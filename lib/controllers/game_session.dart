@@ -89,4 +89,31 @@ class GameSession {
             identical(stagedMove, _unset) ? this.stagedMove : stagedMove as Move?,
         aiThinking: aiThinking ?? this.aiThinking,
       );
+
+  /// Persisted for interruption handling (rules doc §5): mode, engine
+  /// state, and seating only. Selection/staging/aiThinking are presentation
+  /// state (CLAUDE.md rule 6) and are never serialised — a resumed game
+  /// always comes back with a clean slate for those.
+  Map<String, Object?> toJson() => {
+        'mode': mode.name,
+        'engine': engine.toJson(),
+        'starterPerson': starterPerson,
+        'opponents': opponents.toJson(),
+      };
+
+  factory GameSession.fromJson(Map<String, Object?> json) {
+    final mode = GameMode.values.byName(json['mode']! as String);
+    final engineJson = (json['engine']! as Map).cast<String, Object?>();
+    final starterPerson = json['starterPerson'];
+    if (starterPerson is! int || (starterPerson != 1 && starterPerson != 2)) {
+      throw const FormatException('Invalid starterPerson');
+    }
+    return GameSession(
+      mode: mode,
+      engine: mode.decodeEngine(engineJson),
+      starterPerson: starterPerson,
+      opponents: SessionOpponents.fromJson(
+          (json['opponents']! as Map).cast<String, Object?>()),
+    );
+  }
 }

@@ -45,35 +45,80 @@ class GameScreen extends ConsumerWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            Column(
-              children: [
-                _TurnBanner(session: session),
-                Expanded(
-                  child: IgnorePointer(
-                    // Nothing for the human to tap on the AI's turn — the
-                    // controller already no-ops these, this just keeps the
-                    // board from flickering a stage preview under the cursor.
-                    ignoring: session.isAiTurn,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: session.mode.isStacking
-                            ? const StackingBoard()
-                            : const UltimateBoard(),
-                      ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Both orientations (design doc §1): landscape puts the
+                // board and controls side by side rather than fighting
+                // over limited vertical height.
+                final landscape = constraints.maxWidth > constraints.maxHeight;
+                final sideControls = [
+                  _TurnBanner(session: session),
+                  if (session.mode.isStacking && session.status.isOngoing)
+                    IgnorePointer(
+                      ignoring: session.isAiTurn,
+                      child: const InventoryRow(),
                     ),
-                  ),
-                ),
-                if (session.mode.isStacking && session.status.isOngoing)
-                  IgnorePointer(
-                    ignoring: session.isAiTurn,
-                    child: const InventoryRow(),
-                  ),
-                _StagingBar(session: session),
-              ],
+                  _StagingBar(session: session),
+                ];
+                final board = _BoardArea(session: session);
+
+                if (landscape) {
+                  return Row(
+                    children: [
+                      Expanded(child: board),
+                      SizedBox(
+                        width: 300,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: sideControls,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return Column(
+                  children: [
+                    ...sideControls.take(1),
+                    Expanded(child: board),
+                    ...sideControls.skip(1),
+                  ],
+                );
+              },
             ),
             if (session.status.isOver) _ResultOverlay(session: session),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The board itself, capped to a sensible maximum size so it doesn't
+/// stretch edge-to-edge on tablets (design doc §1: "let boards grow to a
+/// sensible maximum with margin").
+class _BoardArea extends StatelessWidget {
+  const _BoardArea({required this.session});
+
+  final GameSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      // Nothing for the human to tap on the AI's turn — the controller
+      // already no-ops these, this just keeps the board from flickering a
+      // stage preview under the cursor.
+      ignoring: session.isAiTurn,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640, maxHeight: 640),
+            child: session.mode.isStacking
+                ? const StackingBoard()
+                : const UltimateBoard(),
+          ),
         ),
       ),
     );
@@ -152,10 +197,18 @@ class _StagingBar extends ConsumerWidget {
     final mustPass = controller.mustPass;
     final stagedPass = session.stagedMove is PassMove;
 
-    return SizedBox(
-      height: 64,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return Container(
+      constraints: const BoxConstraints(minHeight: 64),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      alignment: Alignment.center,
+      // Wrap, not Row: this bar sits either at full screen width (portrait)
+      // or squeezed into a narrow side panel (landscape) — it must reflow
+      // rather than overflow either way.
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
+        runSpacing: 8,
         children: [
           if (mustPass && !stagedPass) ...[
             Text(l10n.mustPassBanner,
@@ -163,7 +216,6 @@ class _StagingBar extends ConsumerWidget {
                     .textTheme
                     .bodyMedium
                     ?.copyWith(color: colors.ink)),
-            const SizedBox(width: 12),
             FilledButton(
               key: const Key('pass'),
               onPressed: () => controller.stageMove(const PassMove()),
@@ -176,7 +228,6 @@ class _StagingBar extends ConsumerWidget {
               onPressed: controller.commitStagedMove,
               child: Text(l10n.confirmMove),
             ),
-            const SizedBox(width: 12),
             TextButton(
               key: const Key('cancel'),
               onPressed: controller.clearSelection,

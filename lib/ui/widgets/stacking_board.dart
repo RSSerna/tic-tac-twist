@@ -5,6 +5,7 @@ import '../../controllers/game_controller.dart';
 import '../../engines/common/player.dart';
 import '../../engines/stacking/stacking_engine.dart';
 import '../../engines/stacking/stacking_move.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../theme/tokens.dart';
 import 'chip_view.dart';
 
@@ -103,78 +104,92 @@ class _StackingCell extends StatelessWidget {
     final colors = context.gameColors;
     final top = engine.topChipAt(cell);
     final depth = engine.stackDepthAt(cell);
+    final l10n = AppLocalizations.of(context);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(4),
-          border: isSelectedOrigin
-              ? Border.all(color: colors.ink, width: 2)
-              : null,
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (highlighted)
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: highlightColor,
-                  borderRadius: BorderRadius.circular(4),
+    // Screen-reader label: public information only — the buried count
+    // (never who or what level) matches exactly what's visible on screen
+    // (design doc §2.5, §6).
+    final occupancy = top == null
+        ? l10n.stackingCellEmpty
+        : l10n.stackingCellOccupied(personFor(top.owner), top.level);
+    final buried = depth > 1 ? ' ${l10n.stackingCellBuried(depth - 1)}' : '';
+    final label = '${l10n.stackingCellLabel(cell + 1)}, $occupancy$buried';
+
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(4),
+            border: isSelectedOrigin
+                ? Border.all(color: colors.ink, width: 2)
+                : null,
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (highlighted)
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: highlightColor,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
-              ),
-            if (top != null)
-              Center(
-                child: Opacity(
-                  // The origin chip of a staged relocation dims: it is
-                  // leaving, but nothing beneath is revealed until commit.
-                  opacity: stagedOrigin ? 0.35 : 1,
+              if (top != null)
+                Center(
+                  child: Opacity(
+                    // The origin chip of a staged relocation dims: it is
+                    // leaving, but nothing beneath is revealed until commit.
+                    opacity: stagedOrigin ? 0.35 : 1,
+                    child: ChipView(
+                      color: personFor(top.owner) == 1
+                          ? colors.playerA
+                          : colors.playerB,
+                      ringColor: colors.surface,
+                      level: top.level,
+                      isFirstPerson: personFor(top.owner) == 1,
+                    ),
+                  ),
+                ),
+              if (stagedLevel != null)
+                Center(
                   child: ChipView(
-                    color: personFor(top.owner) == 1
-                        ? colors.playerA
-                        : colors.playerB,
+                    color: currentColor,
                     ringColor: colors.surface,
-                    level: top.level,
-                    isFirstPerson: personFor(top.owner) == 1,
+                    level: stagedLevel!,
+                    isFirstPerson: currentPersonIsFirst,
+                    ghost: true,
                   ),
                 ),
-              ),
-            if (stagedLevel != null)
-              Center(
-                child: ChipView(
-                  color: currentColor,
-                  ringColor: colors.surface,
-                  level: stagedLevel!,
-                  isFirstPerson: currentPersonIsFirst,
-                  ghost: true,
-                ),
-              ),
-            // Buried collar: shows THAT chips are buried and how many —
-            // never whose or what level (design doc §2.5).
-            if (depth > 1)
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (var i = 0; i < depth - 1; i++)
-                        Container(
-                          width: 6,
-                          height: 6,
-                          margin: const EdgeInsets.symmetric(horizontal: 2),
-                          decoration: BoxDecoration(
-                            color: colors.neutral,
-                            shape: BoxShape.circle,
+              // Buried collar: shows THAT chips are buried and how many —
+              // never whose or what level (design doc §2.5).
+              if (depth > 1)
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (var i = 0; i < depth - 1; i++)
+                          Container(
+                            width: 6,
+                            height: 6,
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            decoration: BoxDecoration(
+                              color: colors.neutral,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

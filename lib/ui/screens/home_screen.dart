@@ -1,13 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../controllers/game_controller.dart';
+import '../../controllers/game_session.dart';
 import '../../engines/common/game_mode.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/tokens.dart';
+import 'game_screen.dart';
 import 'sub_mode_screen.dart';
 
+String _modeName(AppLocalizations l10n, GameMode mode) => switch (mode) {
+      GameMode.stackStatic => l10n.modeStackStatic,
+      GameMode.stackMovable => l10n.modeStackMovable,
+      GameMode.ultimate => l10n.modeUltimate,
+    };
+
 /// Home / mode select: the three v1 modes.
-class HomeScreen extends StatelessWidget {
+///
+/// Also the resume-or-abandon checkpoint (rules doc §5): a game left
+/// in-progress from a previous launch is offered back here, once, before
+/// anything else is shown.
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkForSavedGame());
+  }
+
+  Future<void> _checkForSavedGame() async {
+    final controller = ref.read(gameControllerProvider.notifier);
+    final saved = await controller.peekSavedGame();
+    if (saved == null || !mounted) return;
+
+    final resume = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _ResumeGameDialog(session: saved),
+    );
+    if (!mounted) return;
+
+    if (resume == true) {
+      controller.resumeSession(saved);
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const GameScreen()),
+      );
+    } else {
+      await controller.discardSavedGame();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +89,33 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+class _ResumeGameDialog extends StatelessWidget {
+  const _ResumeGameDialog({required this.session});
+
+  final GameSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l10n.resumeGameTitle),
+      content: Text(l10n.resumeGameBody(_modeName(l10n, session.mode))),
+      actions: [
+        TextButton(
+          key: const Key('abandon-game'),
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(l10n.abandonAction),
+        ),
+        FilledButton(
+          key: const Key('resume-game'),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(l10n.resumeAction),
+        ),
+      ],
+    );
+  }
+}
+
 class _ModeCard extends StatelessWidget {
   const _ModeCard({required this.mode});
 
@@ -53,11 +127,10 @@ class _ModeCard extends StatelessWidget {
     final colors = context.gameColors;
     final textTheme = Theme.of(context).textTheme;
 
-    final (name, description) = switch (mode) {
-      GameMode.stackStatic => (l10n.modeStackStatic, l10n.modeStackStaticDesc),
-      GameMode.stackMovable =>
-        (l10n.modeStackMovable, l10n.modeStackMovableDesc),
-      GameMode.ultimate => (l10n.modeUltimate, l10n.modeUltimateDesc),
+    final description = switch (mode) {
+      GameMode.stackStatic => l10n.modeStackStaticDesc,
+      GameMode.stackMovable => l10n.modeStackMovableDesc,
+      GameMode.ultimate => l10n.modeUltimateDesc,
     };
 
     return Material(
@@ -74,7 +147,7 @@ class _ModeCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(name,
+              Text(_modeName(l10n, mode),
                   style: textTheme.titleLarge?.copyWith(color: colors.ink)),
               const SizedBox(height: 4),
               Text(description,

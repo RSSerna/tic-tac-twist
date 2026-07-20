@@ -9,6 +9,7 @@ import '../engines/common/move.dart';
 import '../engines/stacking/stacking_engine.dart';
 import '../engines/stacking/stacking_move.dart';
 import '../engines/ultimate/ultimate_move.dart';
+import '../services/game_persistence_service.dart';
 import 'game_session.dart';
 import 'session_opponents.dart';
 
@@ -48,10 +49,14 @@ class GameController extends Notifier<GameSession?> {
       starterPerson: 1,
       opponents: opponents,
     );
+    _persist();
     _maybeTriggerAiMove();
   }
 
-  void exitGame() => state = null;
+  void exitGame() {
+    state = null;
+    unawaited(ref.read(gamePersistenceServiceProvider).clearSnapshot());
+  }
 
   /// New game, same mode and opponents: the loser starts; on a draw the
   /// seats alternate (rules doc §5). This is how the AI can end up moving
@@ -69,8 +74,49 @@ class GameController extends Notifier<GameSession?> {
       starterPerson: nextStarter,
       opponents: session.opponents,
     );
+    _persist();
     _maybeTriggerAiMove();
   }
+
+  // --------------------------------------------------------- persistence
+
+  /// Saves the current game if it's ongoing, or clears the saved slot if
+  /// it just ended — a finished game has nothing left to resume (rules doc
+  /// §5: serialise to disk, restore on relaunch with resume-or-abandon).
+  void _persist() {
+    final session = state;
+    final service = ref.read(gamePersistenceServiceProvider);
+    if (session == null || session.status.isOver) {
+      unawaited(service.clearSnapshot());
+    } else {
+      unawaited(service.saveSnapshot(session.toJson()));
+    }
+  }
+
+  /// Loads the saved game, if any, without making it the active session —
+  /// callers decide whether to [resumeSession] or [discardSavedGame] (the
+  /// resume-or-abandon prompt on relaunch).
+  Future<GameSession?> peekSavedGame() async {
+    final service = ref.read(gamePersistenceServiceProvider);
+    final json = await service.loadSnapshot();
+    if (json == null) return null;
+    try {
+      return GameSession.fromJson(json);
+    } on FormatException {
+      await service.clearSnapshot();
+      return null;
+    }
+  }
+
+  /// Makes [session] (from [peekSavedGame]) the active game, resuming an
+  /// AI turn if it's now the AI's move.
+  void resumeSession(GameSession session) {
+    state = session;
+    _maybeTriggerAiMove();
+  }
+
+  Future<void> discardSavedGame() =>
+      ref.read(gamePersistenceServiceProvider).clearSnapshot();
 
   // -------------------------------------------------------------- staging
   //
@@ -122,6 +168,7 @@ class GameController extends Notifier<GameSession?> {
       starterPerson: session.starterPerson,
       opponents: session.opponents,
     );
+    _persist();
     _maybeTriggerAiMove();
   }
 

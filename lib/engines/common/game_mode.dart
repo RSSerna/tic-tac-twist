@@ -20,4 +20,10 @@ enum GameMode {
         stackMovable => StackingEngine.initial(StackingConfig.movableMode),
         ultimate => UltimateEngine.initial(),
       };
+
+  /// Decodes a serialised engine of this mode's kind — the deserialisation
+  /// half of [createEngine], shared by the AI isolate boundary and game
+  /// persistence so neither duplicates the mode→engine-type dispatch.
+  GameEngine<Move> decodeEngine(Map<String, Object?> json) =>
+      isStacking ? StackingEngine.fromJson(json) : UltimateEngine.fromJson(json);
 }

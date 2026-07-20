@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/game_controller.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../theme/tokens.dart';
 import 'chip_view.dart';
 
@@ -69,43 +70,50 @@ class _InventoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final depleted = count <= 0;
-    return GestureDetector(
-      onTap: depleted ? null : onTap,
-      child: Container(
-        width: 64,
-        height: 76,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: BoxDecoration(
-          color: surface,
-          borderRadius: BorderRadius.circular(4),
-          border: selected ? Border.all(color: ink, width: 2) : null,
-        ),
-        child: Opacity(
-          opacity: depleted ? 0.25 : 1,
-          child: Column(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: ChipView(
-                    color: depleted ? neutral : color,
-                    ringColor: surface,
-                    level: level,
-                    isFirstPerson: isFirstPerson,
+    final l10n = AppLocalizations.of(context);
+    return Semantics(
+      button: true,
+      label: l10n.inventoryChipLabel(level, count),
+      child: GestureDetector(
+        onTap: depleted ? null : onTap,
+        child: Container(
+          width: 64,
+          height: 76,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.circular(4),
+            border: selected ? Border.all(color: ink, width: 2) : null,
+          ),
+          child: Opacity(
+            opacity: depleted ? 0.25 : 1,
+            child: ExcludeSemantics(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: ChipView(
+                        color: depleted ? neutral : color,
+                        ringColor: surface,
+                        level: level,
+                        isFirstPerson: isFirstPerson,
+                      ),
+                    ),
                   ),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      '×$count',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(color: ink),
+                    ),
+                  ),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  '×$count',
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelMedium
-                      ?.copyWith(color: ink),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

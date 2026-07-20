@@ -8,8 +8,13 @@ import 'package:nested_game/engines/stacking/stacking_engine.dart';
 import 'package:nested_game/engines/ultimate/ultimate_engine.dart';
 import 'package:nested_game/main.dart';
 import 'package:nested_game/ui/screens/game_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> pumpApp(WidgetTester tester) async {
+  // Reset the mock store per test — it's process-global, so a game saved
+  // by one test would otherwise leak into the next and pop an unexpected
+  // resume-game dialog on the home screen.
+  SharedPreferences.setMockInitialValues({});
   await tester.pumpWidget(const ProviderScope(child: NestedApp()));
   await tester.pumpAndSettle();
 }
@@ -21,8 +26,9 @@ Future<void> startGame(WidgetTester tester, String modeName) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> tapKey(WidgetTester tester, String key) async {
-  await tester.tap(find.byKey(Key(key)));
+Future<void> tapKey(WidgetTester tester, String key,
+    {bool warnIfMissed = true}) async {
+  await tester.tap(find.byKey(Key(key)), warnIfMissed: warnIfMissed);
   await tester.pumpAndSettle();
 }
 
@@ -92,24 +98,42 @@ void main() {
     expect(find.text('Player 2 to move'), findsOneWidget);
   });
 
-  testWidgets('ultimate: staging respects the send rule', (tester) async {
+  testWidgets('ultimate: unzoomed tap zooms in; staging respects the send rule',
+      (tester) async {
     await pumpApp(tester);
     await startGame(tester, 'ultimate');
 
-    await tapKey(tester, 'ult-4-0');
+    // warnIfMissed:false throughout this test — Flutter's advisory
+    // bounds-check on tap() is imprecise for cells inside
+    // AnimatedSwitcher's zoom transition; the actual hit-test dispatch is
+    // a separate, correct code path (verified by every assertion below
+    // actually passing).
+
+    // Unzoomed: a tap on a cell zooms into its board rather than staging.
+    await tapKey(tester, 'ult-4-0', warnIfMissed: false);
+    expect(find.byKey(const Key('confirm')), findsNothing);
+    expect(find.byKey(const Key('zoom-out')), findsOneWidget);
+
+    // Zoomed in: the same cell now stages, and confirm commits it.
+    await tapKey(tester, 'ult-4-0', warnIfMissed: false);
     await tapKey(tester, 'confirm');
     var engine = containerOf(tester).read(gameControllerProvider)!.engine
         as UltimateEngine;
     expect(engine.ownerOf(4, 0), Player.one);
     expect(engine.targetBoard, 0);
 
-    // Tapping outside the target board stages nothing.
-    await tapKey(tester, 'ult-1-0');
+    // Zoom into the WRONG board (not the send-rule target) and try to play
+    // there: the controller rejects it, nothing stages.
+    await tapKey(tester, 'zoom-out');
+    await tapKey(tester, 'ult-1-0', warnIfMissed: false); // zooms into board 1
+    await tapKey(tester, 'ult-1-0', warnIfMissed: false); // illegal: P2 must play board 0
     expect(find.byKey(const Key('confirm')), findsNothing);
 
-    // Legal cell: stage, then second tap commits.
-    await tapKey(tester, 'ult-0-3');
-    await tapKey(tester, 'ult-0-3');
+    // Zoom into the correct board: stage, then second tap commits.
+    await tapKey(tester, 'zoom-out');
+    await tapKey(tester, 'ult-0-3', warnIfMissed: false); // zooms into board 0
+    await tapKey(tester, 'ult-0-3', warnIfMissed: false); // stages
+    await tapKey(tester, 'ult-0-3', warnIfMissed: false); // second tap commits
     engine = containerOf(tester).read(gameControllerProvider)!.engine
         as UltimateEngine;
     expect(engine.ownerOf(0, 3), Player.two);

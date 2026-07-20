@@ -22,6 +22,14 @@
   "difficultyImpossible": "Imposible",
   "difficultyImpossibleDesc": "Rara vez, o nunca, comete un error",
   "aiThinking": "La IA está pensando…",
+  "zoomOut": "Volver al tablero completo",
+  "ultimateSmallBoardLabel": "Tablero {number}",
+  "stackingCellLabel": "Casilla {number}",
+  "stackingCellEmpty": "vacía",
+  "stackingCellOccupied": "ficha del jugador {number}, nivel {level}",
+  "stackingCellBuried": "{count, plural, one{1 ficha enterrada debajo} other{{count} fichas enterradas debajo}}",
+  "ultimateCellLabel": "Tablero {board}, casilla {cell}",
+  "inventoryChipLabel": "Ficha de nivel {level}, quedan {count}",
   "turnBanner": "Turno del jugador {number}",
   "confirmMove": "Confirmar jugada",
   "cancel": "Cancelar",
@@ -33,5 +41,9 @@
   "resultReasonRepetition": "La misma posición se repitió tres veces",
   "resultReasonExactTie": "Control del tablero empatado",
   "rematch": "Revancha",
-  "exitToMenu": "Salir al menú"
+  "exitToMenu": "Salir al menú",
+  "resumeGameTitle": "Partida en curso",
+  "resumeGameBody": "Tienes una partida de {mode} sin terminar.",
+  "resumeAction": "Reanudar",
+  "abandonAction": "Abandonar"
 }

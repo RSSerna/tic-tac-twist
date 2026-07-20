@@ -44,7 +44,12 @@ class GameColors extends ThemeExtension<GameColors> {
     ink: Color(0xFF2E2C29),
     playerA: Color(0xFF1B4B7A),
     playerB: Color(0xFFC9601F),
-    neutral: Color(0xFF8A8C84),
+    // Darkened from the doc's original #8A8C84 during the Phase 4
+    // accessibility pass: the original failed WCAG AA's 3:1 "meaningful
+    // graphics" minimum against both surface (2.99:1) and ground (2.43:1)
+    // — this is what the buried-chip collar and drawn-board marker render
+    // against. #6B6D65 clears both (4.61:1 / 3.75:1) at the same hue.
+    neutral: Color(0xFF6B6D65),
   );
 
   @override

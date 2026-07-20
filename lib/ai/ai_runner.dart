@@ -4,9 +4,7 @@ import 'dart:math';
 import '../engines/common/game_engine.dart';
 import '../engines/common/game_mode.dart';
 import '../engines/common/move.dart';
-import '../engines/stacking/stacking_engine.dart';
 import '../engines/stacking/stacking_move.dart';
-import '../engines/ultimate/ultimate_engine.dart';
 import '../engines/ultimate/ultimate_move.dart';
 import 'ai_player.dart';
 import 'difficulty.dart';
@@ -48,13 +46,10 @@ abstract final class AiRunner {
     final difficulty = Difficulty.values.byName(request['difficulty']! as String);
     final seed = request['seed']! as int;
     final engineJson = (request['engine']! as Map).cast<String, Object?>();
-    final engine = _decodeEngine(mode, engineJson);
+    final engine = mode.decodeEngine(engineJson);
     final move = AiPlayer(difficulty).chooseMove(mode, engine, Random(seed));
     return move.toJson();
   }
-
-  static GameEngine<Move> _decodeEngine(GameMode mode, Map<String, Object?> json) =>
-      mode.isStacking ? StackingEngine.fromJson(json) : UltimateEngine.fromJson(json);
 
   static Move _decodeMove(GameMode mode, Map<String, Object?> json) => mode.isStacking
       ? StackingMove.fromJson(json)

@@ -21,4 +21,20 @@ class SessionOpponents {
       SessionOpponents._(true, difficulty);
 
   bool isAiPerson(int person) => person == 2 && personTwoIsAi;
+
+  Map<String, Object?> toJson() =>
+      {'personTwoIsAi': personTwoIsAi, 'difficulty': difficulty?.name};
+
+  factory SessionOpponents.fromJson(Map<String, Object?> json) {
+    final isAi = json['personTwoIsAi'];
+    if (isAi is! bool) {
+      throw const FormatException('Invalid SessionOpponents.personTwoIsAi');
+    }
+    if (!isAi) return SessionOpponents.human;
+    final difficultyName = json['difficulty'];
+    if (difficultyName is! String) {
+      throw const FormatException('Invalid SessionOpponents.difficulty');
+    }
+    return SessionOpponents.vsAi(Difficulty.values.byName(difficultyName));
+  }
 }

@@ -27,9 +27,11 @@ The default skin must look finished on its own. If the free skin looks like a pl
 | `ink` | `#2E2C29` | Text, outlines, grid structure |
 | `playerA` | `#1B4B7A` | Player 1 — deep indigo |
 | `playerB` | `#C9601F` | Player 2 — burnt amber |
-| `neutral` | `#8A8C84` | Drawn boards, disabled states, buried-stack collar |
+| `neutral` | `#6B6D65` | Drawn boards, disabled states, buried-stack collar |
 
 Indigo/amber survives all three common colour-vision deficiencies, unlike red/green, and stays legible on both `ground` and `surface`.
+
+**`neutral` was darkened from an original `#8A8C84`** during the Phase 4 accessibility pass (2026-07-20): the original failed WCAG AA's 3:1 "meaningful graphics" minimum against both `surface` (2.99:1) and `ground` (2.43:1) — the two backgrounds the buried-chip collar and drawn-board marker render against. `#6B6D65` clears both (4.61:1 / 3.75:1) at the same hue.
 
 **Highlighting uses the active player's own colour at ~15% opacity** — no seventh token. The highlight then tells you *whose* turn it is as well as *where* you may play.
 

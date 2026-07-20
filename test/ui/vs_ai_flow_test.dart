@@ -11,6 +11,7 @@ import 'package:nested_game/engines/stacking/stacking_engine.dart';
 import 'package:nested_game/engines/stacking/stacking_move.dart';
 import 'package:nested_game/main.dart';
 import 'package:nested_game/ui/screens/game_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> tapKey(WidgetTester tester, String key) async {
   await tester.tap(find.byKey(Key(key)));
@@ -29,6 +30,11 @@ Future<void> startVsAiStackStatic(WidgetTester tester) async {
 }
 
 void main() {
+  // Reset the mock store per test — it's process-global, so a game saved
+  // by one test would otherwise leak into the next and pop an unexpected
+  // resume-game dialog on the home screen.
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   testWidgets(
       'vs AI: human moves, AI thinks in the background, then moves itself',
       (tester) async {

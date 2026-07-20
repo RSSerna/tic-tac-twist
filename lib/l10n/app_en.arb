@@ -37,6 +37,48 @@
   "difficultyImpossible": "Impossible",
   "difficultyImpossibleDesc": "Rarely, if ever, makes a mistake",
   "aiThinking": "AI is thinking…",
+  "zoomOut": "Back to full board",
+  "ultimateSmallBoardLabel": "Board {number}",
+  "@ultimateSmallBoardLabel": {
+    "description": "Screen-reader label for a small board in the unzoomed Ultimate view (tap to zoom in).",
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "stackingCellLabel": "Square {number}",
+  "@stackingCellLabel": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "stackingCellEmpty": "empty",
+  "stackingCellOccupied": "player {number} chip, level {level}",
+  "@stackingCellOccupied": {
+    "placeholders": {
+      "number": {"type": "int"},
+      "level": {"type": "int"}
+    }
+  },
+  "stackingCellBuried": "{count, plural, one{1 chip buried beneath} other{{count} chips buried beneath}}",
+  "@stackingCellBuried": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "ultimateCellLabel": "Board {board}, square {cell}",
+  "@ultimateCellLabel": {
+    "placeholders": {
+      "board": {"type": "int"},
+      "cell": {"type": "int"}
+    }
+  },
+  "inventoryChipLabel": "Level {level} chip, {count} remaining",
+  "@inventoryChipLabel": {
+    "placeholders": {
+      "level": {"type": "int"},
+      "count": {"type": "int"}
+    }
+  },
   "turnBanner": "Player {number} to move",
   "@turnBanner": {
     "placeholders": {
@@ -58,5 +100,14 @@
   "resultReasonRepetition": "The same position occurred three times",
   "resultReasonExactTie": "Board control exactly tied",
   "rematch": "Rematch",
-  "exitToMenu": "Exit to menu"
+  "exitToMenu": "Exit to menu",
+  "resumeGameTitle": "Game in progress",
+  "resumeGameBody": "You have an unfinished {mode} game.",
+  "@resumeGameBody": {
+    "placeholders": {
+      "mode": {"type": "String"}
+    }
+  },
+  "resumeAction": "Resume",
+  "abandonAction": "Abandon"
 }
