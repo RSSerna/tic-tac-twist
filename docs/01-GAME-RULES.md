@@ -82,13 +82,10 @@ On a turn, do **one** of:
 
 Once inventory is empty, a player must move.
 
-### 3.3 OPEN — stall prevention
-Infinite back-and-forth repetition is possible with movable pieces. Options:
-- (a) forbid a move that exactly reverses your own previous move
-- (b) **threefold repetition of board state = draw** ← recommended; cheap via a state-hash set, matches chess convention
-- (c) turn timer
+### 3.3 Stall prevention — DECIDED (2026-07-19)
+**Threefold repetition of position = draw.** A position is the board contents plus the player to move; its third occurrence ends the game immediately. Cheap via a position-count map, matches chess convention. True "no legal move" states are nearly impossible in this mode, so this is the only realistic draw path.
 
-**Ask before implementing.** True "no legal move" states are nearly impossible in this mode, so this is the only realistic draw path.
+*(Rejected alternatives: forbidding immediate move reversal — only blocks 2-cycles; turn timer — presentation-level, not an engine rule.)*
 
 ---
 

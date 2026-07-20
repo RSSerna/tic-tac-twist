@@ -80,8 +80,8 @@ These look like UI details but are gameplay-critical. Breaking them breaks the g
 - App name: **Nested**. Bundle ID / Android package: `dev.rsaldarris.nested`. Dart package: `nested_game` (plain `nested` collides with the pub.dev package of that name).
 - Developer name: Ricardo Saldarriaga Serna.
 - Minimums: iOS 13, Android 6.0 (API 23 — Google Mobile Ads SDK floor).
+- Stack-Movable stall rule: threefold repetition of position = draw (see `01-GAME-RULES.md` §3.3).
 
 ## Still undecided — ask before assuming
 
 - Launch skin count and chest rarity tiers
-- Repetition/stall rule for Stack-Movable (see `01-GAME-RULES.md` §3.3)
