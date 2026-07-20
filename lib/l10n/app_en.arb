@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "appTitle": "Nested",
+  "@appTitle": {
+    "description": "App name. A proper noun — keep untranslated in all locales."
+  },
+  "homeTagline": "Three tic-tac-toe variants",
+  "@homeTagline": {
+    "description": "Short subtitle shown under the app title on the placeholder home screen."
+  }
+}
