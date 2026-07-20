@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../controllers/game_mode.dart';
+import '../../engines/common/game_mode.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/tokens.dart';
 import 'sub_mode_screen.dart';

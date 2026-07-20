@@ -1,10 +1,11 @@
 import 'package:meta/meta.dart';
 
 import '../engines/common/game_engine.dart';
+import '../engines/common/game_mode.dart';
 import '../engines/common/game_status.dart';
 import '../engines/common/move.dart';
 import '../engines/common/player.dart';
-import 'game_mode.dart';
+import 'session_opponents.dart';
 
 /// One game in progress, plus its presentation state (selection, staging).
 ///
@@ -22,9 +23,11 @@ class GameSession {
     required this.mode,
     required this.engine,
     required this.starterPerson,
+    this.opponents = SessionOpponents.human,
     this.selectedLevel,
     this.selectedCell,
     this.stagedMove,
+    this.aiThinking = false,
   });
 
   final GameMode mode;
@@ -32,6 +35,10 @@ class GameSession {
 
   /// Which person (1 or 2) moves first in this game (= engine [Player.one]).
   final int starterPerson;
+
+  /// Which persons are AI-controlled; fixed identity, independent of
+  /// [starterPerson].
+  final SessionOpponents opponents;
 
   /// Stacking: inventory chip level picked, awaiting a target cell.
   final int? selectedLevel;
@@ -43,6 +50,11 @@ class GameSession {
   /// before commit, never take back after).
   final Move? stagedMove;
 
+  /// An AI move computation is in flight. Presentation state only; used to
+  /// show a "thinking" indicator and to keep the human from staging moves
+  /// on the AI's turn.
+  final bool aiThinking;
+
   Player get currentPlayer => engine.currentPlayer;
   GameStatus get status => engine.status;
 
@@ -51,6 +63,8 @@ class GameSession {
 
   int get currentPerson => personFor(currentPlayer);
 
+  bool get isAiTurn => opponents.isAiPerson(currentPerson);
+
   static const _unset = Object();
 
   GameSession copy({
@@ -58,11 +72,13 @@ class GameSession {
     Object? selectedLevel = _unset,
     Object? selectedCell = _unset,
     Object? stagedMove = _unset,
+    bool? aiThinking,
   }) =>
       GameSession(
         mode: mode,
         engine: engine ?? this.engine,
         starterPerson: starterPerson,
+        opponents: opponents,
         selectedLevel: identical(selectedLevel, _unset)
             ? this.selectedLevel
             : selectedLevel as int?,
@@ -71,5 +87,6 @@ class GameSession {
             : selectedCell as int?,
         stagedMove:
             identical(stagedMove, _unset) ? this.stagedMove : stagedMove as Move?,
+        aiThinking: aiThinking ?? this.aiThinking,
       );
 }

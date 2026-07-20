@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/game_controller.dart';
-import '../../controllers/game_mode.dart';
+import '../../engines/common/game_mode.dart';
 import '../../controllers/game_session.dart';
 import '../../engines/common/game_status.dart';
 import '../../engines/stacking/stacking_move.dart';
@@ -49,17 +49,26 @@ class GameScreen extends ConsumerWidget {
               children: [
                 _TurnBanner(session: session),
                 Expanded(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: session.mode.isStacking
-                          ? const StackingBoard()
-                          : const UltimateBoard(),
+                  child: IgnorePointer(
+                    // Nothing for the human to tap on the AI's turn — the
+                    // controller already no-ops these, this just keeps the
+                    // board from flickering a stage preview under the cursor.
+                    ignoring: session.isAiTurn,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: session.mode.isStacking
+                            ? const StackingBoard()
+                            : const UltimateBoard(),
+                      ),
                     ),
                   ),
                 ),
                 if (session.mode.isStacking && session.status.isOngoing)
-                  const InventoryRow(),
+                  IgnorePointer(
+                    ignoring: session.isAiTurn,
+                    child: const InventoryRow(),
+                  ),
                 _StagingBar(session: session),
               ],
             ),
@@ -85,27 +94,42 @@ class _TurnBanner extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Column(
         children: [
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: ChipView(
-              color: color,
-              ringColor: colors.surface,
-              level: 1,
-              isFirstPerson: person == 1,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: ChipView(
+                  color: color,
+                  ringColor: colors.surface,
+                  level: 1,
+                  isFirstPerson: person == 1,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l10n.turnBanner(person),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(color: colors.ink),
+              ),
+            ],
+          ),
+          if (session.aiThinking) ...[
+            const SizedBox(height: 4),
+            Text(
+              l10n.aiThinking,
+              key: const Key('ai-thinking'),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: colors.neutral),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            l10n.turnBanner(person),
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(color: colors.ink),
-          ),
+          ],
         ],
       ),
     );

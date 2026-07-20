@@ -121,12 +121,22 @@ class UltimateEngine implements GameEngine<UltimateMove> {
 
     final cells = List<Player?>.of(_cells);
     cells[move.board * 9 + move.cell] = currentPlayer;
-    // The cell position just played dictates the opponent's board (rule 3);
-    // the factory normalises it to a free move if that board is finished.
-    return UltimateEngine._derive(
-      List<Player?>.unmodifiable(cells),
+    final frozen = List<Player?>.unmodifiable(cells);
+    // Only the played board's result can change; reuse the other eight
+    // (this keeps AI playouts cheap).
+    final results = List<BoardResult>.unmodifiable([
+      for (var b = 0; b < 9; b++)
+        b == move.board ? _deriveResult(frozen, b) : _results[b],
+    ]);
+    // The cell position just played dictates the opponent's board (rule 3),
+    // normalised to a free move if that board is finished.
+    final target = results[move.cell].isFinished ? null : move.cell;
+    return UltimateEngine._(
+      frozen,
       currentPlayer.opponent,
-      move.cell,
+      target,
+      results,
+      _evaluate(results, currentPlayer.opponent),
     );
   }
 

@@ -1,21 +1,31 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../ai/ai_runner.dart';
+import '../engines/common/game_mode.dart';
 import '../engines/common/game_status.dart';
 import '../engines/common/move.dart';
 import '../engines/stacking/stacking_engine.dart';
 import '../engines/stacking/stacking_move.dart';
 import '../engines/ultimate/ultimate_move.dart';
-import 'game_mode.dart';
 import 'game_session.dart';
+import 'session_opponents.dart';
+
+/// The AI move computer this controller calls. A [Provider] (not a plain
+/// top-level constant) so tests can override it with a fast fake instead of
+/// spawning a real isolate (see CLAUDE.md: Riverpod for shared state).
+final aiRunnerProvider = Provider<AiMoveComputer>((ref) => AiRunner.chooseMove);
 
 final gameControllerProvider =
     NotifierProvider<GameController, GameSession?>(GameController.new);
 
 /// Turn management and the single gateway for mutating game state.
 ///
-/// Every move — local UI now, AI in Phase 3, network in v2 — goes through
-/// [submitMove]. No other path touches the engine (CLAUDE.md rule 3).
-/// Legality lives in the engine; this class only asks `legalMoves()`.
+/// Every move — local UI and AI in v1, a network listener added in v2 —
+/// goes through [submitMove]. No other path touches the engine (CLAUDE.md
+/// rule 3). Legality lives in the engine; this class only asks
+/// `legalMoves()`.
 class GameController extends Notifier<GameSession?> {
   @override
   GameSession? build() => null;
@@ -29,19 +39,23 @@ class GameController extends Notifier<GameSession?> {
   }
 
   /// Starts a fresh game. Person 1 starts the first game of a session
-  /// (rules doc §5); rematch seating is handled by [rematch].
-  void startGame(GameMode mode) {
+  /// (rules doc §5) and is always the human when [opponents] is vs-AI;
+  /// rematch seating is handled by [rematch].
+  void startGame(GameMode mode, {SessionOpponents opponents = SessionOpponents.human}) {
     state = GameSession(
       mode: mode,
       engine: mode.createEngine(),
       starterPerson: 1,
+      opponents: opponents,
     );
+    _maybeTriggerAiMove();
   }
 
   void exitGame() => state = null;
 
-  /// New game, same mode: the loser starts; on a draw the seats alternate
-  /// (rules doc §5).
+  /// New game, same mode and opponents: the loser starts; on a draw the
+  /// seats alternate (rules doc §5). This is how the AI can end up moving
+  /// first, if the human lost the previous game.
   void rematch() {
     final session = _session;
     final status = session.status;
@@ -53,14 +67,20 @@ class GameController extends Notifier<GameSession?> {
       mode: session.mode,
       engine: session.mode.createEngine(),
       starterPerson: nextStarter,
+      opponents: session.opponents,
     );
+    _maybeTriggerAiMove();
   }
 
   // -------------------------------------------------------------- staging
+  //
+  // Every staging method below no-ops during the AI's turn: currentPlayer
+  // belongs to the AI person, so there is nothing for the human to stage.
 
   /// Toggles an inventory chip selection (stacking modes).
   void selectInventoryLevel(int level) {
     final session = _session;
+    if (session.isAiTurn) return;
     state = session.copy(
       selectedLevel: session.selectedLevel == level ? null : level,
       selectedCell: null,
@@ -69,7 +89,9 @@ class GameController extends Notifier<GameSession?> {
   }
 
   void clearSelection() {
-    state = _session.copy(
+    final session = _session;
+    if (session.isAiTurn) return;
+    state = session.copy(
       selectedLevel: null,
       selectedCell: null,
       stagedMove: null,
@@ -79,6 +101,7 @@ class GameController extends Notifier<GameSession?> {
   /// Stages [move] if the engine says it is legal.
   void stageMove(Move move) {
     final session = _session;
+    if (session.isAiTurn) return;
     if (session.engine.legalMoves().contains(move)) {
       state = session.copy(stagedMove: move);
     }
@@ -97,7 +120,9 @@ class GameController extends Notifier<GameSession?> {
       mode: session.mode,
       engine: session.engine.applyMove(move),
       starterPerson: session.starterPerson,
+      opponents: session.opponents,
     );
+    _maybeTriggerAiMove();
   }
 
   // ------------------------------------------------- gesture interpretation
@@ -107,7 +132,7 @@ class GameController extends Notifier<GameSession?> {
   /// commitment; tapping elsewhere clears.
   void onStackingCellTapped(int cell) {
     final session = _session;
-    if (session.status.isOver) return;
+    if (session.status.isOver || session.isAiTurn) return;
     final staged = session.stagedMove;
 
     // Second tap on the staged target commits.
@@ -148,7 +173,7 @@ class GameController extends Notifier<GameSession?> {
   /// clear otherwise.
   void onUltimateCellTapped(int board, int cell) {
     final session = _session;
-    if (session.status.isOver) return;
+    if (session.status.isOver || session.isAiTurn) return;
     final move = UltimateMove(board, cell);
     if (session.stagedMove == move) {
       commitStagedMove();
@@ -159,6 +184,41 @@ class GameController extends Notifier<GameSession?> {
     } else {
       clearSelection();
     }
+  }
+
+  // ------------------------------------------------------------------- AI
+
+  /// Kicks off a background AI move if it's now an AI-controlled person's
+  /// turn. Safe to call after every state transition — it's a no-op
+  /// otherwise.
+  void _maybeTriggerAiMove() {
+    final session = state;
+    if (session == null || session.status.isOver || !session.isAiTurn) return;
+    unawaited(_runAiTurn(session));
+  }
+
+  Future<void> _runAiTurn(GameSession session) async {
+    final legal = session.engine.legalMoves();
+    if (legal.length == 1) {
+      // Forced move (or a forced pass): no search needed, nothing async —
+      // safe to apply immediately.
+      submitMove(legal.single);
+      return;
+    }
+
+    final thinking = session.copy(aiThinking: true);
+    state = thinking;
+    final move = await ref.read(aiRunnerProvider)(
+      mode: session.mode,
+      difficulty: session.opponents.difficulty!,
+      engine: session.engine,
+    );
+    // The session may have moved on (exited, restarted) while awaiting —
+    // compare against `thinking` (the state we ourselves set), not the
+    // original `session`, since setting aiThinking already changed identity.
+    // Never apply a stale computation on top of unrelated state.
+    if (!identical(state, thinking)) return;
+    submitMove(move);
   }
 
   // ------------------------------------------------------------- queries

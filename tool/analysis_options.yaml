@@ -1,0 +1,8 @@
+include: package:flutter_lints/flutter.yaml
+
+# This directory holds CLI scripts (e.g. balance_batch.dart) whose entire
+# purpose is console output — avoid_print doesn't apply here the way it
+# does to lib/.
+linter:
+  rules:
+    avoid_print: false

@@ -25,6 +25,18 @@
   "modeUltimateDesc": "Nine boards in one. Your move picks their board.",
   "playLocal": "Pass & play",
   "playLocalDesc": "Two players, one device",
+  "playVsAi": "Vs AI",
+  "playVsAiDesc": "One player, choose a difficulty",
+  "chooseDifficulty": "Choose a difficulty",
+  "difficultyEasy": "Easy",
+  "difficultyEasyDesc": "Relaxed — makes mistakes",
+  "difficultyMedium": "Medium",
+  "difficultyMediumDesc": "Solid, but not perfect",
+  "difficultyHard": "Hard",
+  "difficultyHardDesc": "Plays a strong game",
+  "difficultyImpossible": "Impossible",
+  "difficultyImpossibleDesc": "Rarely, if ever, makes a mistake",
+  "aiThinking": "AI is thinking…",
   "turnBanner": "Player {number} to move",
   "@turnBanner": {
     "placeholders": {
