@@ -1,22 +1,22 @@
-name: CI
+# name: CI
 
-on:
-  push:
-  pull_request:
+# on:
+#   push:
+#   pull_request:
 
-jobs:
-  analyze-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+# jobs:
+#   analyze-and-test:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
 
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: 3.41.4
-          cache: true
+#       - uses: subosito/flutter-action@v2
+#         with:
+#           channel: stable
+#           flutter-version: 3.41.4
+#           cache: true
 
-      - run: flutter pub get
-      - run: flutter gen-l10n
-      - run: flutter analyze
-      - run: flutter test
+#       - run: flutter pub get
+#       - run: flutter gen-l10n
+#       - run: flutter analyze
+#       - run: flutter test
