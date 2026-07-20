@@ -109,5 +109,42 @@
     }
   },
   "resumeAction": "Resume",
-  "abandonAction": "Abandon"
+  "abandonAction": "Abandon",
+
+  "replayTutorial": "Replay tutorial",
+  "tutorialNext": "Next",
+  "tutorialSkip": "Skip tutorial",
+  "tutorialContinue": "Continue",
+
+  "tutorialOpponentTurn": "Your opponent plays…",
+
+  "tutorialStaticIntro": "Stack: Static — bigger chips cover smaller ones. Line up three squares with your color on top to win.",
+  "tutorialStaticSpendSmall": "Place your smallest chip (L1) in the center. Tip: spend small chips early.",
+  "tutorialStaticCoverExplain": "Their chip is small — anything bigger can cover it, even in the middle of the board.",
+  "tutorialStaticCoverMove": "Cover it! Place your L2 on their chip at the top-middle.",
+  "tutorialStaticCoverRecap": "Covering is permanent in Static — once placed, a chip never moves again.",
+  "tutorialStaticL4Move": "Now place your L4 at the top-left. It's the biggest chip — nothing can ever cover it.",
+  "tutorialStaticL4Recap": "That's the whole game: line up three squares where your color is on top, any level, to win.",
+  "tutorialStaticWinMove": "Complete your diagonal — place at the bottom-right to win!",
+  "tutorialStaticComplete": "You won! That's Stack-Static. Ready for a real game?",
+
+  "tutorialMovableIntro": "Stack: Movable — same covering rules as Static, but chips can move.",
+  "tutorialMovableSpendSmall": "Place your smallest chip (L1) in the center. Tip: spend small chips early.",
+  "tutorialMovableCoverMove": "Cover it! Place your L2 on their chip at the top-middle.",
+  "tutorialMovableRelocateExplain": "You can also move one of your own chips instead of placing a new one — moving it away reveals whatever's underneath.",
+  "tutorialMovableRelocateMove": "Move your L2 from the top-middle to the bottom-right.",
+  "tutorialMovableRelocateRecap": "See? Their chip was hiding underneath — moving away revealed it.",
+  "tutorialMovableWinMove": "Place your last L1 at the top-left to complete the diagonal and win!",
+  "tutorialMovableComplete": "You won! That's Stack-Movable. Ready for a real game?",
+
+  "tutorialUltimateIntro": "Ultimate — nine boards in one. Your move decides which board your opponent plays next.",
+  "tutorialUltimateFirstMove": "The first move can go anywhere. Let's start in the center board, top-left square.",
+  "tutorialUltimateSendRule1": "Notice: your move sent them to the top-left board. Whichever square you play, that's the board they must play next.",
+  "tutorialUltimateSendRule2": "Now they've sent you back to the center board — same rule, working on you this time.",
+  "tutorialUltimateBuildMove": "Play the top-middle square of this board.",
+  "tutorialUltimateClaimMove": "One more square completes the top row — claim this board!",
+  "tutorialUltimateClaimRecap": "You claimed a board! Three in a row inside a small board wins it for the big board.",
+  "tutorialUltimateFreeMoveExplain": "That board is claimed and out of play — since they just sent you there, you get a free move: play in any open board.",
+  "tutorialUltimateFreeMoveMove": "Play anywhere — let's try the top-left board.",
+  "tutorialUltimateComplete": "That's Ultimate: the send rule, claiming boards, and free moves. Ready for a real game?"
 }

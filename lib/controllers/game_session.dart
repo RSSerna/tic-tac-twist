@@ -6,6 +6,7 @@ import '../engines/common/game_status.dart';
 import '../engines/common/move.dart';
 import '../engines/common/player.dart';
 import 'session_opponents.dart';
+import 'tutorial_state.dart';
 
 /// One game in progress, plus its presentation state (selection, staging).
 ///
@@ -28,6 +29,7 @@ class GameSession {
     this.selectedCell,
     this.stagedMove,
     this.aiThinking = false,
+    this.tutorial,
   });
 
   final GameMode mode;
@@ -55,6 +57,13 @@ class GameSession {
   /// on the AI's turn.
   final bool aiThinking;
 
+  /// Non-null iff this is a tutorial session (design doc §7): the human's
+  /// moves are restricted to the script's next expected move, and the
+  /// "opponent" auto-plays rather than being AI or a second human. Never
+  /// persisted — an interrupted tutorial just restarts (see
+  /// [TutorialState]'s doc comment).
+  final TutorialState? tutorial;
+
   Player get currentPlayer => engine.currentPlayer;
   GameStatus get status => engine.status;
 
@@ -65,6 +74,8 @@ class GameSession {
 
   bool get isAiTurn => opponents.isAiPerson(currentPerson);
 
+  bool get isTutorial => tutorial != null;
+
   static const _unset = Object();
 
   GameSession copy({
@@ -73,6 +84,7 @@ class GameSession {
     Object? selectedCell = _unset,
     Object? stagedMove = _unset,
     bool? aiThinking,
+    Object? tutorial = _unset,
   }) =>
       GameSession(
         mode: mode,
@@ -85,6 +97,9 @@ class GameSession {
         selectedCell: identical(selectedCell, _unset)
             ? this.selectedCell
             : selectedCell as int?,
+        tutorial: identical(tutorial, _unset)
+            ? this.tutorial
+            : tutorial as TutorialState?,
         stagedMove:
             identical(stagedMove, _unset) ? this.stagedMove : stagedMove as Move?,
         aiThinking: aiThinking ?? this.aiThinking,

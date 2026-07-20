@@ -9,6 +9,8 @@ import 'package:nested_game/main.dart';
 import 'package:nested_game/ui/screens/game_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../test_helpers.dart';
+
 Future<void> tapKey(WidgetTester tester, String key) async {
   await tester.tap(find.byKey(Key(key)));
   await tester.pumpAndSettle();
@@ -31,12 +33,17 @@ Future<void> relaunch(WidgetTester tester) async {
 }
 
 void main() {
-  // Deliberately NOT reset between these tests — the whole point is to
-  // simulate the mock shared_preferences store surviving a relaunch, i.e.
-  // pumping a brand-new NestedApp widget tree while the "disk" underneath
-  // it stays put. Each test still starts from a clean store via its own
-  // setUp to stay independent of run order.
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  // Deliberately NOT reset between relaunches WITHIN a test — the whole
+  // point is to simulate the mock shared_preferences store surviving a
+  // relaunch, i.e. pumping a brand-new NestedApp widget tree while the
+  // "disk" underneath it stays put. Each test still starts from a clean
+  // store via its own setUp to stay independent of run order. These tests
+  // are about game persistence, not onboarding, so tutorials are
+  // pre-completed to skip straight past the tutorial trigger on mode select.
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    await markAllTutorialsCompleted();
+  });
 
   testWidgets('an in-progress game is offered back after a simulated relaunch',
       (tester) async {

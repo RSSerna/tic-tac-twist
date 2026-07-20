@@ -13,6 +13,8 @@ import 'package:nested_game/main.dart';
 import 'package:nested_game/ui/screens/game_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../test_helpers.dart';
+
 Future<void> tapKey(WidgetTester tester, String key) async {
   await tester.tap(find.byKey(Key(key)));
   await tester.pumpAndSettle();
@@ -32,8 +34,13 @@ Future<void> startVsAiStackStatic(WidgetTester tester) async {
 void main() {
   // Reset the mock store per test — it's process-global, so a game saved
   // by one test would otherwise leak into the next and pop an unexpected
-  // resume-game dialog on the home screen.
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  // resume-game dialog on the home screen. These tests are about vs-AI
+  // gameplay, not onboarding, so tutorials are pre-completed to skip
+  // straight past the tutorial trigger on mode select.
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    await markAllTutorialsCompleted();
+  });
 
   testWidgets(
       'vs AI: human moves, AI thinks in the background, then moves itself',

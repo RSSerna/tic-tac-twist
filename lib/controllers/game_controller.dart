@@ -10,8 +10,12 @@ import '../engines/stacking/stacking_engine.dart';
 import '../engines/stacking/stacking_move.dart';
 import '../engines/ultimate/ultimate_move.dart';
 import '../services/game_persistence_service.dart';
+import '../services/tutorial_progress_service.dart';
+import '../tutorial/tutorial_script.dart';
+import '../tutorial/tutorial_step.dart';
 import 'game_session.dart';
 import 'session_opponents.dart';
+import 'tutorial_state.dart';
 
 /// The AI move computer this controller calls. A [Provider] (not a plain
 /// top-level constant) so tests can override it with a fast fake instead of
@@ -56,6 +60,67 @@ class GameController extends Notifier<GameSession?> {
   void exitGame() {
     state = null;
     unawaited(ref.read(gamePersistenceServiceProvider).clearSnapshot());
+  }
+
+  // ----------------------------------------------------------- tutorial
+  //
+  // Design doc §7: a real game, on the real engine, with a scripted
+  // opponent and prompts driven by step (move) count. Never persisted —
+  // an interrupted tutorial just restarts (see TutorialState).
+
+  /// Starts mode's guided first game. Person 1 is always the human.
+  void startTutorial(GameMode mode) {
+    state = GameSession(
+      mode: mode,
+      engine: mode.createEngine(),
+      starterPerson: 1,
+      tutorial: TutorialState(script: TutorialScript.forMode(mode)),
+    );
+    _maybeAutoPlayTutorialStep();
+  }
+
+  /// Advances past a [TutorialMessage] step — the "Next" control. Board
+  /// taps advance [TutorialHumanMove] steps instead, via [submitMove].
+  void tutorialNext() {
+    final session = _session;
+    final tutorial = session.tutorial;
+    if (tutorial == null || tutorial.currentStep is! TutorialMessage) return;
+    state = session.copy(tutorial: tutorial.advance());
+    _maybeAutoPlayTutorialStep();
+  }
+
+  /// Ends the tutorial, marking the mode as completed either way — skipping
+  /// is still a completed onboarding, not a "try again next launch" (design
+  /// doc §7: "skippable, but not silently").
+  Future<void> finishTutorial() async {
+    final session = _session;
+    await ref.read(tutorialProgressServiceProvider).markCompleted(session.mode);
+    state = null;
+  }
+
+  void _maybeAutoPlayTutorialStep() {
+    final session = state;
+    if (session == null) return;
+    final tutorial = session.tutorial;
+    if (tutorial == null || tutorial.isComplete) return;
+    final step = tutorial.currentStep;
+    if (step is! TutorialOpponentMove) return;
+    Future.delayed(const Duration(milliseconds: 700), () {
+      // Stale guard, same pattern as the AI turn: only apply if nothing
+      // else changed state while we were waiting.
+      if (!identical(state, session)) return;
+      submitMove(step.move);
+    });
+  }
+
+  /// Whether [move] is the tutorial script's next expected move — true
+  /// unconditionally outside a tutorial. Gates every staging path so a
+  /// tutorial session can only ever play its scripted line.
+  bool _isTutorialMoveAllowed(GameSession session, Move move) {
+    final tutorial = session.tutorial;
+    if (tutorial == null) return true;
+    final step = tutorial.currentStep;
+    return step is TutorialHumanMove && step.move == move;
   }
 
   /// New game, same mode and opponents: the loser starts; on a draw the
@@ -144,11 +209,13 @@ class GameController extends Notifier<GameSession?> {
     );
   }
 
-  /// Stages [move] if the engine says it is legal.
+  /// Stages [move] if the engine says it is legal (and, in a tutorial, if
+  /// it's also the script's next expected move).
   void stageMove(Move move) {
     final session = _session;
     if (session.isAiTurn) return;
-    if (session.engine.legalMoves().contains(move)) {
+    if (session.engine.legalMoves().contains(move) &&
+        _isTutorialMoveAllowed(session, move)) {
       state = session.copy(stagedMove: move);
     }
   }
@@ -159,17 +226,25 @@ class GameController extends Notifier<GameSession?> {
     if (staged != null) submitMove(staged);
   }
 
-  /// The only path that mutates game state.
+  /// The only path that mutates game state — the real engine, whether the
+  /// move came from local UI, the AI, or (design doc §7) a tutorial's
+  /// scripted opponent.
   void submitMove(Move move) {
     final session = _session;
+    final tutorial = session.tutorial;
     state = GameSession(
       mode: session.mode,
       engine: session.engine.applyMove(move),
       starterPerson: session.starterPerson,
       opponents: session.opponents,
+      tutorial: tutorial?.advance(),
     );
-    _persist();
-    _maybeTriggerAiMove();
+    if (tutorial == null) {
+      _persist();
+      _maybeTriggerAiMove();
+    } else {
+      _maybeAutoPlayTutorialStep();
+    }
   }
 
   // ------------------------------------------------- gesture interpretation
@@ -192,14 +267,14 @@ class GameController extends Notifier<GameSession?> {
     final legal = session.engine.legalMoves();
     if (session.selectedLevel != null) {
       final move = PlaceMove(session.selectedLevel!, cell);
-      if (legal.contains(move)) {
+      if (legal.contains(move) && _isTutorialMoveAllowed(session, move)) {
         state = session.copy(stagedMove: move);
         return;
       }
     }
     if (session.selectedCell != null && session.selectedCell != cell) {
       final move = RelocateMove(session.selectedCell!, cell);
-      if (legal.contains(move)) {
+      if (legal.contains(move) && _isTutorialMoveAllowed(session, move)) {
         state = session.copy(stagedMove: move);
         return;
       }
@@ -226,7 +301,8 @@ class GameController extends Notifier<GameSession?> {
       commitStagedMove();
       return;
     }
-    if (session.engine.legalMoves().contains(move)) {
+    if (session.engine.legalMoves().contains(move) &&
+        _isTutorialMoveAllowed(session, move)) {
       state = session.copy(stagedMove: move);
     } else {
       clearSelection();

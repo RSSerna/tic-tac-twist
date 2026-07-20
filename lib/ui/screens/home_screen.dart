@@ -5,9 +5,11 @@ import '../../controllers/game_controller.dart';
 import '../../controllers/game_session.dart';
 import '../../engines/common/game_mode.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../services/tutorial_progress_service.dart';
 import '../../theme/tokens.dart';
 import 'game_screen.dart';
 import 'sub_mode_screen.dart';
+import 'tutorial_screen.dart';
 
 String _modeName(AppLocalizations l10n, GameMode mode) => switch (mode) {
       GameMode.stackStatic => l10n.modeStackStatic,
@@ -116,13 +118,27 @@ class _ResumeGameDialog extends StatelessWidget {
   }
 }
 
-class _ModeCard extends StatelessWidget {
+class _ModeCard extends ConsumerWidget {
   const _ModeCard({required this.mode});
 
   final GameMode mode;
 
+  Future<void> _onTap(BuildContext context, WidgetRef ref) async {
+    // Triggered automatically the first time a mode is opened (design doc
+    // §7); once completed (or explicitly skipped), opening the mode goes
+    // straight to sub-mode select from then on.
+    final completed =
+        await ref.read(tutorialProgressServiceProvider).isCompleted(mode);
+    if (!context.mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => completed ? SubModeScreen(mode: mode) : TutorialScreen(mode: mode),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
     final textTheme = Theme.of(context).textTheme;
@@ -139,9 +155,7 @@ class _ModeCard extends StatelessWidget {
       child: InkWell(
         key: Key('mode-${mode.name}'),
         borderRadius: BorderRadius.circular(4),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => SubModeScreen(mode: mode)),
-        ),
+        onTap: () => _onTap(context, ref),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(

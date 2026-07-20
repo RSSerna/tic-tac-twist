@@ -45,5 +45,42 @@
   "resumeGameTitle": "Partida en curso",
   "resumeGameBody": "Tienes una partida de {mode} sin terminar.",
   "resumeAction": "Reanudar",
-  "abandonAction": "Abandonar"
+  "abandonAction": "Abandonar",
+
+  "replayTutorial": "Repetir tutorial",
+  "tutorialNext": "Siguiente",
+  "tutorialSkip": "Saltar tutorial",
+  "tutorialContinue": "Continuar",
+
+  "tutorialOpponentTurn": "Tu oponente juega…",
+
+  "tutorialStaticIntro": "Stack: Static — las fichas grandes cubren a las pequeñas. Alinea tres casillas con tu color arriba para ganar.",
+  "tutorialStaticSpendSmall": "Coloca tu ficha más pequeña (L1) en el centro. Consejo: gasta las fichas pequeñas pronto.",
+  "tutorialStaticCoverExplain": "Su ficha es pequeña — cualquier ficha más grande puede cubrirla, incluso en el centro del tablero.",
+  "tutorialStaticCoverMove": "¡Cúbrela! Coloca tu L2 sobre su ficha en el centro superior.",
+  "tutorialStaticCoverRecap": "Cubrir es permanente en Static — una vez colocada, una ficha nunca vuelve a moverse.",
+  "tutorialStaticL4Move": "Ahora coloca tu L4 en la esquina superior izquierda. Es la ficha más grande — nada puede cubrirla nunca.",
+  "tutorialStaticL4Recap": "Eso es todo el juego: alinea tres casillas donde tu color esté arriba, de cualquier nivel, para ganar.",
+  "tutorialStaticWinMove": "Completa tu diagonal — juega en la esquina inferior derecha para ganar!",
+  "tutorialStaticComplete": "¡Ganaste! Eso es Stack-Static. ¿Listo para una partida de verdad?",
+
+  "tutorialMovableIntro": "Stack: Movable — las mismas reglas de cobertura que Static, pero las fichas se pueden mover.",
+  "tutorialMovableSpendSmall": "Coloca tu ficha más pequeña (L1) en el centro. Consejo: gasta las fichas pequeñas pronto.",
+  "tutorialMovableCoverMove": "¡Cúbrela! Coloca tu L2 sobre su ficha en el centro superior.",
+  "tutorialMovableRelocateExplain": "También puedes mover una de tus fichas en vez de colocar una nueva — al moverla, revelas lo que había debajo.",
+  "tutorialMovableRelocateMove": "Mueve tu L2 del centro superior a la esquina inferior derecha.",
+  "tutorialMovableRelocateRecap": "¿Ves? Su ficha estaba escondida debajo — al moverte, quedó al descubierto.",
+  "tutorialMovableWinMove": "Coloca tu última L1 en la esquina superior izquierda para completar la diagonal y ganar!",
+  "tutorialMovableComplete": "¡Ganaste! Eso es Stack-Movable. ¿Listo para una partida de verdad?",
+
+  "tutorialUltimateIntro": "Ultimate — nueve tableros en uno. Tu jugada decide en qué tablero juega tu oponente después.",
+  "tutorialUltimateFirstMove": "La primera jugada puede ir a cualquier lugar. Empecemos en el tablero central, casilla superior izquierda.",
+  "tutorialUltimateSendRule1": "Fíjate: tu jugada los envió al tablero superior izquierdo. La casilla que juegues es el tablero donde deben jugar después.",
+  "tutorialUltimateSendRule2": "Ahora te enviaron de vuelta al tablero central — la misma regla, esta vez sobre ti.",
+  "tutorialUltimateBuildMove": "Juega la casilla superior central de este tablero.",
+  "tutorialUltimateClaimMove": "Una casilla más completa la fila superior — ¡reclama este tablero!",
+  "tutorialUltimateClaimRecap": "¡Reclamaste un tablero! Tres en línea dentro de un tablero pequeño lo gana para el tablero grande.",
+  "tutorialUltimateFreeMoveExplain": "Ese tablero está reclamado y fuera de juego — como te enviaron ahí, tienes una jugada libre: juega en cualquier tablero abierto.",
+  "tutorialUltimateFreeMoveMove": "Juega donde quieras — probemos el tablero superior izquierdo.",
+  "tutorialUltimateComplete": "Eso es Ultimate: la regla de envío, reclamar tableros y las jugadas libres. ¿Listo para una partida de verdad?"
 }

@@ -10,11 +10,16 @@ import 'package:nested_game/main.dart';
 import 'package:nested_game/ui/screens/game_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../test_helpers.dart';
+
 Future<void> pumpApp(WidgetTester tester) async {
   // Reset the mock store per test — it's process-global, so a game saved
   // by one test would otherwise leak into the next and pop an unexpected
-  // resume-game dialog on the home screen.
+  // resume-game dialog on the home screen. These tests are about gameplay,
+  // not onboarding, so tutorials are pre-completed to skip straight past
+  // the tutorial trigger on mode select.
   SharedPreferences.setMockInitialValues({});
+  await markAllTutorialsCompleted();
   await tester.pumpWidget(const ProviderScope(child: NestedApp()));
   await tester.pumpAndSettle();
 }

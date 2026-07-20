@@ -83,6 +83,7 @@ These look like UI details but are gameplay-critical. Breaking them breaks the g
 - Stack-Movable stall rule: threefold repetition of position = draw (see `01-GAME-RULES.md` §3.3).
 - Movable staging: free cancellation, no touch-move commitment (see `02-DESIGN-SYSTEM.md` §3.2).
 - Mode names are untranslated proper nouns with translated blurbs (see `02-DESIGN-SYSTEM.md` §8).
+- Tutorial replay (Phase 5): added a temporary "Replay tutorial" button on the sub-mode screen since Settings (Phase 6) doesn't exist yet. Relocate into Settings once that screen is built; the button/key (`replay-tutorial`) can be deleted from `sub_mode_screen.dart` at that point.
 
 ## Still undecided — ask before assuming
 

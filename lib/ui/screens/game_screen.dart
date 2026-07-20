@@ -58,9 +58,9 @@ class GameScreen extends ConsumerWidget {
                       ignoring: session.isAiTurn,
                       child: const InventoryRow(),
                     ),
-                  _StagingBar(session: session),
+                  StagingBar(session: session),
                 ];
-                final board = _BoardArea(session: session);
+                final board = BoardArea(session: session);
 
                 if (landscape) {
                   return Row(
@@ -98,8 +98,8 @@ class GameScreen extends ConsumerWidget {
 /// The board itself, capped to a sensible maximum size so it doesn't
 /// stretch edge-to-edge on tablets (design doc §1: "let boards grow to a
 /// sensible maximum with margin").
-class _BoardArea extends StatelessWidget {
-  const _BoardArea({required this.session});
+class BoardArea extends StatelessWidget {
+  const BoardArea({super.key, required this.session});
 
   final GameSession session;
 
@@ -181,8 +181,8 @@ class _TurnBanner extends ConsumerWidget {
   }
 }
 
-class _StagingBar extends ConsumerWidget {
-  const _StagingBar({required this.session});
+class StagingBar extends ConsumerWidget {
+  const StagingBar({super.key, required this.session});
 
   final GameSession session;
 
