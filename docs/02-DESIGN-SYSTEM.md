@@ -70,7 +70,7 @@ Skins may **never** change chip size relationships, ring-count legibility, or th
 ### 3.2 Staging must not leak hidden information
 - Staging a cover move must **not** reveal what is beneath the target square.
 - In Movable mode, selecting one of your chips to relocate must **not** preview what is underneath it.
-- **OPEN — ask before implementing:** the physical game enforces "touch it, move it." The digital equivalent is that selecting a chip commits you to moving it somewhere (destination may change, chip selection may not). Strict enforcement preserves the memory element; free cancellation is friendlier but weakens the mode.
+- **DECIDED (2026-07-19): free cancellation.** Selecting a chip previews legal destinations; tapping elsewhere or cancel clears it. Friendlier on touch screens and consistent with staging in the other modes. (Strict "touch it, move it" was rejected as too punishing for mis-taps.)
 
 ### 3.3 Legal-move highlighting — always on
 - **Ultimate:** clearly indicate the small board the player has been sent to. When a free move is granted, indicate that *all* open boards are available — this is the rule players most often forget.
@@ -168,7 +168,7 @@ Key beats:
 - **No hardcoded user-facing strings, from the first screen.** `intl`/ARB, single source-of-truth string file.
 - **Launch: English and Spanish.** More later — the point of doing this now is that adding a language becomes a translation file, not a refactor.
 - **Allow for text expansion.** Spanish runs ~20–25% longer. Controls wrap or scale; never truncate. Test the longest string in every control.
-- **OPEN:** are mode names translated or kept as proper nouns? Recommend untranslated (like game titles) with a translated one-line description underneath.
+- **DECIDED (2026-07-19):** mode names are untranslated proper nouns (like game titles), with a translated one-line description underneath.
 - Numbers and dates via `intl`, not manual formatting.
 - The tutorial is the most text-heavy surface — write its copy as short discrete strings, not paragraphs with embedded formatting.
 

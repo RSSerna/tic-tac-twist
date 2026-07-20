@@ -1,5 +1,25 @@
 {
   "@@locale": "es",
   "appTitle": "Nested",
-  "homeTagline": "Tres variantes de tres en raya"
+  "homeTagline": "Tres variantes de tres en raya",
+  "modeStackStatic": "Stack: Static",
+  "modeStackStaticDesc": "Las fichas grandes cubren a las pequeñas. Nada se mueve.",
+  "modeStackMovable": "Stack: Movable",
+  "modeStackMovableDesc": "Cubre o recoloca tus fichas: la memoria importa.",
+  "modeUltimate": "Ultimate",
+  "modeUltimateDesc": "Nueve tableros en uno. Tu jugada elige su tablero.",
+  "playLocal": "Jugar a dos",
+  "playLocalDesc": "Dos personas, un dispositivo",
+  "turnBanner": "Turno del jugador {number}",
+  "confirmMove": "Confirmar jugada",
+  "cancel": "Cancelar",
+  "passTurn": "Pasar",
+  "mustPassBanner": "Sin jugadas legales: debes pasar",
+  "winBanner": "¡Gana el jugador {number}!",
+  "drawBanner": "Empate",
+  "resultReasonTiebreak": "Decidido por control del tablero",
+  "resultReasonRepetition": "La misma posición se repitió tres veces",
+  "resultReasonExactTie": "Control del tablero empatado",
+  "rematch": "Revancha",
+  "exitToMenu": "Salir al menú"
 }

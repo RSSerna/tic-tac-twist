@@ -6,6 +6,45 @@
   },
   "homeTagline": "Three tic-tac-toe variants",
   "@homeTagline": {
-    "description": "Short subtitle shown under the app title on the placeholder home screen."
-  }
+    "description": "Short subtitle shown under the app title on the mode-select screen."
+  },
+  "modeStackStatic": "Stack: Static",
+  "@modeStackStatic": {
+    "description": "Mode name. Proper noun — keep untranslated in all locales (§8 decision)."
+  },
+  "modeStackStaticDesc": "Bigger chips cover smaller ones. Nothing ever moves.",
+  "modeStackMovable": "Stack: Movable",
+  "@modeStackMovable": {
+    "description": "Mode name. Proper noun — keep untranslated in all locales."
+  },
+  "modeStackMovableDesc": "Cover or relocate your chips — memory matters.",
+  "modeUltimate": "Ultimate",
+  "@modeUltimate": {
+    "description": "Mode name. Proper noun — keep untranslated in all locales."
+  },
+  "modeUltimateDesc": "Nine boards in one. Your move picks their board.",
+  "playLocal": "Pass & play",
+  "playLocalDesc": "Two players, one device",
+  "turnBanner": "Player {number} to move",
+  "@turnBanner": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "confirmMove": "Confirm move",
+  "cancel": "Cancel",
+  "passTurn": "Pass",
+  "mustPassBanner": "No legal moves — you must pass",
+  "winBanner": "Player {number} wins!",
+  "@winBanner": {
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "drawBanner": "It's a draw",
+  "resultReasonTiebreak": "Decided on board control",
+  "resultReasonRepetition": "The same position occurred three times",
+  "resultReasonExactTie": "Board control exactly tied",
+  "rematch": "Rematch",
+  "exitToMenu": "Exit to menu"
 }

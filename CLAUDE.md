@@ -81,6 +81,8 @@ These look like UI details but are gameplay-critical. Breaking them breaks the g
 - Developer name: Ricardo Saldarriaga Serna.
 - Minimums: iOS 13, Android 6.0 (API 23 — Google Mobile Ads SDK floor).
 - Stack-Movable stall rule: threefold repetition of position = draw (see `01-GAME-RULES.md` §3.3).
+- Movable staging: free cancellation, no touch-move commitment (see `02-DESIGN-SYSTEM.md` §3.2).
+- Mode names are untranslated proper nouns with translated blurbs (see `02-DESIGN-SYSTEM.md` §8).
 
 ## Still undecided — ask before assuming
 
