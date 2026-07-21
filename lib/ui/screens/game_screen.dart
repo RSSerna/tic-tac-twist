@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/game_controller.dart';
 import '../../engines/common/game_mode.dart';
 import '../../controllers/game_session.dart';
+import '../../controllers/skin_controller.dart';
 import '../../engines/common/game_status.dart';
 import '../../engines/stacking/stacking_move.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
 import '../widgets/chip_view.dart';
 import '../widgets/inventory_row.dart';
@@ -208,6 +210,9 @@ class _TurnBanner extends ConsumerWidget {
     final colors = context.gameColors;
     final person = session.currentPerson;
     final color = person == 1 ? colors.playerA : colors.playerB;
+    final chipForm =
+        ref.watch(skinControllerProvider).value?.selectedSkin.chipForm ??
+            ChipForm.rings;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -224,6 +229,7 @@ class _TurnBanner extends ConsumerWidget {
                   ringColor: colors.surface,
                   level: 1,
                   isFirstPerson: person == 1,
+                  form: chipForm,
                 ),
               ),
               const SizedBox(width: 8),

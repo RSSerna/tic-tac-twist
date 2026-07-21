@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../ai/ai_runner.dart';
+import '../ai/difficulty.dart';
 import '../engines/common/game_engine.dart';
 import '../engines/common/game_mode.dart';
 import '../engines/common/game_status.dart';
@@ -11,15 +12,18 @@ import '../engines/stacking/stacking_engine.dart';
 import '../engines/stacking/stacking_move.dart';
 import '../engines/ultimate/ultimate_engine.dart';
 import '../engines/ultimate/ultimate_move.dart';
+import '../services/achievement_service.dart';
 import '../services/audio_service.dart';
 import '../services/game_persistence_service.dart';
 import '../services/stats/stats_service.dart';
 import '../services/tutorial_progress_service.dart';
+import '../theme/skin.dart';
 import '../tutorial/tutorial_script.dart';
 import '../tutorial/tutorial_step.dart';
 import 'game_session.dart';
 import 'session_opponents.dart';
 import 'settings_controller.dart';
+import 'skin_controller.dart';
 import 'tutorial_state.dart';
 
 /// The AI move computer this controller calls. A [Provider] (not a plain
@@ -216,6 +220,52 @@ class GameController extends Notifier<GameSession?> {
     }
   }
 
+  /// Product doc §3.1's example achievement set — unlocking any one of them
+  /// unlocks the one premium skin this phase ships (real chests, rarity
+  /// tiers, and per-achievement rewards are Phase 9). Only fires for an
+  /// actual win (a line or a tiebreak decision) — a timeout forfeit doesn't
+  /// count as "beating" anything.
+  Future<void> _checkAchievements(Move move, GameSession session) async {
+    final status = session.status;
+    if (status.outcome != GameOutcome.won) return;
+    if (status.reason != EndReason.line && status.reason != EndReason.tiebreak) {
+      return;
+    }
+
+    final achievements = <Achievement>{};
+
+    if (session.opponents.personTwoIsAi &&
+        session.opponents.difficulty == Difficulty.impossible &&
+        session.personFor(status.winner!) == 1) {
+      achievements.add(switch (session.mode) {
+        GameMode.stackStatic => Achievement.beatImpossibleStatic,
+        GameMode.stackMovable => Achievement.beatImpossibleMovable,
+        GameMode.ultimate => Achievement.beatImpossibleUltimate,
+      });
+    }
+    if (session.mode.isStacking &&
+        status.reason == EndReason.line &&
+        move is PlaceMove &&
+        move.level == 4 &&
+        status.winningLine!.contains(move.cell)) {
+      achievements.add(Achievement.winWithL4OnFinalMove);
+    }
+    if (session.mode == GameMode.ultimate &&
+        (session.engine as UltimateEngine).claimedCount(status.winner!) >= 6) {
+      achievements.add(Achievement.claimBoardMajority);
+    }
+    if (achievements.isEmpty) return;
+
+    final service = ref.read(achievementServiceProvider);
+    var anyNewlyUnlocked = false;
+    for (final achievement in achievements) {
+      if (await service.unlock(achievement)) anyNewlyUnlocked = true;
+    }
+    if (anyNewlyUnlocked) {
+      await ref.read(skinControllerProvider.notifier).unlockSkin(GameSkin.nestingDolls);
+    }
+  }
+
   // --------------------------------------------------------- turn timer
   //
   // Design doc §3.6: optional, off by default, controller-level presentation
@@ -368,7 +418,10 @@ class GameController extends Notifier<GameSession?> {
     }
     if (tutorial == null) {
       _persist();
-      if (wasOngoing && newSession.status.isOver) _recordResult(newSession);
+      if (wasOngoing && newSession.status.isOver) {
+        _recordResult(newSession);
+        unawaited(_checkAchievements(move, newSession));
+      }
       _maybeTriggerAiMove();
       _rescheduleTurnTimer();
     } else {

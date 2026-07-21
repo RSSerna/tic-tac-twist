@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/game_controller.dart';
+import '../../controllers/skin_controller.dart';
 import '../../engines/common/player.dart';
 import '../../engines/stacking/stacking_engine.dart';
 import '../../engines/stacking/stacking_move.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
 import 'chip_view.dart';
 
@@ -22,6 +24,9 @@ class StackingBoard extends ConsumerWidget {
     final controller = ref.read(gameControllerProvider.notifier);
     final engine = session.engine as StackingEngine;
     final colors = context.gameColors;
+    final chipForm =
+        ref.watch(skinControllerProvider).value?.selectedSkin.chipForm ??
+            ChipForm.rings;
 
     final highlights = controller.stackingHighlightTargets();
     final staged = session.stagedMove;
@@ -59,6 +64,7 @@ class StackingBoard extends ConsumerWidget {
               currentPersonIsFirst: currentPerson == 1,
               currentColor: currentColor,
               personFor: session.personFor,
+              chipForm: chipForm,
               onTap: () => controller.onStackingCellTapped(cell),
             ),
         ],
@@ -80,6 +86,7 @@ class _StackingCell extends StatelessWidget {
     required this.currentPersonIsFirst,
     required this.currentColor,
     required this.personFor,
+    required this.chipForm,
     required this.onTap,
   });
 
@@ -97,6 +104,7 @@ class _StackingCell extends StatelessWidget {
   final bool currentPersonIsFirst;
   final Color currentColor;
   final int Function(Player) personFor;
+  final ChipForm chipForm;
   final VoidCallback onTap;
 
   @override
@@ -161,6 +169,7 @@ class _StackingCell extends StatelessWidget {
                         ringColor: colors.surface,
                         level: top.level,
                         isFirstPerson: personFor(top.owner) == 1,
+                        form: chipForm,
                       ),
                     ),
                   ),
@@ -172,6 +181,7 @@ class _StackingCell extends StatelessWidget {
                     ringColor: colors.surface,
                     level: stagedLevel!,
                     isFirstPerson: currentPersonIsFirst,
+                    form: chipForm,
                     ghost: true,
                   ),
                 ),

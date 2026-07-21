@@ -116,5 +116,15 @@
   "abandonGameConfirm": "Salir",
   "abandonGameCancel": "Quedarme",
 
-  "turnTimerBanner": "{seconds}s"
+  "turnTimerBanner": "{seconds}s",
+
+  "skinsTitle": "Aspectos",
+  "skinTurnedWoodName": "Madera Torneada",
+  "skinTurnedWoodDesc": "El aspecto predeterminado: anillos concéntricos, color plano.",
+  "skinNestingDollsName": "Muñecas Rusas",
+  "skinNestingDollsDesc": "Fichas con forma de muñecas rusas.",
+  "skinLocked": "Bloqueado",
+  "skinUnlockHint": "Desbloquéalo venciendo a Imposible, reclamando la mayoría de los tableros de Ultimate en una partida, o ganando con una ficha L4 en la jugada final.",
+  "skinSelected": "Seleccionado",
+  "skinSelect": "Elegir"
 }

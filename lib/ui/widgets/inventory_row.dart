@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/game_controller.dart';
+import '../../controllers/skin_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
 import 'chip_view.dart';
 
@@ -21,6 +23,9 @@ class InventoryRow extends ConsumerWidget {
         controller.stackingEngine.remainingInventory(session.currentPlayer);
     final person = session.currentPerson;
     final color = person == 1 ? colors.playerA : colors.playerB;
+    final chipForm =
+        ref.watch(skinControllerProvider).value?.selectedSkin.chipForm ??
+            ChipForm.rings;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -36,6 +41,7 @@ class InventoryRow extends ConsumerWidget {
             neutral: colors.neutral,
             isFirstPerson: person == 1,
             selected: session.selectedLevel == level,
+            chipForm: chipForm,
             onTap: () => controller.selectInventoryLevel(level),
           ),
       ],
@@ -54,6 +60,7 @@ class _InventoryChip extends StatelessWidget {
     required this.neutral,
     required this.isFirstPerson,
     required this.selected,
+    required this.chipForm,
     required this.onTap,
   });
 
@@ -65,6 +72,7 @@ class _InventoryChip extends StatelessWidget {
   final Color neutral;
   final bool isFirstPerson;
   final bool selected;
+  final ChipForm chipForm;
   final VoidCallback onTap;
 
   @override
@@ -98,6 +106,7 @@ class _InventoryChip extends StatelessWidget {
                         ringColor: surface,
                         level: level,
                         isFirstPerson: isFirstPerson,
+                        form: chipForm,
                       ),
                     ),
                   ),

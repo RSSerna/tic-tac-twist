@@ -9,6 +9,7 @@ import '../../services/tutorial_progress_service.dart';
 import '../../theme/tokens.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
+import 'skins_screen.dart';
 import 'stats_screen.dart';
 import 'sub_mode_screen.dart';
 import 'tutorial_screen.dart';
@@ -72,6 +73,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         foregroundColor: colors.ink,
         automaticallyImplyLeading: false,
         actions: [
+          IconButton(
+            key: const Key('open-skins'),
+            icon: const Icon(Icons.palette),
+            tooltip: l10n.skinsTitle,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SkinsScreen()),
+            ),
+          ),
           IconButton(
             key: const Key('open-stats'),
             icon: const Icon(Icons.bar_chart),

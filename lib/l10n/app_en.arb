@@ -209,5 +209,15 @@
     "placeholders": {
       "seconds": {"type": "int"}
     }
-  }
+  },
+
+  "skinsTitle": "Skins",
+  "skinTurnedWoodName": "Turned Wood",
+  "skinTurnedWoodDesc": "The default look: concentric rings, flat colour.",
+  "skinNestingDollsName": "Nesting Dolls",
+  "skinNestingDollsDesc": "Chips styled after nesting dolls.",
+  "skinLocked": "Locked",
+  "skinUnlockHint": "Unlock by beating Impossible, claiming a majority of Ultimate's boards in one game, or winning with an L4 chip on the final move.",
+  "skinSelected": "Selected",
+  "skinSelect": "Select"
 }
