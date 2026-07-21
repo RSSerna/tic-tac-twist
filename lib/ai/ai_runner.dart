@@ -1,6 +1,8 @@
 import 'dart:isolate';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import '../engines/common/game_engine.dart';
 import '../engines/common/game_mode.dart';
 import '../engines/common/move.dart';
@@ -35,9 +37,28 @@ abstract final class AiRunner {
       'mode': mode.name,
       'difficulty': difficulty.name,
       'engine': engine.toJson(),
-      'seed': Random().nextInt(1 << 32),
+      // A plain literal, not a `<<` shift: `1 << 32` wrapped to 0 on the web
+      // runtime (`nextInt(0)` then throws a RangeError) — observed via a
+      // real DartError in Chrome, not caught by `flutter test` since tests
+      // always run on the VM, never the web JS runtime. Bit-shift results
+      // near the int width aren't reliably portable there, so this avoids
+      // `<<` entirely rather than guessing at a shift amount that happens
+      // to be safe. 2^31-1 is still ~2.1 billion seed values.
+      'seed': Random().nextInt(2147483647),
     };
-    final resultJson = await Isolate.run(() => _computeInIsolate(request));
+    // dart:isolate has no web implementation at all — `Isolate.run` throws
+    // "Unsupported operation" there unconditionally (confirmed via a real
+    // DartError in Chrome), not just under some configuration. There's no
+    // background-thread equivalent to fall back to on web without adding
+    // Web Worker infrastructure, so this runs on the main thread instead.
+    // The `Future.delayed` first just lets the "AI thinking" indicator
+    // actually paint before the computation blocks the UI thread — it does
+    // NOT prevent the freeze itself. Impossible's ~1.5s MCTS budget will
+    // still visibly freeze the tab on web until real Web Worker support is
+    // built (a bigger follow-up, not part of this fix).
+    final resultJson = kIsWeb
+        ? await Future<void>.delayed(Duration.zero).then((_) => _computeInIsolate(request))
+        : await Isolate.run(() => _computeInIsolate(request));
     return _decodeMove(mode, resultJson);
   }
 
