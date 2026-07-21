@@ -190,27 +190,43 @@ class _SmallBoard extends StatelessWidget {
               children: [
                 Opacity(opacity: 0.3, child: grid),
                 Center(
-                  child: claimant == null
-                      ? FractionallySizedBox(
-                          widthFactor: 0.5,
-                          heightFactor: 0.5,
-                          child: CustomPaint(
-                            painter: _MarkPainter(
-                                color: colors.neutral, isX: false, filled: true),
-                          ),
-                        )
-                      : FractionallySizedBox(
-                          widthFactor: 0.7,
-                          heightFactor: 0.7,
-                          child: CustomPaint(
-                            painter: _MarkPainter(
-                              color: personFor(claimant) == 1
-                                  ? colors.playerA
-                                  : colors.playerB,
-                              isX: personFor(claimant) == 1,
+                  // The symbol resolving into place (design doc §4) — a
+                  // small board only ever reaches this subtree once it has
+                  // resolved, so AnimatedSwitcher's very first build already
+                  // plays the entrance transition for whichever mark won.
+                  child: AnimatedSwitcher(
+                    duration: MediaQuery.of(context).disableAnimations
+                        ? Duration.zero
+                        : context.gameAnimations.boardClaim,
+                    transitionBuilder: (child, animation) => ScaleTransition(
+                      scale: CurvedAnimation(
+                          parent: animation, curve: Curves.easeOutBack),
+                      child: child,
+                    ),
+                    child: claimant == null
+                        ? FractionallySizedBox(
+                            key: const ValueKey('drawn'),
+                            widthFactor: 0.5,
+                            heightFactor: 0.5,
+                            child: CustomPaint(
+                              painter: _MarkPainter(
+                                  color: colors.neutral, isX: false, filled: true),
+                            ),
+                          )
+                        : FractionallySizedBox(
+                            key: ValueKey('claim-${claimant.name}'),
+                            widthFactor: 0.7,
+                            heightFactor: 0.7,
+                            child: CustomPaint(
+                              painter: _MarkPainter(
+                                color: personFor(claimant) == 1
+                                    ? colors.playerA
+                                    : colors.playerB,
+                                isX: personFor(claimant) == 1,
+                              ),
                             ),
                           ),
-                        ),
+                  ),
                 ),
               ],
             ),

@@ -4,8 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/turn_timer_preset.dart';
 
 /// Persisted app-wide preferences (design doc §10 Settings screen):
-/// language and the local turn timer. (SFX/music toggles join this once
-/// Phase 7 builds audio.)
+/// language, the local turn timer, and independent SFX/music toggles.
 abstract interface class SettingsService {
   Future<TurnTimerPreset> turnTimerPreset();
   Future<void> setTurnTimerPreset(TurnTimerPreset preset);
@@ -13,6 +12,12 @@ abstract interface class SettingsService {
   /// ISO 639-1 code ('en', 'es'), or null to follow the system locale.
   Future<String?> languageCode();
   Future<void> setLanguageCode(String? code);
+
+  /// Both default on (design doc §5) and persist independently of each other.
+  Future<bool> sfxEnabled();
+  Future<void> setSfxEnabled(bool enabled);
+  Future<bool> musicEnabled();
+  Future<void> setMusicEnabled(bool enabled);
 }
 
 final settingsServiceProvider =
@@ -21,6 +26,8 @@ final settingsServiceProvider =
 class SharedPreferencesSettingsService implements SettingsService {
   static const _turnTimerKey = 'nested_game.settings.turn_timer';
   static const _languageKey = 'nested_game.settings.language';
+  static const _sfxEnabledKey = 'nested_game.settings.sfx_enabled';
+  static const _musicEnabledKey = 'nested_game.settings.music_enabled';
 
   @override
   Future<TurnTimerPreset> turnTimerPreset() async {
@@ -53,5 +60,29 @@ class SharedPreferencesSettingsService implements SettingsService {
     } else {
       await prefs.setString(_languageKey, code);
     }
+  }
+
+  @override
+  Future<bool> sfxEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_sfxEnabledKey) ?? true;
+  }
+
+  @override
+  Future<void> setSfxEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_sfxEnabledKey, enabled);
+  }
+
+  @override
+  Future<bool> musicEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_musicEnabledKey) ?? true;
+  }
+
+  @override
+  Future<void> setMusicEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_musicEnabledKey, enabled);
   }
 }

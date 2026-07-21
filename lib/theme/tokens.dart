@@ -88,3 +88,74 @@ class GameColors extends ThemeExtension<GameColors> {
 extension GameColorsContext on BuildContext {
   GameColors get gameColors => Theme.of(this).extension<GameColors>()!;
 }
+
+/// Animation durations from `docs/02-DESIGN-SYSTEM.md` §4 ("moderate":
+/// covering has weight, board claims get a flourish, wins get a line reveal).
+///
+/// Modelled as a [ThemeExtension], same rationale as [GameColors]: "skins
+/// supply their own placement/cover/claim effects" (§4) means the animation
+/// layer must be built once and parameterised, not hardcoded per widget.
+@immutable
+class GameAnimations extends ThemeExtension<GameAnimations> {
+  const GameAnimations({
+    required this.placement,
+    required this.cover,
+    required this.boardClaim,
+    required this.winLineReveal,
+  });
+
+  /// A chip landing on an empty cell.
+  final Duration placement;
+
+  /// A chip covering another — the signature moment of the stacking modes,
+  /// weightier than a plain placement.
+  final Duration cover;
+
+  /// An Ultimate small board resolving to a claim.
+  final Duration boardClaim;
+
+  /// Drawing the line through the winning three squares.
+  final Duration winLineReveal;
+
+  static const GameAnimations standard = GameAnimations(
+    placement: Duration(milliseconds: 160),
+    cover: Duration(milliseconds: 260),
+    boardClaim: Duration(milliseconds: 320),
+    winLineReveal: Duration(milliseconds: 450),
+  );
+
+  static Duration _lerpDuration(Duration a, Duration b, double t) => Duration(
+        microseconds:
+            (a.inMicroseconds + (b.inMicroseconds - a.inMicroseconds) * t).round(),
+      );
+
+  @override
+  GameAnimations copyWith({
+    Duration? placement,
+    Duration? cover,
+    Duration? boardClaim,
+    Duration? winLineReveal,
+  }) {
+    return GameAnimations(
+      placement: placement ?? this.placement,
+      cover: cover ?? this.cover,
+      boardClaim: boardClaim ?? this.boardClaim,
+      winLineReveal: winLineReveal ?? this.winLineReveal,
+    );
+  }
+
+  @override
+  GameAnimations lerp(ThemeExtension<GameAnimations>? other, double t) {
+    if (other is! GameAnimations) return this;
+    return GameAnimations(
+      placement: _lerpDuration(placement, other.placement, t),
+      cover: _lerpDuration(cover, other.cover, t),
+      boardClaim: _lerpDuration(boardClaim, other.boardClaim, t),
+      winLineReveal: _lerpDuration(winLineReveal, other.winLineReveal, t),
+    );
+  }
+}
+
+extension GameAnimationsContext on BuildContext {
+  GameAnimations get gameAnimations => Theme.of(this).extension<GameAnimations>()!;
+}

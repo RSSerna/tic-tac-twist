@@ -14,6 +14,7 @@ import '../widgets/chip_view.dart';
 import '../widgets/inventory_row.dart';
 import '../widgets/stacking_board.dart';
 import '../widgets/ultimate_board.dart';
+import '../widgets/winning_line_overlay.dart';
 
 /// Shared game-screen skeleton: turn banner, mode-specific board widget
 /// (swappable — skins and boards never touch game logic), staging controls,
@@ -151,6 +152,13 @@ class BoardArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final status = session.status;
+    // Only for an actual line win (not a tiebreak/timeout/repetition
+    // result, which has no three-in-a-row to point at).
+    final winningLine =
+        status.reason == EndReason.line ? status.winningLine : null;
+    final colors = context.gameColors;
+
     return IgnorePointer(
       // Nothing for the human to tap on the AI's turn — the controller
       // already no-ops these, this just keeps the board from flickering a
@@ -161,9 +169,27 @@ class BoardArea extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 640, maxHeight: 640),
-            child: session.mode.isStacking
-                ? const StackingBoard()
-                : const UltimateBoard(),
+            child: Stack(
+              children: [
+                session.mode.isStacking
+                    ? const StackingBoard()
+                    : const UltimateBoard(),
+                if (winningLine != null)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: WinningLineOverlay(
+                        line: winningLine,
+                        color: session.personFor(status.winner!) == 1
+                            ? colors.playerA
+                            : colors.playerB,
+                        duration: MediaQuery.of(context).disableAnimations
+                            ? Duration.zero
+                            : context.gameAnimations.winLineReveal,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

@@ -15,8 +15,8 @@ String _modeName(AppLocalizations l10n, GameMode mode) => switch (mode) {
       GameMode.ultimate => l10n.modeUltimate,
     };
 
-/// Design doc §10: reset stats, replay tutorial, language, local turn timer.
-/// (SFX/music toggles join this once Phase 7 builds audio.)
+/// Design doc §10: reset stats, replay tutorial, sound toggles, language,
+/// local turn timer.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -66,6 +66,26 @@ class SettingsScreen extends ConsumerWidget {
                         child: Text(_modeName(l10n, mode)),
                       ),
                     ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            _SectionCard(
+              title: l10n.settingsSoundHeading,
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    key: const Key('sfx-toggle'),
+                    title: Text(l10n.settingsSfxLabel),
+                    value: settings?.sfxEnabled ?? true,
+                    onChanged: (value) => settingsController.setSfxEnabled(value),
+                  ),
+                  SwitchListTile(
+                    key: const Key('music-toggle'),
+                    title: Text(l10n.settingsMusicLabel),
+                    value: settings?.musicEnabled ?? true,
+                    onChanged: (value) => settingsController.setMusicEnabled(value),
+                  ),
                 ],
               ),
             ),

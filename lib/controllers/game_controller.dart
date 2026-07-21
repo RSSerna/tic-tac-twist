@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../ai/ai_runner.dart';
+import '../engines/common/game_engine.dart';
 import '../engines/common/game_mode.dart';
 import '../engines/common/game_status.dart';
 import '../engines/common/move.dart';
 import '../engines/stacking/stacking_engine.dart';
 import '../engines/stacking/stacking_move.dart';
+import '../engines/ultimate/ultimate_engine.dart';
 import '../engines/ultimate/ultimate_move.dart';
+import '../services/audio_service.dart';
 import '../services/game_persistence_service.dart';
 import '../services/stats/stats_service.dart';
 import '../services/tutorial_progress_service.dart';
@@ -349,15 +352,20 @@ class GameController extends Notifier<GameSession?> {
     final session = _session;
     final tutorial = session.tutorial;
     final wasOngoing = session.status.isOngoing;
+    final newEngine = session.engine.applyMove(move);
     final newSession = GameSession(
       mode: session.mode,
-      engine: session.engine.applyMove(move),
+      engine: newEngine,
       starterPerson: session.starterPerson,
       opponents: session.opponents,
       tutorial: tutorial?.advance(),
       turnTimerSeconds: session.turnTimerSeconds,
     );
     state = newSession;
+    _playMoveSfx(session.mode, move, session.engine, newEngine);
+    if (wasOngoing && newSession.status.outcome == GameOutcome.won) {
+      _playSfx(SfxSound.gameWin);
+    }
     if (tutorial == null) {
       _persist();
       if (wasOngoing && newSession.status.isOver) _recordResult(newSession);
@@ -365,6 +373,42 @@ class GameController extends Notifier<GameSession?> {
       _rescheduleTurnTimer();
     } else {
       _maybeAutoPlayTutorialStep();
+    }
+  }
+
+  // ------------------------------------------------------------------ audio
+  //
+  // Design doc §5: chip placement, cover (weightier), small-board claim,
+  // game win, invalid move. Fire-and-forget, gated on the live SFX setting
+  // — never blocks or delays a move (same rationale as _playSfx itself).
+
+  void _playSfx(SfxSound sound) {
+    final enabled = ref.read(settingsControllerProvider).value?.sfxEnabled ?? true;
+    if (!enabled) return;
+    unawaited(ref.read(audioServiceProvider).playSfx(sound));
+  }
+
+  void _playMoveSfx(
+    GameMode mode,
+    Move move,
+    GameEngine<Move> oldEngine,
+    GameEngine<Move> newEngine,
+  ) {
+    if (mode.isStacking) {
+      final cell = switch (move) {
+        PlaceMove(:final cell) => cell,
+        RelocateMove(:final to) => to,
+        _ => null,
+      };
+      if (cell == null) return;
+      final covered = (oldEngine as StackingEngine).topChipAt(cell) != null;
+      _playSfx(covered ? SfxSound.chipCover : SfxSound.chipPlace);
+    } else {
+      _playSfx(SfxSound.chipPlace);
+      final board = (move as UltimateMove).board;
+      final wasClaimed = (oldEngine as UltimateEngine).resultOf(board).claimant != null;
+      final isClaimed = (newEngine as UltimateEngine).resultOf(board).claimant != null;
+      if (!wasClaimed && isClaimed) _playSfx(SfxSound.boardClaim);
     }
   }
 
@@ -409,6 +453,11 @@ class GameController extends Notifier<GameSession?> {
       );
       return;
     }
+    // Only beep when a selection was actively rejected — a casual tap with
+    // nothing selected is normal browsing, not a failed attempt.
+    if (session.selectedLevel != null || session.selectedCell != null) {
+      _playSfx(SfxSound.invalidMove);
+    }
     clearSelection();
   }
 
@@ -426,6 +475,7 @@ class GameController extends Notifier<GameSession?> {
         _isTutorialMoveAllowed(session, move)) {
       state = session.copy(stagedMove: move);
     } else {
+      _playSfx(SfxSound.invalidMove);
       clearSelection();
     }
   }

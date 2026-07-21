@@ -140,17 +140,28 @@ class _StackingCell extends StatelessWidget {
                 ),
               if (top != null)
                 Center(
-                  child: Opacity(
-                    // The origin chip of a staged relocation dims: it is
-                    // leaving, but nothing beneath is revealed until commit.
-                    opacity: stagedOrigin ? 0.35 : 1,
-                    child: ChipView(
-                      color: personFor(top.owner) == 1
-                          ? colors.playerA
-                          : colors.playerB,
-                      ringColor: colors.surface,
-                      level: top.level,
-                      isFirstPerson: personFor(top.owner) == 1,
+                  child: _AnimatedChip(
+                    // Depth > 1 means something was already there — a cover,
+                    // the signature moment of the stacking modes (design doc
+                    // §4), gets a weightier animation than a plain placement.
+                    // Depth itself makes the key unique per top-chip change:
+                    // it only ever moves in the direction that produced a
+                    // genuinely new top chip (placement, cover, or a
+                    // relocation revealing what's underneath).
+                    animationKey: ValueKey('$cell-$depth-${top.owner.name}-${top.level}'),
+                    isCover: depth > 1,
+                    child: Opacity(
+                      // The origin chip of a staged relocation dims: it is
+                      // leaving, but nothing beneath is revealed until commit.
+                      opacity: stagedOrigin ? 0.35 : 1,
+                      child: ChipView(
+                        color: personFor(top.owner) == 1
+                            ? colors.playerA
+                            : colors.playerB,
+                        ringColor: colors.surface,
+                        level: top.level,
+                        isFirstPerson: personFor(top.owner) == 1,
+                      ),
                     ),
                   ),
                 ),
@@ -192,6 +203,43 @@ class _StackingCell extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A chip's entrance: a plain placement pops in quickly; a cover — something
+/// was already there — settles in weightier, with a little overshoot (design
+/// doc §4: "covering has weight... instantly distinguishable from a normal
+/// placement"). Respects OS reduced-motion by collapsing to an instant swap.
+class _AnimatedChip extends StatelessWidget {
+  const _AnimatedChip({
+    required this.animationKey,
+    required this.isCover,
+    required this.child,
+  });
+
+  final Key animationKey;
+  final bool isCover;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final animations = context.gameAnimations;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final duration = reduceMotion
+        ? Duration.zero
+        : (isCover ? animations.cover : animations.placement);
+
+    return AnimatedSwitcher(
+      duration: duration,
+      transitionBuilder: (child, animation) => ScaleTransition(
+        scale: CurvedAnimation(
+          parent: animation,
+          curve: isCover ? Curves.easeOutBack : Curves.easeOut,
+        ),
+        child: child,
+      ),
+      child: KeyedSubtree(key: animationKey, child: child),
     );
   }
 }

@@ -2,9 +2,13 @@ import 'package:flutter/material.dart' hide Chip;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nested_game/controllers/game_controller.dart';
+import 'package:nested_game/controllers/game_session.dart';
+import 'package:nested_game/engines/common/game_mode.dart';
 import 'package:nested_game/engines/common/player.dart';
 import 'package:nested_game/engines/stacking/chip.dart';
+import 'package:nested_game/engines/stacking/stacking_config.dart';
 import 'package:nested_game/engines/stacking/stacking_engine.dart';
+import 'package:nested_game/engines/stacking/stacking_move.dart';
 import 'package:nested_game/engines/ultimate/ultimate_engine.dart';
 import 'package:nested_game/main.dart';
 import 'package:nested_game/ui/screens/game_screen.dart';
@@ -183,4 +187,45 @@ void main() {
     // Loser (person 2) starts the next game.
     expect(find.text('Player 2 to move'), findsOneWidget);
   });
+
+  testWidgets(
+      'reduced motion: a cover that also wins the game renders instantly '
+      'with no crash (chip, cover, and winning-line animations all '
+      'collapse to zero duration)', (tester) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(
+        () => tester.platformDispatcher.clearAccessibilityFeaturesTestValue());
+
+    await pumpApp(tester);
+    await startGame(tester, 'stackStatic');
+
+    // P1 already owns cells 1 and 2; P2's L1 sits alone at cell 0. P1's
+    // final move covers P2's chip at 0 *and* completes the top row in the
+    // same move, exercising the cover animation and the winning-line
+    // overlay together.
+    final controller = containerOf(tester).read(gameControllerProvider.notifier);
+    final engine = StackingEngine.fromJson({
+      'config': StackingConfig.staticMode.toJson(),
+      'board': [
+        [chip(2, 1)], // P2's L1
+        [chip(1, 1)], // P1's L1
+        [chip(1, 1)], // P1's L1
+        <Object?>[], <Object?>[], <Object?>[], <Object?>[], <Object?>[], <Object?>[],
+      ],
+      'currentPlayer': 1,
+    });
+    controller.resumeSession(
+      GameSession(mode: GameMode.stackStatic, engine: engine, starterPerson: 1),
+    );
+    await tester.pumpAndSettle();
+
+    controller.submitMove(const PlaceMove(4, 0));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Player 1 wins!'), findsOneWidget);
+  });
 }
+
+Map<String, Object?> chip(int owner, int level) => {'owner': owner, 'level': level};

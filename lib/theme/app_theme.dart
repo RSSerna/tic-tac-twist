@@ -7,7 +7,10 @@ import 'tokens.dart';
 /// Typography (Bricolage Grotesque / Archivo, design system §2.2) is deferred
 /// until the fonts are bundled as assets — the token structure here is what
 /// Phase 0 owes.
-ThemeData buildAppTheme({GameColors colors = GameColors.baseSkin}) {
+ThemeData buildAppTheme({
+  GameColors colors = GameColors.baseSkin,
+  GameAnimations animations = GameAnimations.standard,
+}) {
   return ThemeData(
     useMaterial3: true,
     scaffoldBackgroundColor: colors.ground,
@@ -17,6 +20,6 @@ ThemeData buildAppTheme({GameColors colors = GameColors.baseSkin}) {
       surface: colors.surface,
       onSurface: colors.ink,
     ),
-    extensions: [colors],
+    extensions: [colors, animations],
   );
 }

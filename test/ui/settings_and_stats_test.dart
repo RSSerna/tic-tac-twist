@@ -6,6 +6,8 @@ import 'package:nested_game/ai/difficulty.dart';
 import 'package:nested_game/controllers/game_controller.dart';
 import 'package:nested_game/engines/common/game_mode.dart';
 import 'package:nested_game/main.dart';
+import 'package:nested_game/services/audio_service.dart';
+import 'package:nested_game/services/settings_service.dart';
 import 'package:nested_game/services/stats/stats_service.dart';
 import 'package:nested_game/ui/screens/game_screen.dart';
 import 'package:nested_game/ui/screens/home_screen.dart';
@@ -167,6 +169,38 @@ void main() {
         await teardownApp(tester);
       },
     );
+  });
+
+  group('sound settings', () {
+    testWidgets('sfx toggle persists', (tester) async {
+      await pumpNestedApp(tester);
+      await tapKey(tester, 'open-settings');
+
+      await tapKey(tester, 'sfx-toggle');
+
+      final enabled = await containerOf(tester, screen: SettingsScreen)
+          .read(settingsServiceProvider)
+          .sfxEnabled();
+      expect(enabled, isFalse);
+    });
+
+    testWidgets('music toggle drives playback through the app-level listener',
+        (tester) async {
+      final audio = FakeAudioService();
+      await pumpNestedApp(tester, overrides: [
+        audioServiceProvider.overrideWithValue(audio),
+      ]);
+      // Music defaults on (design doc §5) — starts as soon as settings
+      // resolve, with no user action needed.
+      expect(audio.musicPlaying, isTrue);
+
+      await tapKey(tester, 'open-settings');
+      await tapKey(tester, 'music-toggle');
+      expect(audio.musicPlaying, isFalse);
+
+      await tapKey(tester, 'music-toggle');
+      expect(audio.musicPlaying, isTrue);
+    });
   });
 
   group('turn timer countdown display', () {
