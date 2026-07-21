@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,11 +23,16 @@ String _skinDesc(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
 
 /// The direct-purchase route design doc §2.2 names alongside "earned
 /// through play" — null for skins (like the free default) that have no
-/// purchase route at all.
-ProductId? _productFor(GameSkin skin) => switch (skin.id) {
-      'nesting_dolls' => ProductId.skinNestingDolls,
-      _ => null,
-    };
+/// purchase route at all, and always null on web (design doc §9:
+/// in_app_purchase has no web implementation, so there's nothing to sell —
+/// achievement-unlocking still works there, since it's just local storage).
+ProductId? _productFor(GameSkin skin) {
+  if (kIsWeb) return null;
+  return switch (skin.id) {
+    'nesting_dolls' => ProductId.skinNestingDolls,
+    _ => null,
+  };
+}
 
 /// Skin picker (roadmap Phase 8): the free default plus one premium set,
 /// unlockable either by achievement (design doc §2.6 / product doc §3.1) or

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,11 +41,15 @@ abstract interface class PurchaseService {
   Future<void> markRemoved();
 }
 
-/// in_app_purchase has no real platform channel under `flutter_test` (same
-/// situation `audioServiceProvider` documents) — default to a no-op there;
-/// production gets the real implementation.
+/// No-ops on web (design doc §9: "in_app_purchase is mobile-only... no
+/// delivery mechanism" — remove-ads and skin packs simply have nothing to
+/// sell there) and under `flutter_test` (in_app_purchase has no real
+/// platform channel there, same situation `audioServiceProvider`
+/// documents). `kIsWeb` must be checked before `Platform.environment` —
+/// that's dart:io, which throws `UnsupportedError` on web rather than
+/// simply being unavailable at compile time.
 final purchaseServiceProvider = Provider<PurchaseService>((ref) {
-  if (Platform.environment['FLUTTER_TEST'] == 'true') {
+  if (kIsWeb || Platform.environment['FLUTTER_TEST'] == 'true') {
     return _NullPurchaseService();
   }
   final service = InAppPurchaseService();

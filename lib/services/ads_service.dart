@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -28,11 +29,14 @@ abstract interface class AdsService {
   Future<void> showInterstitialIfLoaded();
 }
 
-/// google_mobile_ads has no real platform channel under `flutter_test`
-/// (same situation `audioServiceProvider` documents) — default to a no-op
-/// there; production gets the real implementation.
+/// No-ops on web (design doc §9: "AdMob does not support Flutter web —
+/// there is no drop-in path for the ad model") and under `flutter_test`
+/// (google_mobile_ads has no real platform channel there, same situation
+/// `audioServiceProvider` documents). `kIsWeb` must be checked before
+/// `Platform.environment` — that's dart:io, which throws `UnsupportedError`
+/// on web rather than simply being unavailable at compile time.
 final adsServiceProvider = Provider<AdsService>((ref) {
-  if (Platform.environment['FLUTTER_TEST'] == 'true') {
+  if (kIsWeb || Platform.environment['FLUTTER_TEST'] == 'true') {
     return const _NullAdsService();
   }
   return GoogleMobileAdsService();

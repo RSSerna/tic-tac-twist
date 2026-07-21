@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -117,8 +118,13 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            const _RemoveAdsSection(),
+            // Web is inherently ad-free and purchase-free (design doc §9) —
+            // AdMob and in_app_purchase have no web implementation, so
+            // there's nothing to remove and nothing to buy there.
+            if (!kIsWeb) ...[
+              const SizedBox(height: 12),
+              const _RemoveAdsSection(),
+            ],
             const SizedBox(height: 12),
             _SectionCard(
               title: l10n.settingsTurnTimerHeading,

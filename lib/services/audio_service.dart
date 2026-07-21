@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// SFX cues (design doc §5). Asset content isn't bundled yet — Phase 7 ships
@@ -18,14 +19,21 @@ abstract interface class AudioService {
 }
 
 final audioServiceProvider = Provider<AudioService>((ref) {
-  // flutter_test has no real audioplayers platform channel, and constructing
-  // AudioPlayer there leaks unhandled async errors from its own internal
-  // init — every widget/controller test would otherwise need an explicit
-  // override just to submit a move. Detect the test runner (the same
-  // FLUTTER_TEST env var flutter_test itself sets) and no-op instead; tests
-  // that want to verify actual SFX/music calls override this provider
-  // explicitly with a recording fake.
-  if (Platform.environment['FLUTTER_TEST'] == 'true') {
+  // `Platform.environment` (below) throws `UnsupportedError` on web — it's
+  // dart:io, which web only stubs partially. `kIsWeb` is a compile-time
+  // constant safe on every platform, so it must be checked first. audioplayers
+  // has a real web implementation (design doc §9's monetization-only web
+  // caveat doesn't apply to audio), so web always gets the real service —
+  // flutter_test never runs with kIsWeb true, so this never masks the test
+  // no-op path below.
+  if (!kIsWeb && Platform.environment['FLUTTER_TEST'] == 'true') {
+    // flutter_test has no real audioplayers platform channel, and constructing
+    // AudioPlayer there leaks unhandled async errors from its own internal
+    // init — every widget/controller test would otherwise need an explicit
+    // override just to submit a move. Detect the test runner (the same
+    // FLUTTER_TEST env var flutter_test itself sets) and no-op instead; tests
+    // that want to verify actual SFX/music calls override this provider
+    // explicitly with a recording fake.
     return const _NullAudioService();
   }
   final service = AudioPlayersAudioService();
