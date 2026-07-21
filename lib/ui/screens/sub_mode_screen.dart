@@ -7,7 +7,6 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../theme/tokens.dart';
 import 'difficulty_screen.dart';
 import 'game_screen.dart';
-import 'tutorial_screen.dart';
 
 /// Opponent picker for one mode: local pass-and-play, or vs AI (which then
 /// asks for a difficulty).
@@ -60,19 +59,6 @@ class SubModeScreen extends ConsumerWidget {
                   ),
                 );
               },
-            ),
-            const SizedBox(height: 12),
-            // TEMPORARY (Phase 5): the design doc wants tutorial replay
-            // reachable from Settings, which doesn't exist until Phase 6.
-            // Relocate this into Settings once that screen exists.
-            Center(
-              child: TextButton(
-                key: const Key('replay-tutorial'),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => TutorialScreen(mode: mode)),
-                ),
-                child: Text(l10n.replayTutorial),
-              ),
             ),
           ],
         ),

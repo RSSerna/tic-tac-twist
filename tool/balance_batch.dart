@@ -101,6 +101,8 @@ class BatchStats {
         }
       case EndReason.repetition:
         repetitionDraws++;
+      case EndReason.timeout:
+        break; // controller-only; engine-vs-engine batches never produce this
       case null:
         break;
     }

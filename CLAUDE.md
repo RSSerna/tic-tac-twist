@@ -83,7 +83,9 @@ These look like UI details but are gameplay-critical. Breaking them breaks the g
 - Stack-Movable stall rule: threefold repetition of position = draw (see `01-GAME-RULES.md` §3.3).
 - Movable staging: free cancellation, no touch-move commitment (see `02-DESIGN-SYSTEM.md` §3.2).
 - Mode names are untranslated proper nouns with translated blurbs (see `02-DESIGN-SYSTEM.md` §8).
-- Tutorial replay (Phase 5): added a temporary "Replay tutorial" button on the sub-mode screen since Settings (Phase 6) doesn't exist yet. Relocate into Settings once that screen is built; the button/key (`replay-tutorial`) can be deleted from `sub_mode_screen.dart` at that point.
+- Local stats (Phase 6): pass-and-play results are tracked **by seat** (Player 1 / Player 2 / Draw), not a "you"-perspective win/loss — pass-and-play has no persistent per-seat identity across games. Vs-AI results are tracked from the human's perspective, split by difficulty tier.
+- Abandon (Phase 6): added an explicit confirm-guarded back/leave action during an ongoing game (`GameScreen`'s `PopScope`) — none existed before, and the "abandoning vs AI counts as a loss" rule (`03-PRODUCT.md` §4) needs something to actually trigger it.
+- Turn timer expiry (Phase 6): the timer-expired player **loses the game outright** (`EndReason.timeout`), like losing on time in chess — not "pass the turn with no move played." Neither engine supports a voluntary pass when legal moves exist, and inventing that would be a rules-engine change, not a controller/UI feature.
 
 ## Still undecided — ask before assuming
 

@@ -99,6 +99,7 @@
   "resultReasonTiebreak": "Decided on board control",
   "resultReasonRepetition": "The same position occurred three times",
   "resultReasonExactTie": "Board control exactly tied",
+  "resultReasonTimeout": "Ran out of time",
   "rematch": "Rematch",
   "exitToMenu": "Exit to menu",
   "resumeGameTitle": "Game in progress",
@@ -111,7 +112,6 @@
   "resumeAction": "Resume",
   "abandonAction": "Abandon",
 
-  "replayTutorial": "Replay tutorial",
   "tutorialNext": "Next",
   "tutorialSkip": "Skip tutorial",
   "tutorialContinue": "Continue",
@@ -146,5 +146,65 @@
   "tutorialUltimateClaimRecap": "You claimed a board! Three in a row inside a small board wins it for the big board.",
   "tutorialUltimateFreeMoveExplain": "That board is claimed and out of play — since they just sent you there, you get a free move: play in any open board.",
   "tutorialUltimateFreeMoveMove": "Play anywhere — let's try the top-left board.",
-  "tutorialUltimateComplete": "That's Ultimate: the send rule, claiming boards, and free moves. Ready for a real game?"
+  "tutorialUltimateComplete": "That's Ultimate: the send rule, claiming boards, and free moves. Ready for a real game?",
+
+  "statsTitle": "Stats",
+  "statsLocalHeading": "Pass & play",
+  "statsVsAiHeading": "Vs AI",
+  "statsPlayerWins": "Player {number}: {count}",
+  "@statsPlayerWins": {
+    "placeholders": {
+      "number": {"type": "int"},
+      "count": {"type": "int"}
+    }
+  },
+  "statsDrawsCount": "Draws: {count}",
+  "@statsDrawsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "statsRecord": "W {wins} · L {losses} · D {draws}",
+  "@statsRecord": {
+    "placeholders": {
+      "wins": {"type": "int"},
+      "losses": {"type": "int"},
+      "draws": {"type": "int"}
+    }
+  },
+  "statsNoGamesYet": "No games played yet",
+
+  "settingsTitle": "Settings",
+  "settingsResetStats": "Reset stats",
+  "settingsResetStatsConfirmTitle": "Reset all stats?",
+  "settingsResetStatsConfirmBody": "This clears every mode's win/loss/draw record. This can't be undone.",
+  "settingsReset": "Reset",
+  "settingsResetStatsDone": "Stats reset",
+  "settingsReplayTutorialHeading": "Replay tutorial",
+  "settingsLanguageHeading": "Language",
+  "languageSystem": "System default",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "settingsTurnTimerHeading": "Local turn timer",
+  "turnTimerOff": "Off",
+  "turnTimerSeconds": "{seconds}s",
+  "@turnTimerSeconds": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+
+  "abandonGameTitle": "Leave this game?",
+  "abandonGameBodyVsAi": "Abandoning a game vs AI counts as a loss.",
+  "abandonGameBodyLocal": "Your progress in this game will be lost.",
+  "abandonGameConfirm": "Leave",
+  "abandonGameCancel": "Stay",
+
+  "turnTimerBanner": "{seconds}s",
+  "@turnTimerBanner": {
+    "description": "Live countdown shown during a turn when the local turn timer is on.",
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  }
 }

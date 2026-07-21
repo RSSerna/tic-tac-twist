@@ -20,7 +20,12 @@ Future<void> pumpApp(WidgetTester tester) async {
 }
 
 Future<void> startGame(WidgetTester tester, String modeName) async {
-  await tester.tap(find.byKey(Key('mode-$modeName')));
+  // Small landscape surfaces don't fit every mode card above the fold now
+  // that the home screen has an AppBar — scroll the target into the
+  // ListView's lazy-build range before tapping it.
+  final modeFinder = find.byKey(Key('mode-$modeName'));
+  await tester.scrollUntilVisible(modeFinder, 200);
+  await tester.tap(modeFinder);
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('play-local')));
   await tester.pumpAndSettle();

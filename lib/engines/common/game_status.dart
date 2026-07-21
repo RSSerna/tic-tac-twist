@@ -17,6 +17,12 @@ enum EndReason {
 
   /// Stack-Movable only: the same position occurred three times.
   repetition,
+
+  /// A controller-level forfeit (design doc §3.6: the local turn timer).
+  /// Never produced by an engine — engines are time-independent — this
+  /// value exists purely for the controller to construct a [GameStatus]
+  /// with, reusing the same result vocabulary the UI already renders.
+  timeout,
 }
 
 /// Terminal-or-not state of a game. Derivable from engine state, so it is

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,60 +38,104 @@ class GameScreen extends ConsumerWidget {
       GameMode.ultimate => l10n.modeUltimate,
     };
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(modeName),
-        backgroundColor: colors.ground,
-        foregroundColor: colors.ink,
-      ),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            LayoutBuilder(
-              builder: (context, constraints) {
-                // Both orientations (design doc §1): landscape puts the
-                // board and controls side by side rather than fighting
-                // over limited vertical height.
-                final landscape = constraints.maxWidth > constraints.maxHeight;
-                final sideControls = [
-                  _TurnBanner(session: session),
-                  if (session.mode.isStacking && session.status.isOngoing)
-                    IgnorePointer(
-                      ignoring: session.isAiTurn,
-                      child: const InventoryRow(),
-                    ),
-                  StagingBar(session: session),
-                ];
-                final board = BoardArea(session: session);
+    final controller = ref.read(gameControllerProvider.notifier);
 
-                if (landscape) {
-                  return Row(
-                    children: [
-                      Expanded(child: board),
-                      SizedBox(
-                        width: 300,
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: sideControls,
+    return PopScope<void>(
+      // A finished game has nothing left to abandon — the result overlay's
+      // own "exit to menu" already handles that path. Only an ongoing game
+      // needs the confirm guard (product doc §4: abandoning vs AI is a loss).
+      canPop: session.status.isOver,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final leave = await _confirmAbandon(context, l10n, session);
+        if (leave != true) return;
+        await controller.abandonGame();
+        if (context.mounted) Navigator.of(context).pop();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(modeName),
+          backgroundColor: colors.ground,
+          foregroundColor: colors.ink,
+        ),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // Both orientations (design doc §1): landscape puts the
+                  // board and controls side by side rather than fighting
+                  // over limited vertical height.
+                  final landscape = constraints.maxWidth > constraints.maxHeight;
+                  final sideControls = [
+                    _TurnBanner(session: session),
+                    if (session.mode.isStacking && session.status.isOngoing)
+                      IgnorePointer(
+                        ignoring: session.isAiTurn,
+                        child: const InventoryRow(),
+                      ),
+                    StagingBar(session: session),
+                  ];
+                  final board = BoardArea(session: session);
+
+                  if (landscape) {
+                    return Row(
+                      children: [
+                        Expanded(child: board),
+                        SizedBox(
+                          width: 300,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: sideControls,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
+                    );
+                  }
+                  return Column(
+                    children: [
+                      ...sideControls.take(1),
+                      Expanded(child: board),
+                      ...sideControls.skip(1),
                     ],
                   );
-                }
-                return Column(
-                  children: [
-                    ...sideControls.take(1),
-                    Expanded(child: board),
-                    ...sideControls.skip(1),
-                  ],
-                );
-              },
-            ),
-            if (session.status.isOver) _ResultOverlay(session: session),
-          ],
+                },
+              ),
+              if (session.status.isOver) _ResultOverlay(session: session),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Future<bool?> _confirmAbandon(
+    BuildContext context,
+    AppLocalizations l10n,
+    GameSession session,
+  ) {
+    final body = session.opponents.personTwoIsAi
+        ? l10n.abandonGameBodyVsAi
+        : l10n.abandonGameBodyLocal;
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.abandonGameTitle),
+        content: Text(body),
+        actions: [
+          TextButton(
+            key: const Key('abandon-cancel'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.abandonGameCancel),
+          ),
+          FilledButton(
+            key: const Key('abandon-confirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.abandonGameConfirm),
+          ),
+        ],
       ),
     );
   }
@@ -175,8 +221,53 @@ class _TurnBanner extends ConsumerWidget {
                   ?.copyWith(color: colors.neutral),
             ),
           ],
+          if (session.turnDeadline != null) ...[
+            const SizedBox(height: 4),
+            _TurnTimerCountdown(deadline: session.turnDeadline!),
+          ],
         ],
       ),
+    );
+  }
+}
+
+/// Live "seconds remaining" display for the local turn timer (design doc
+/// §3.6). Ticks on its own widget-local timer rather than round-tripping
+/// through [GameController] state every second — the deadline itself is
+/// stamped once by the controller; only the display needs to be live.
+class _TurnTimerCountdown extends StatefulWidget {
+  const _TurnTimerCountdown({required this.deadline});
+
+  final DateTime deadline;
+
+  @override
+  State<_TurnTimerCountdown> createState() => _TurnTimerCountdownState();
+}
+
+class _TurnTimerCountdownState extends State<_TurnTimerCountdown> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = context.gameColors;
+    final remaining = widget.deadline.difference(DateTime.now()).inSeconds;
+    return Text(
+      l10n.turnTimerBanner(remaining < 0 ? 0 : remaining),
+      key: const Key('turn-timer-banner'),
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.neutral),
     );
   }
 }
@@ -261,6 +352,7 @@ class _ResultOverlay extends ConsumerWidget {
       EndReason.tiebreak => status.outcome == GameOutcome.draw
           ? l10n.resultReasonExactTie
           : l10n.resultReasonTiebreak,
+      EndReason.timeout => l10n.resultReasonTimeout,
       _ => null,
     };
 

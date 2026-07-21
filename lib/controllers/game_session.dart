@@ -30,6 +30,9 @@ class GameSession {
     this.stagedMove,
     this.aiThinking = false,
     this.tutorial,
+    this.forfeitStatus,
+    this.turnTimerSeconds,
+    this.turnDeadline,
   });
 
   final GameMode mode;
@@ -64,8 +67,27 @@ class GameSession {
   /// [TutorialState]'s doc comment).
   final TutorialState? tutorial;
 
+  /// A controller-level forfeit (design doc §3.6: the local turn timer
+  /// expiring). Overrides the engine's own status when set — the engine
+  /// itself never produces this; it has no clock (CLAUDE.md rule 5). Not
+  /// persisted: a forfeited game is over, so [GameController._persist]
+  /// already has nothing left to save.
+  final GameStatus? forfeitStatus;
+
+  /// Local turn timer, in seconds; null means off (design doc §3.6).
+  /// Fixed for the life of a game, read from settings when the game starts.
+  final int? turnTimerSeconds;
+
+  /// Wall-clock deadline for the current turn, set by the controller
+  /// whenever it (re)schedules the timer. Presentation state for the live
+  /// countdown display only (CLAUDE.md rule 6: engines never see a clock,
+  /// and this isn't even engine-adjacent) — never persisted, since a
+  /// resumed game restarts its timer fresh rather than reconstructing
+  /// elapsed real time across the backgrounding gap.
+  final DateTime? turnDeadline;
+
   Player get currentPlayer => engine.currentPlayer;
-  GameStatus get status => engine.status;
+  GameStatus get status => forfeitStatus ?? engine.status;
 
   int personFor(Player player) =>
       player == Player.one ? starterPerson : 3 - starterPerson;
@@ -85,6 +107,8 @@ class GameSession {
     Object? stagedMove = _unset,
     bool? aiThinking,
     Object? tutorial = _unset,
+    Object? forfeitStatus = _unset,
+    Object? turnDeadline = _unset,
   }) =>
       GameSession(
         mode: mode,
@@ -103,6 +127,13 @@ class GameSession {
         stagedMove:
             identical(stagedMove, _unset) ? this.stagedMove : stagedMove as Move?,
         aiThinking: aiThinking ?? this.aiThinking,
+        forfeitStatus: identical(forfeitStatus, _unset)
+            ? this.forfeitStatus
+            : forfeitStatus as GameStatus?,
+        turnTimerSeconds: turnTimerSeconds,
+        turnDeadline: identical(turnDeadline, _unset)
+            ? this.turnDeadline
+            : turnDeadline as DateTime?,
       );
 
   /// Persisted for interruption handling (rules doc §5): mode, engine
@@ -114,6 +145,7 @@ class GameSession {
         'engine': engine.toJson(),
         'starterPerson': starterPerson,
         'opponents': opponents.toJson(),
+        'turnTimerSeconds': turnTimerSeconds,
       };
 
   factory GameSession.fromJson(Map<String, Object?> json) {
@@ -129,6 +161,7 @@ class GameSession {
       starterPerson: starterPerson,
       opponents: SessionOpponents.fromJson(
           (json['opponents']! as Map).cast<String, Object?>()),
+      turnTimerSeconds: json['turnTimerSeconds'] as int?,
     );
   }
 }

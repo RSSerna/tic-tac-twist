@@ -40,6 +40,7 @@
   "resultReasonTiebreak": "Decidido por control del tablero",
   "resultReasonRepetition": "La misma posición se repitió tres veces",
   "resultReasonExactTie": "Control del tablero empatado",
+  "resultReasonTimeout": "Se acabó el tiempo",
   "rematch": "Revancha",
   "exitToMenu": "Salir al menú",
   "resumeGameTitle": "Partida en curso",
@@ -47,7 +48,6 @@
   "resumeAction": "Reanudar",
   "abandonAction": "Abandonar",
 
-  "replayTutorial": "Repetir tutorial",
   "tutorialNext": "Siguiente",
   "tutorialSkip": "Saltar tutorial",
   "tutorialContinue": "Continuar",
@@ -82,5 +82,36 @@
   "tutorialUltimateClaimRecap": "¡Reclamaste un tablero! Tres en línea dentro de un tablero pequeño lo gana para el tablero grande.",
   "tutorialUltimateFreeMoveExplain": "Ese tablero está reclamado y fuera de juego — como te enviaron ahí, tienes una jugada libre: juega en cualquier tablero abierto.",
   "tutorialUltimateFreeMoveMove": "Juega donde quieras — probemos el tablero superior izquierdo.",
-  "tutorialUltimateComplete": "Eso es Ultimate: la regla de envío, reclamar tableros y las jugadas libres. ¿Listo para una partida de verdad?"
+  "tutorialUltimateComplete": "Eso es Ultimate: la regla de envío, reclamar tableros y las jugadas libres. ¿Listo para una partida de verdad?",
+
+  "statsTitle": "Estadísticas",
+  "statsLocalHeading": "Jugar a dos",
+  "statsVsAiHeading": "Contra la IA",
+  "statsPlayerWins": "Jugador {number}: {count}",
+  "statsDrawsCount": "Empates: {count}",
+  "statsRecord": "G {wins} · P {losses} · E {draws}",
+  "statsNoGamesYet": "Todavía no se ha jugado ninguna partida",
+
+  "settingsTitle": "Ajustes",
+  "settingsResetStats": "Reiniciar estadísticas",
+  "settingsResetStatsConfirmTitle": "¿Reiniciar todas las estadísticas?",
+  "settingsResetStatsConfirmBody": "Esto borra el historial de victorias, derrotas y empates de todos los modos. No se puede deshacer.",
+  "settingsReset": "Reiniciar",
+  "settingsResetStatsDone": "Estadísticas reiniciadas",
+  "settingsReplayTutorialHeading": "Repetir tutorial",
+  "settingsLanguageHeading": "Idioma",
+  "languageSystem": "Predeterminado del sistema",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "settingsTurnTimerHeading": "Temporizador de turno local",
+  "turnTimerOff": "Desactivado",
+  "turnTimerSeconds": "{seconds}s",
+
+  "abandonGameTitle": "¿Salir de esta partida?",
+  "abandonGameBodyVsAi": "Abandonar una partida contra la IA cuenta como derrota.",
+  "abandonGameBodyLocal": "Se perderá el progreso de esta partida.",
+  "abandonGameConfirm": "Salir",
+  "abandonGameCancel": "Quedarme",
+
+  "turnTimerBanner": "{seconds}s"
 }

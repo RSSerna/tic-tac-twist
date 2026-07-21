@@ -10,17 +10,26 @@ import '../engines/stacking/stacking_engine.dart';
 import '../engines/stacking/stacking_move.dart';
 import '../engines/ultimate/ultimate_move.dart';
 import '../services/game_persistence_service.dart';
+import '../services/stats/stats_service.dart';
 import '../services/tutorial_progress_service.dart';
 import '../tutorial/tutorial_script.dart';
 import '../tutorial/tutorial_step.dart';
 import 'game_session.dart';
 import 'session_opponents.dart';
+import 'settings_controller.dart';
 import 'tutorial_state.dart';
 
 /// The AI move computer this controller calls. A [Provider] (not a plain
 /// top-level constant) so tests can override it with a fast fake instead of
 /// spawning a real isolate (see CLAUDE.md: Riverpod for shared state).
 final aiRunnerProvider = Provider<AiMoveComputer>((ref) => AiRunner.chooseMove);
+
+/// Maps a turn timer preset's seconds to the real [Duration] to count down.
+/// A seam (not a direct `Duration(seconds: seconds)` call) so tests can
+/// swap in a millisecond-scale mapping instead of waiting out real
+/// 15s/30s countdowns.
+final turnTimerDurationProvider =
+    Provider<Duration Function(int seconds)>((ref) => (seconds) => Duration(seconds: seconds));
 
 final gameControllerProvider =
     NotifierProvider<GameController, GameSession?>(GameController.new);
@@ -32,8 +41,13 @@ final gameControllerProvider =
 /// rule 3). Legality lives in the engine; this class only asks
 /// `legalMoves()`.
 class GameController extends Notifier<GameSession?> {
+  Timer? _turnTimer;
+
   @override
-  GameSession? build() => null;
+  GameSession? build() {
+    ref.onDispose(() => _turnTimer?.cancel());
+    return null;
+  }
 
   GameSession get _session {
     final session = state;
@@ -52,15 +66,43 @@ class GameController extends Notifier<GameSession?> {
       engine: mode.createEngine(),
       starterPerson: 1,
       opponents: opponents,
+      turnTimerSeconds: _currentTurnTimerSeconds(),
     );
     _persist();
     _maybeTriggerAiMove();
+    _rescheduleTurnTimer();
   }
 
+  /// Ends the game (post-result "exit to menu", or the resume-or-abandon
+  /// dialog's "abandon"). No stats effect — a finished game already
+  /// recorded its result; a never-started saved game never played.
   void exitGame() {
+    _turnTimer?.cancel();
     state = null;
     unawaited(ref.read(gamePersistenceServiceProvider).clearSnapshot());
   }
+
+  /// Leaves an in-progress game. Vs-AI, this is a loss for the human
+  /// (product doc §4: "abandoning a game vs AI counts as a loss") —
+  /// pass-and-play has no single "you" to charge a loss to, so it has no
+  /// stats effect. Already-finished games should go through [exitGame]
+  /// instead (there's nothing left to abandon).
+  Future<void> abandonGame() async {
+    final session = _session;
+    if (session.status.isOngoing &&
+        !session.isTutorial &&
+        session.opponents.personTwoIsAi) {
+      await ref.read(statsServiceProvider).recordVsAiResult(
+            session.mode,
+            session.opponents.difficulty!,
+            MatchResult.loss,
+          );
+    }
+    exitGame();
+  }
+
+  int? _currentTurnTimerSeconds() =>
+      ref.read(settingsControllerProvider).value?.turnTimer.seconds;
 
   // ----------------------------------------------------------- tutorial
   //
@@ -138,9 +180,80 @@ class GameController extends Notifier<GameSession?> {
       engine: session.mode.createEngine(),
       starterPerson: nextStarter,
       opponents: session.opponents,
+      turnTimerSeconds: _currentTurnTimerSeconds(),
     );
     _persist();
     _maybeTriggerAiMove();
+    _rescheduleTurnTimer();
+  }
+
+  // ------------------------------------------------------------- results
+
+  /// Records the outcome once a game just finished — local by seat, vs-AI
+  /// from the human's perspective (product doc §4). Never called for
+  /// tutorials, which have nothing to do with a player's stats.
+  void _recordResult(GameSession session) {
+    final status = session.status;
+    final service = ref.read(statsServiceProvider);
+    if (session.opponents.personTwoIsAi) {
+      const humanPerson = 1; // always true vs-AI (rules doc §5)
+      final result = switch (status.outcome) {
+        GameOutcome.draw => MatchResult.draw,
+        GameOutcome.won => session.personFor(status.winner!) == humanPerson
+            ? MatchResult.win
+            : MatchResult.loss,
+        GameOutcome.ongoing => throw StateError('unreachable: recorded while ongoing'),
+      };
+      unawaited(
+          service.recordVsAiResult(session.mode, session.opponents.difficulty!, result));
+    } else {
+      final winnerPerson =
+          status.outcome == GameOutcome.won ? session.personFor(status.winner!) : null;
+      unawaited(service.recordLocalResult(session.mode, winnerPerson: winnerPerson));
+    }
+  }
+
+  // --------------------------------------------------------- turn timer
+  //
+  // Design doc §3.6: optional, off by default, controller-level presentation
+  // state — the engine never sees a clock (CLAUDE.md rule 5).
+
+  void _rescheduleTurnTimer() {
+    _turnTimer?.cancel();
+    _turnTimer = null;
+    final session = state;
+    if (session == null) return;
+    final seconds = session.turnTimerSeconds;
+    if (seconds == null ||
+        session.status.isOver ||
+        session.isAiTurn ||
+        session.isTutorial) {
+      if (session.turnDeadline != null) {
+        state = session.copy(turnDeadline: null);
+      }
+      return;
+    }
+    final duration = ref.read(turnTimerDurationProvider)(seconds);
+    // The deadline is presentation state for the live countdown display —
+    // stamped once here, not ticked every second, so scheduling doesn't
+    // touch persistence or stats on its own.
+    final withDeadline = session.copy(turnDeadline: DateTime.now().add(duration));
+    state = withDeadline;
+    _turnTimer = Timer(duration, () => _forfeitOnTimeout(withDeadline));
+  }
+
+  void _forfeitOnTimeout(GameSession expected) {
+    // Stale-timer guard: if anything else changed state since this timer
+    // was scheduled, it's for a turn that no longer exists.
+    if (!identical(state, expected)) return;
+    final timedOutPlayer = expected.currentPlayer;
+    final newSession = expected.copy(
+      forfeitStatus: GameStatus.won(timedOutPlayer.opponent, EndReason.timeout),
+      turnDeadline: null,
+    );
+    state = newSession;
+    _recordResult(newSession);
+    _persist();
   }
 
   // --------------------------------------------------------- persistence
@@ -174,10 +287,13 @@ class GameController extends Notifier<GameSession?> {
   }
 
   /// Makes [session] (from [peekSavedGame]) the active game, resuming an
-  /// AI turn if it's now the AI's move.
+  /// AI turn if it's now the AI's move. A turn timer, if the game has one,
+  /// restarts fresh rather than trying to reconstruct elapsed real time
+  /// across the backgrounding gap.
   void resumeSession(GameSession session) {
     state = session;
     _maybeTriggerAiMove();
+    _rescheduleTurnTimer();
   }
 
   Future<void> discardSavedGame() =>
@@ -232,16 +348,21 @@ class GameController extends Notifier<GameSession?> {
   void submitMove(Move move) {
     final session = _session;
     final tutorial = session.tutorial;
-    state = GameSession(
+    final wasOngoing = session.status.isOngoing;
+    final newSession = GameSession(
       mode: session.mode,
       engine: session.engine.applyMove(move),
       starterPerson: session.starterPerson,
       opponents: session.opponents,
       tutorial: tutorial?.advance(),
+      turnTimerSeconds: session.turnTimerSeconds,
     );
+    state = newSession;
     if (tutorial == null) {
       _persist();
+      if (wasOngoing && newSession.status.isOver) _recordResult(newSession);
       _maybeTriggerAiMove();
+      _rescheduleTurnTimer();
     } else {
       _maybeAutoPlayTutorialStep();
     }

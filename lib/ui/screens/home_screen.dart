@@ -8,6 +8,8 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../services/tutorial_progress_service.dart';
 import '../../theme/tokens.dart';
 import 'game_screen.dart';
+import 'settings_screen.dart';
+import 'stats_screen.dart';
 import 'sub_mode_screen.dart';
 import 'tutorial_screen.dart';
 
@@ -65,6 +67,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: colors.ground,
+        foregroundColor: colors.ink,
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            key: const Key('open-stats'),
+            icon: const Icon(Icons.bar_chart),
+            tooltip: l10n.statsTitle,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const StatsScreen()),
+            ),
+          ),
+          IconButton(
+            key: const Key('open-settings'),
+            icon: const Icon(Icons.settings),
+            tooltip: l10n.settingsTitle,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(24),
