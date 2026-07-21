@@ -33,6 +33,8 @@ class GameSession {
     this.forfeitStatus,
     this.turnTimerSeconds,
     this.turnDeadline,
+    this.moveCount = 0,
+    this.startedAt,
   });
 
   final GameMode mode;
@@ -86,6 +88,18 @@ class GameSession {
   /// elapsed real time across the backgrounding gap.
   final DateTime? turnDeadline;
 
+  /// Total moves played so far (analytics only — product doc §5's
+  /// `game_ended` event wants average game length per mode). Persisted so a
+  /// resumed game keeps an accurate count.
+  final int moveCount;
+
+  /// Wall-clock time this game started, for the `game_ended` event's
+  /// duration field. Not persisted — like [turnDeadline], a resumed game
+  /// gets a fresh value rather than reconstructing elapsed real time across
+  /// the backgrounding gap, so duration only ever reflects time actually
+  /// spent with the app open.
+  final DateTime? startedAt;
+
   Player get currentPlayer => engine.currentPlayer;
   GameStatus get status => forfeitStatus ?? engine.status;
 
@@ -109,6 +123,7 @@ class GameSession {
     Object? tutorial = _unset,
     Object? forfeitStatus = _unset,
     Object? turnDeadline = _unset,
+    Object? startedAt = _unset,
   }) =>
       GameSession(
         mode: mode,
@@ -134,6 +149,8 @@ class GameSession {
         turnDeadline: identical(turnDeadline, _unset)
             ? this.turnDeadline
             : turnDeadline as DateTime?,
+        moveCount: moveCount,
+        startedAt: identical(startedAt, _unset) ? this.startedAt : startedAt as DateTime?,
       );
 
   /// Persisted for interruption handling (rules doc §5): mode, engine
@@ -146,6 +163,7 @@ class GameSession {
         'starterPerson': starterPerson,
         'opponents': opponents.toJson(),
         'turnTimerSeconds': turnTimerSeconds,
+        'moveCount': moveCount,
       };
 
   factory GameSession.fromJson(Map<String, Object?> json) {
@@ -162,6 +180,7 @@ class GameSession {
       opponents: SessionOpponents.fromJson(
           (json['opponents']! as Map).cast<String, Object?>()),
       turnTimerSeconds: json['turnTimerSeconds'] as int?,
+      moveCount: json['moveCount'] as int? ?? 0,
     );
   }
 }

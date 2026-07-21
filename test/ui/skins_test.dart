@@ -30,6 +30,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await markAllTutorialsCompleted();
+    await markAgeGateAnswered();
   });
 
   testWidgets('Skins icon on Home opens the Skins screen', (tester) async {

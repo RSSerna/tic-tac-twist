@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/skin_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../services/purchase_service.dart';
 import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
 import '../widgets/chip_view.dart';
@@ -19,10 +20,17 @@ String _skinDesc(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
       _ => '',
     };
 
-/// Skin picker (roadmap Phase 8): the free default plus one
-/// achievement-unlocked premium set (design doc §2.6 / product doc §2.2).
-/// Real purchases and the full chest system are Phase 9 — this phase only
-/// wires the swap mechanism and an achievement-based unlock.
+/// The direct-purchase route design doc §2.2 names alongside "earned
+/// through play" — null for skins (like the free default) that have no
+/// purchase route at all.
+ProductId? _productFor(GameSkin skin) => switch (skin.id) {
+      'nesting_dolls' => ProductId.skinNestingDolls,
+      _ => null,
+    };
+
+/// Skin picker (roadmap Phase 8): the free default plus one premium set,
+/// unlockable either by achievement (design doc §2.6 / product doc §3.1) or
+/// direct purchase (product doc §2.2's other cosmetics route).
 class SkinsScreen extends ConsumerWidget {
   const SkinsScreen({super.key});
 
@@ -60,7 +68,7 @@ class SkinsScreen extends ConsumerWidget {
   }
 }
 
-class _SkinCard extends StatelessWidget {
+class _SkinCard extends ConsumerWidget {
   const _SkinCard({
     required this.skin,
     required this.unlocked,
@@ -74,10 +82,11 @@ class _SkinCard extends StatelessWidget {
   final VoidCallback onSelect;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
     final textTheme = Theme.of(context).textTheme;
+    final product = _productFor(skin);
 
     return Material(
       key: Key('skin-card-${skin.id}'),
@@ -117,9 +126,17 @@ class _SkinCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            if (!unlocked)
-              Icon(Icons.lock, color: colors.neutral, semanticLabel: l10n.skinLocked)
-            else if (selected)
+            if (!unlocked) ...[
+              Icon(Icons.lock, color: colors.neutral, semanticLabel: l10n.skinLocked),
+              if (product != null) ...[
+                const SizedBox(width: 8),
+                FilledButton(
+                  key: Key('buy-skin-${skin.id}'),
+                  onPressed: () => ref.read(purchaseServiceProvider).buy(product),
+                  child: Text(l10n.skinBuyButton),
+                ),
+              ],
+            ] else if (selected)
               Text(l10n.skinSelected,
                   style: textTheme.labelLarge?.copyWith(color: colors.ink))
             else

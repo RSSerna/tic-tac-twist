@@ -5,6 +5,7 @@ import '../../controllers/settings_controller.dart';
 import '../../controllers/turn_timer_preset.dart';
 import '../../engines/common/game_mode.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../services/purchase_service.dart';
 import '../../services/stats/stats_service.dart';
 import '../../theme/tokens.dart';
 import 'tutorial_screen.dart';
@@ -117,6 +118,8 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
+            const _RemoveAdsSection(),
+            const SizedBox(height: 12),
             _SectionCard(
               title: l10n.settingsTurnTimerHeading,
               child: RadioGroup<TurnTimerPreset>(
@@ -169,6 +172,83 @@ class SettingsScreen extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.settingsResetStatsDone)),
+    );
+  }
+}
+
+/// Remove-ads IAP (product doc §2.1: "highest-converting purchase... nearly
+/// free to implement") plus restore-purchases. Manages its own tiny bit of
+/// state (the current entitlement) since it's the one thing on this screen
+/// that isn't driven by a Riverpod controller — a real purchase completes
+/// asynchronously via the platform's own purchase stream, not synchronously
+/// from tapping "Buy".
+class _RemoveAdsSection extends ConsumerStatefulWidget {
+  const _RemoveAdsSection();
+
+  @override
+  ConsumerState<_RemoveAdsSection> createState() => _RemoveAdsSectionState();
+}
+
+class _RemoveAdsSectionState extends ConsumerState<_RemoveAdsSection> {
+  late Future<bool> _removed;
+
+  @override
+  void initState() {
+    super.initState();
+    _removed = ref.read(purchaseServiceProvider).isRemoved();
+  }
+
+  void _refresh() => setState(() {
+        _removed = ref.read(purchaseServiceProvider).isRemoved();
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return _SectionCard(
+      title: l10n.removeAdsTitle,
+      child: FutureBuilder<bool>(
+        future: _removed,
+        builder: (context, snapshot) {
+          final removed = snapshot.data ?? false;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.removeAdsDesc),
+              const SizedBox(height: 8),
+              if (removed)
+                Text(l10n.removeAdsOwned)
+              else
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    FilledButton(
+                      key: const Key('remove-ads-buy'),
+                      onPressed: () async {
+                        await ref
+                            .read(purchaseServiceProvider)
+                            .buy(ProductId.removeAds);
+                        _refresh();
+                      },
+                      child: Text(l10n.removeAdsButton),
+                    ),
+                    TextButton(
+                      key: const Key('restore-purchases'),
+                      onPressed: () async {
+                        await ref.read(purchaseServiceProvider).restorePurchases();
+                        _refresh();
+                      },
+                      child: Text(l10n.restorePurchases),
+                    ),
+                  ],
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

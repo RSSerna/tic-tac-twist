@@ -56,6 +56,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await markAllTutorialsCompleted();
+    await markAgeGateAnswered();
   });
 
   group('home screen entry points', () {

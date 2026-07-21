@@ -13,6 +13,7 @@ import '../engines/stacking/stacking_move.dart';
 import '../engines/ultimate/ultimate_engine.dart';
 import '../engines/ultimate/ultimate_move.dart';
 import '../services/achievement_service.dart';
+import '../services/analytics_service.dart';
 import '../services/audio_service.dart';
 import '../services/game_persistence_service.dart';
 import '../services/stats/stats_service.dart';
@@ -68,14 +69,17 @@ class GameController extends Notifier<GameSession?> {
   /// (rules doc §5) and is always the human when [opponents] is vs-AI;
   /// rematch seating is handled by [rematch].
   void startGame(GameMode mode, {SessionOpponents opponents = SessionOpponents.human}) {
-    state = GameSession(
+    final session = GameSession(
       mode: mode,
       engine: mode.createEngine(),
       starterPerson: 1,
       opponents: opponents,
       turnTimerSeconds: _currentTurnTimerSeconds(),
+      startedAt: DateTime.now(),
     );
+    state = session;
     _persist();
+    _recordGameStarted(session);
     _maybeTriggerAiMove();
     _rescheduleTurnTimer();
   }
@@ -144,6 +148,12 @@ class GameController extends Notifier<GameSession?> {
   Future<void> finishTutorial() async {
     final session = _session;
     await ref.read(tutorialProgressServiceProvider).markCompleted(session.mode);
+    final analytics = ref.read(analyticsServiceProvider);
+    if (session.tutorial?.isComplete ?? false) {
+      unawaited(analytics.tutorialCompleted(session.mode));
+    } else {
+      unawaited(analytics.tutorialSkipped(session.mode));
+    }
     state = null;
   }
 
@@ -182,14 +192,17 @@ class GameController extends Notifier<GameSession?> {
       GameOutcome.won => 3 - session.personFor(status.winner!),
       _ => 3 - session.starterPerson,
     };
-    state = GameSession(
+    final nextSession = GameSession(
       mode: session.mode,
       engine: session.mode.createEngine(),
       starterPerson: nextStarter,
       opponents: session.opponents,
       turnTimerSeconds: _currentTurnTimerSeconds(),
+      startedAt: DateTime.now(),
     );
+    state = nextSession;
     _persist();
+    _recordGameStarted(nextSession);
     _maybeTriggerAiMove();
     _rescheduleTurnTimer();
   }
@@ -218,6 +231,39 @@ class GameController extends Notifier<GameSession?> {
           status.outcome == GameOutcome.won ? session.personFor(status.winner!) : null;
       unawaited(service.recordLocalResult(session.mode, winnerPerson: winnerPerson));
     }
+  }
+
+  // ---------------------------------------------------------- analytics
+  //
+  // Product doc §5's deliberately small event set. Fire-and-forget, same
+  // rationale as stats/achievements — analytics must never slow down a move.
+
+  void _recordGameStarted(GameSession session) {
+    unawaited(ref.read(analyticsServiceProvider).gameStarted(
+          mode: session.mode,
+          opponentType: session.opponents.personTwoIsAi ? 'ai' : 'human',
+          difficulty: session.opponents.difficulty,
+        ));
+  }
+
+  void _recordGameEnded(GameSession session) {
+    final status = session.status;
+    final result = switch (status.outcome) {
+      GameOutcome.won => 'win',
+      GameOutcome.draw => 'draw',
+      GameOutcome.ongoing => throw StateError('unreachable: recorded while ongoing'),
+    };
+    final duration = session.startedAt == null
+        ? Duration.zero
+        : DateTime.now().difference(session.startedAt!);
+    unawaited(ref.read(analyticsServiceProvider).gameEnded(
+          mode: session.mode,
+          result: result,
+          endReason: status.reason!.name,
+          moveCount: session.moveCount,
+          duration: duration,
+          firstPlayer: session.starterPerson,
+        ));
   }
 
   /// Product doc §3.1's example achievement set — unlocking any one of them
@@ -306,6 +352,7 @@ class GameController extends Notifier<GameSession?> {
     );
     state = newSession;
     _recordResult(newSession);
+    _recordGameEnded(newSession);
     _persist();
   }
 
@@ -344,7 +391,11 @@ class GameController extends Notifier<GameSession?> {
   /// restarts fresh rather than trying to reconstruct elapsed real time
   /// across the backgrounding gap.
   void resumeSession(GameSession session) {
-    state = session;
+    // startedAt is never persisted (see GameSession's doc comment) — a
+    // fresh value here means duration only ever reflects time actually
+    // spent with the app open, same rationale as the turn timer restarting
+    // fresh rather than reconstructing elapsed real time.
+    state = session.copy(startedAt: DateTime.now());
     _maybeTriggerAiMove();
     _rescheduleTurnTimer();
   }
@@ -410,6 +461,8 @@ class GameController extends Notifier<GameSession?> {
       opponents: session.opponents,
       tutorial: tutorial?.advance(),
       turnTimerSeconds: session.turnTimerSeconds,
+      moveCount: session.moveCount + 1,
+      startedAt: session.startedAt,
     );
     state = newSession;
     _playMoveSfx(session.mode, move, session.engine, newEngine);
@@ -421,6 +474,7 @@ class GameController extends Notifier<GameSession?> {
       if (wasOngoing && newSession.status.isOver) {
         _recordResult(newSession);
         unawaited(_checkAchievements(move, newSession));
+        _recordGameEnded(newSession);
       }
       _maybeTriggerAiMove();
       _rescheduleTurnTimer();

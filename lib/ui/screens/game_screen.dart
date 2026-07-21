@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../controllers/ads_controller.dart';
 import '../../controllers/game_controller.dart';
 import '../../engines/common/game_mode.dart';
 import '../../controllers/game_session.dart';
@@ -423,6 +424,10 @@ class _ResultOverlay extends ConsumerWidget {
                 onPressed: () {
                   controller.exitGame();
                   Navigator.of(context).popUntil((route) => route.isFirst);
+                  // Between games, never mid-game and never between the
+                  // rematch tap and the new game (design doc §3.5) — this
+                  // is the one place that's genuinely "between games".
+                  unawaited(ref.read(adsControllerProvider.notifier).onReturnedToMenuAfterGame());
                 },
                 child: Text(l10n.exitToMenu),
               ),

@@ -40,6 +40,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await markAllTutorialsCompleted();
+    await markAgeGateAnswered();
   });
 
   testWidgets(

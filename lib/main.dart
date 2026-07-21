@@ -1,14 +1,37 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'controllers/ads_controller.dart';
+import 'controllers/age_gate_controller.dart';
 import 'controllers/settings_controller.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'services/audio_service.dart';
+import 'services/crash_reporting_service.dart';
 import 'theme/app_theme.dart';
+import 'ui/screens/age_gate_screen.dart';
 import 'ui/screens/home_screen.dart';
 
-void main() {
-  runApp(const ProviderScope(child: NestedApp()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Built before runApp so global error handlers can be wired before
+  // anything else runs — see crash_reporting_service.dart for why the
+  // active backend is a no-op until one is configured and swapped in.
+  final container = ProviderContainer();
+  final crashReporting = container.read(crashReportingServiceProvider);
+  await crashReporting.initialize();
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    crashReporting.recordFlutterError(details);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    crashReporting.recordError(error, stack, fatal: true);
+    return true;
+  };
+
+  runApp(UncontrolledProviderScope(container: container, child: const NestedApp()));
 }
 
 class NestedApp extends ConsumerWidget {
@@ -40,7 +63,35 @@ class NestedApp extends ConsumerWidget {
       locale: languageCode == null ? null : Locale(languageCode),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const HomeScreen(),
+      home: const _AppRoot(),
     );
+  }
+}
+
+/// The neutral age screen (product doc §1.1) gates everything else,
+/// including ad initialisation — shown once, before Home, then never
+/// again once answered.
+class _AppRoot extends ConsumerWidget {
+  const _AppRoot();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ageGate = ref.watch(ageGateControllerProvider);
+
+    // Ads (and their mixed-audience config, product doc §1) only ever
+    // initialise once the age gate has an answer — first resolution
+    // covers "already answered on a previous launch"; a value transition
+    // covers "just answered it".
+    ref.listen(ageGateControllerProvider, (previous, next) {
+      final wasAnswered = previous?.value != null;
+      final isAnswered = next.value != null;
+      if (isAnswered && !wasAnswered) {
+        ref.read(adsControllerProvider.notifier).initialize();
+      }
+    });
+
+    if (!ageGate.hasValue) return const Scaffold(body: SizedBox.shrink());
+    if (ageGate.value == null) return const AgeGateScreen();
+    return const HomeScreen();
   }
 }

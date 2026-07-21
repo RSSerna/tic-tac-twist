@@ -6,15 +6,24 @@ import 'package:nested_game/engines/common/player.dart';
 import 'package:nested_game/engines/stacking/chip.dart';
 import 'package:nested_game/engines/stacking/stacking_engine.dart';
 import 'package:nested_game/main.dart';
+import 'package:nested_game/services/analytics_service.dart';
 import 'package:nested_game/ui/screens/sub_mode_screen.dart';
 import 'package:nested_game/ui/screens/tutorial_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-Future<void> pumpApp(WidgetTester tester) async {
+import '../test_helpers.dart';
+
+Future<void> pumpApp(WidgetTester tester, {FakeAnalyticsService? analytics}) async {
   // Fresh, empty store: no tutorial is completed yet — exactly the state
   // that should trigger the auto-tutorial on mode select.
   SharedPreferences.setMockInitialValues({});
-  await tester.pumpWidget(const ProviderScope(child: NestedApp()));
+  await markAgeGateAnswered();
+  await tester.pumpWidget(ProviderScope(
+    overrides: [
+      if (analytics != null) analyticsServiceProvider.overrideWithValue(analytics),
+    ],
+    child: const NestedApp(),
+  ));
   await tester.pumpAndSettle();
 }
 
@@ -49,7 +58,8 @@ void main() {
   testWidgets(
       'Static tutorial: gates the human move to the script, auto-plays the '
       'opponent, and ends in a real win', (tester) async {
-    await pumpApp(tester);
+    final analytics = FakeAnalyticsService();
+    await pumpApp(tester, analytics: analytics);
     await tapKey(tester, 'mode-stackStatic');
 
     // Message step: advance with Next.
@@ -103,6 +113,7 @@ void main() {
 
     await tapKey(tester, 'tutorial-continue');
     expect(find.byType(SubModeScreen), findsOneWidget);
+    expect(analytics.events, ['tutorial_completed:stackStatic']);
 
     // Reopening the mode from scratch now skips straight past the tutorial.
     await tester.pumpWidget(const SizedBox());
@@ -114,12 +125,14 @@ void main() {
   });
 
   testWidgets('skipping the tutorial still marks it completed', (tester) async {
-    await pumpApp(tester);
+    final analytics = FakeAnalyticsService();
+    await pumpApp(tester, analytics: analytics);
     await tapKey(tester, 'mode-stackMovable');
     expect(find.byType(TutorialScreen), findsOneWidget);
 
     await tapKey(tester, 'skip-tutorial');
     expect(find.byType(SubModeScreen), findsOneWidget);
+    expect(analytics.events, ['tutorial_skipped:stackMovable']);
 
     // A fresh relaunch-equivalent: reopening goes straight to sub-mode.
     await tester.pumpWidget(const SizedBox());

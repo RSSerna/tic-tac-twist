@@ -24,6 +24,7 @@ Future<void> pumpApp(WidgetTester tester) async {
   // the tutorial trigger on mode select.
   SharedPreferences.setMockInitialValues({});
   await markAllTutorialsCompleted();
+  await markAgeGateAnswered();
   await tester.pumpWidget(const ProviderScope(child: NestedApp()));
   await tester.pumpAndSettle();
 }

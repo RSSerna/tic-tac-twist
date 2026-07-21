@@ -219,5 +219,17 @@
   "skinLocked": "Locked",
   "skinUnlockHint": "Unlock by beating Impossible, claiming a majority of Ultimate's boards in one game, or winning with an L4 chip on the final move.",
   "skinSelected": "Selected",
-  "skinSelect": "Select"
+  "skinSelect": "Select",
+
+  "ageGateQuestion": "What year were you born?",
+  "ageGateContinue": "Continue",
+  "ageGateChooseYear": "Choose a year",
+
+  "removeAdsTitle": "Remove ads",
+  "removeAdsDesc": "One-time purchase. No more interstitial ads, ever.",
+  "removeAdsButton": "Buy",
+  "removeAdsOwned": "Ads removed",
+  "restorePurchases": "Restore purchases",
+
+  "skinBuyButton": "Buy"
 }

@@ -126,5 +126,17 @@
   "skinLocked": "Bloqueado",
   "skinUnlockHint": "Desbloquéalo venciendo a Imposible, reclamando la mayoría de los tableros de Ultimate en una partida, o ganando con una ficha L4 en la jugada final.",
   "skinSelected": "Seleccionado",
-  "skinSelect": "Elegir"
+  "skinSelect": "Elegir",
+
+  "ageGateQuestion": "¿En qué año naciste?",
+  "ageGateContinue": "Continuar",
+  "ageGateChooseYear": "Elige un año",
+
+  "removeAdsTitle": "Quitar anuncios",
+  "removeAdsDesc": "Compra única. Sin anuncios intersticiales, nunca más.",
+  "removeAdsButton": "Comprar",
+  "removeAdsOwned": "Anuncios eliminados",
+  "restorePurchases": "Restaurar compras",
+
+  "skinBuyButton": "Comprar"
 }

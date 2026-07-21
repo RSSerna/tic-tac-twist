@@ -43,6 +43,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await markAllTutorialsCompleted();
+    await markAgeGateAnswered();
   });
 
   testWidgets('an in-progress game is offered back after a simulated relaunch',
