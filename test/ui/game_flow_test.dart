@@ -124,26 +124,32 @@ void main() {
     expect(find.byKey(const Key('confirm')), findsNothing);
     expect(find.byKey(const Key('zoom-out')), findsOneWidget);
 
-    // Zoomed in: the same cell now stages, and confirm commits it.
+    // Zoomed in: the same cell now stages, and confirm commits it — which
+    // also zooms back out to the full board on its own (never stay zoomed
+    // into a small board once play has moved on).
     await tapKey(tester, 'ult-4-0', warnIfMissed: false);
     await tapKey(tester, 'confirm');
+    expect(find.byKey(const Key('zoom-out')), findsNothing);
     var engine = containerOf(tester).read(gameControllerProvider)!.engine
         as UltimateEngine;
     expect(engine.ownerOf(4, 0), Player.one);
     expect(engine.targetBoard, 0);
 
     // Zoom into the WRONG board (not the send-rule target) and try to play
-    // there: the controller rejects it, nothing stages.
-    await tapKey(tester, 'zoom-out');
+    // there: the controller rejects it, nothing stages — and nothing
+    // committed, so this does NOT auto-zoom back out.
     await tapKey(tester, 'ult-1-0', warnIfMissed: false); // zooms into board 1
     await tapKey(tester, 'ult-1-0', warnIfMissed: false); // illegal: P2 must play board 0
     expect(find.byKey(const Key('confirm')), findsNothing);
+    expect(find.byKey(const Key('zoom-out')), findsOneWidget);
 
-    // Zoom into the correct board: stage, then second tap commits.
+    // Zoom into the correct board: stage, then second tap commits — auto
+    // zooms back out again.
     await tapKey(tester, 'zoom-out');
     await tapKey(tester, 'ult-0-3', warnIfMissed: false); // zooms into board 0
     await tapKey(tester, 'ult-0-3', warnIfMissed: false); // stages
     await tapKey(tester, 'ult-0-3', warnIfMissed: false); // second tap commits
+    expect(find.byKey(const Key('zoom-out')), findsNothing);
     engine = containerOf(tester).read(gameControllerProvider)!.engine
         as UltimateEngine;
     expect(engine.ownerOf(0, 3), Player.two);

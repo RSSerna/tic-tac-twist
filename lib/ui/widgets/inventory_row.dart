@@ -19,16 +19,24 @@ class InventoryRow extends ConsumerWidget {
     if (session == null) return const SizedBox.shrink();
     final controller = ref.read(gameControllerProvider.notifier);
     final colors = context.gameColors;
-    final remaining =
-        controller.stackingEngine.remainingInventory(session.currentPlayer);
+    final remaining = controller.stackingEngine.remainingInventory(
+      session.currentPlayer,
+    );
     final person = session.currentPerson;
     final color = person == 1 ? colors.playerA : colors.playerB;
     final chipForm =
         ref.watch(skinControllerProvider).value?.selectedSkin.chipForm ??
-            ChipForm.rings;
+        ChipForm.rings;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    // Wrap, not Row: each chip is a fixed 64x76 + its own horizontal margin,
+    // so four of them need ~288px of width. That fits in portrait but not
+    // always in a narrow landscape side panel — Wrap reflows onto a second
+    // line (effectively a grid) instead of overflowing (same reasoning as
+    // StagingBar's Wrap).
+    return Wrap(
+      alignment: WrapAlignment.center,
+      runSpacing: 8,
+
       children: [
         for (var level = 1; level <= 4; level++)
           _InventoryChip(
@@ -114,10 +122,9 @@ class _InventoryChip extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Text(
                       '×$count',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelMedium
-                          ?.copyWith(color: ink),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelMedium?.copyWith(color: ink),
                     ),
                   ),
                 ],

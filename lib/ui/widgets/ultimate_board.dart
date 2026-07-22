@@ -34,6 +34,27 @@ class _UltimateBoardState extends ConsumerState<UltimateBoard> {
   Widget build(BuildContext context) {
     final session = ref.watch(gameControllerProvider);
     if (session == null) return const SizedBox.shrink();
+
+    // A committed move (human, AI, or a tutorial's scripted opponent) always
+    // zooms back out to the full board — never stay zoomed into a small
+    // board once play has moved on. This is what lets the design doc's
+    // "highlight the board they've been sent to and let them choose"
+    // actually work: the next player sees the full board with the send-rule
+    // highlight, not a stale zoomed-in view of wherever the previous player
+    // last tapped. Engine identity (not stagedMove) is the signal, since a
+    // staged-then-cancelled move must NOT zoom out — only an actual move
+    // changes the engine.
+    ref.listen(gameControllerProvider, (previous, next) {
+      if (_zoomedBoard == null) return;
+      final previousEngine = previous?.engine;
+      final nextEngine = next?.engine;
+      if (previousEngine != null &&
+          nextEngine != null &&
+          !identical(previousEngine, nextEngine)) {
+        setState(() => _zoomedBoard = null);
+      }
+    });
+
     final controller = ref.read(gameControllerProvider.notifier);
     final engine = session.engine as UltimateEngine;
     final colors = context.gameColors;
@@ -45,51 +66,63 @@ class _UltimateBoardState extends ConsumerState<UltimateBoard> {
     final staged = session.stagedMove as UltimateMove?;
 
     Widget smallBoard(int board, {required bool interactive}) => _SmallBoard(
-          engine: engine,
-          board: board,
-          playable: playable.contains(board),
-          highlightColor: colors.highlightFor(currentColor),
-          staged: staged?.board == board ? staged : null,
-          currentPerson: currentPerson,
-          currentColor: currentColor,
-          personFor: session.personFor,
-          onCellTap: interactive
-              ? (cell) => controller.onUltimateCellTapped(board, cell)
-              : null,
-          onZoomTap: interactive ? null : () => _zoomTo(board),
-        );
+      engine: engine,
+      board: board,
+      playable: playable.contains(board),
+      highlightColor: colors.highlightFor(currentColor),
+      staged: staged?.board == board ? staged : null,
+      currentPerson: currentPerson,
+      currentColor: currentColor,
+      personFor: session.personFor,
+      onCellTap: interactive
+          ? (cell) => controller.onUltimateCellTapped(board, cell)
+          : null,
+      onZoomTap: interactive ? null : () => _zoomTo(board),
+    );
 
     final Widget content;
     if (_zoomedBoard == null) {
-      content = GridView.count(
-        key: const ValueKey('full'),
-        crossAxisCount: 3,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        children: [
-          for (var board = 0; board < 9; board++)
-            smallBoard(board, interactive: false),
-        ],
+      content = AspectRatio(
+        aspectRatio: 1,
+        child: GridView.count(
+          key: const ValueKey('full'),
+          crossAxisCount: 3,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          children: [
+            for (var board = 0; board < 9; board++)
+              smallBoard(board, interactive: false),
+          ],
+        ),
       );
     } else {
       content = Column(
         key: ValueKey('zoomed-$_zoomedBoard'),
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: IconButton(
-              key: const Key('zoom-out'),
-              onPressed: _zoomOut,
-              icon: const Icon(Icons.arrow_back),
-              tooltip: l10n.zoomOut,
-              color: colors.ink,
-            ),
+          Row(
+            children: [
+              IconButton(
+                key: const Key('zoom-out'),
+                onPressed: _zoomOut,
+                icon: const Icon(Icons.arrow_back),
+                tooltip: l10n.zoomOut,
+                color: colors.ink,
+              ),
+              const SizedBox(width: 8),
+              _MiniMap(
+                currentBoard: _zoomedBoard!,
+                highlightColor: currentColor,
+              ),
+            ],
           ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(4),
-              child: smallBoard(_zoomedBoard!, interactive: true),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: smallBoard(_zoomedBoard!, interactive: true),
+              ),
             ),
           ),
         ],
@@ -97,11 +130,52 @@ class _UltimateBoardState extends ConsumerState<UltimateBoard> {
     }
 
     final reduceMotion = MediaQuery.of(context).disableAnimations;
-    return AspectRatio(
-      aspectRatio: 1,
-      child: AnimatedSwitcher(
-        duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 200),
-        child: content,
+    return AnimatedSwitcher(
+      duration: reduceMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 200),
+      child: content,
+    );
+  }
+}
+
+/// A small positional reference shown next to the back arrow while zoomed
+/// in: which of the 9 boards this is, relative to the full board. Purely a
+/// static indicator (not interactive) — the screen-reader label carries the
+/// same "Board N" text already used for the unzoomed tap targets.
+class _MiniMap extends StatelessWidget {
+  const _MiniMap({required this.currentBoard, required this.highlightColor});
+
+  final int currentBoard;
+  final Color highlightColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.gameColors;
+    final l10n = AppLocalizations.of(context);
+
+    return Semantics(
+      label: l10n.ultimateSmallBoardLabel(currentBoard + 1),
+      child: SizedBox(
+        width: 28,
+        height: 28,
+        child: GridView.count(
+          crossAxisCount: 3,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 2,
+          crossAxisSpacing: 2,
+          children: [
+            for (var board = 0; board < 9; board++)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: board == currentBoard
+                      ? highlightColor
+                      : colors.neutral,
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -172,7 +246,8 @@ class _SmallBoard extends StatelessWidget {
     );
 
     final claimant = result.claimant;
-    final Widget boardContent = (claimant == null && result != BoardResult.drawn)
+    final Widget boardContent =
+        (claimant == null && result != BoardResult.drawn)
         ? grid
         : DecoratedBox(
             // Finished boards are out of play: dim them and stamp the
@@ -200,7 +275,9 @@ class _SmallBoard extends StatelessWidget {
                         : context.gameAnimations.boardClaim,
                     transitionBuilder: (child, animation) => ScaleTransition(
                       scale: CurvedAnimation(
-                          parent: animation, curve: Curves.easeOutBack),
+                        parent: animation,
+                        curve: Curves.easeOutBack,
+                      ),
                       child: child,
                     ),
                     child: claimant == null
@@ -210,7 +287,10 @@ class _SmallBoard extends StatelessWidget {
                             heightFactor: 0.5,
                             child: CustomPaint(
                               painter: _MarkPainter(
-                                  color: colors.neutral, isX: false, filled: true),
+                                color: colors.neutral,
+                                isX: false,
+                                filled: true,
+                              ),
                             ),
                           )
                         : FractionallySizedBox(
@@ -288,9 +368,10 @@ class _UltimateCell extends StatelessWidget {
                       color: stagedHere
                           ? currentColor
                           : personFor(owner!) == 1
-                              ? colors.playerA
-                              : colors.playerB,
-                      isX: (stagedHere ? currentPerson : personFor(owner!)) == 1,
+                          ? colors.playerA
+                          : colors.playerB,
+                      isX:
+                          (stagedHere ? currentPerson : personFor(owner!)) == 1,
                     ),
                   ),
                 ),
@@ -334,9 +415,15 @@ class _MarkPainter extends CustomPainter {
     } else if (isX) {
       final arm = radius * 0.62;
       canvas.drawLine(
-          center - Offset(arm, arm), center + Offset(arm, arm), paint);
+        center - Offset(arm, arm),
+        center + Offset(arm, arm),
+        paint,
+      );
       canvas.drawLine(
-          center - Offset(arm, -arm), center + Offset(arm, -arm), paint);
+        center - Offset(arm, -arm),
+        center + Offset(arm, -arm),
+        paint,
+      );
     } else {
       canvas.drawCircle(center, radius * 0.62, paint);
     }

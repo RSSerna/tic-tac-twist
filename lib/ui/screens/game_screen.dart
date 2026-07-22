@@ -70,7 +70,8 @@ class GameScreen extends ConsumerWidget {
                   // Both orientations (design doc §1): landscape puts the
                   // board and controls side by side rather than fighting
                   // over limited vertical height.
-                  final landscape = constraints.maxWidth > constraints.maxHeight;
+                  final landscape =
+                      constraints.maxWidth > constraints.maxHeight;
                   final sideControls = [
                     _TurnBanner(session: session),
                     if (session.mode.isStacking && session.status.isOngoing)
@@ -85,9 +86,9 @@ class GameScreen extends ConsumerWidget {
                   if (landscape) {
                     return Row(
                       children: [
-                        Expanded(child: board),
-                        SizedBox(
-                          width: 300,
+                        Expanded(flex: 2, child: board),
+                        Expanded(
+                          flex: 1,
                           child: SingleChildScrollView(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -158,8 +159,9 @@ class BoardArea extends StatelessWidget {
     final status = session.status;
     // Only for an actual line win (not a tiebreak/timeout/repetition
     // result, which has no three-in-a-row to point at).
-    final winningLine =
-        status.reason == EndReason.line ? status.winningLine : null;
+    final winningLine = status.reason == EndReason.line
+        ? status.winningLine
+        : null;
     final colors = context.gameColors;
 
     return IgnorePointer(
@@ -169,9 +171,14 @@ class BoardArea extends StatelessWidget {
       ignoring: session.isAiTurn,
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.only(left: 12, right: 12, bottom: 12),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640, maxHeight: 640),
+            constraints: BoxConstraints(
+              // maxWidth: 640,
+              // maxHeight: 700,
+              maxWidth: session.mode.isStacking ? 640 : 722,
+              maxHeight: session.mode.isStacking ? 640 : 722,
+            ),
             child: Stack(
               children: [
                 session.mode.isStacking
@@ -213,14 +220,21 @@ class _TurnBanner extends ConsumerWidget {
     final color = person == 1 ? colors.playerA : colors.playerB;
     final chipForm =
         ref.watch(skinControllerProvider).value?.selectedSkin.chipForm ??
-            ChipForm.rings;
+        ChipForm.rings;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          // Wrap, not Row: a narrow landscape side panel (or Spanish's
+          // longer strings, design doc §8) can leave less width than the
+          // icon + text need together — reflow onto a second line instead
+          // of overflowing (same reasoning as StagingBar/InventoryRow).
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               SizedBox(
                 width: 24,
@@ -233,13 +247,11 @@ class _TurnBanner extends ConsumerWidget {
                   form: chipForm,
                 ),
               ),
-              const SizedBox(width: 8),
               Text(
                 l10n.turnBanner(person),
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(color: colors.ink),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(color: colors.ink),
               ),
             ],
           ),
@@ -248,10 +260,9 @@ class _TurnBanner extends ConsumerWidget {
             Text(
               l10n.aiThinking,
               key: const Key('ai-thinking'),
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: colors.neutral),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colors.neutral),
             ),
           ],
           if (session.turnDeadline != null) ...[
@@ -283,7 +294,10 @@ class _TurnTimerCountdownState extends State<_TurnTimerCountdown> {
   @override
   void initState() {
     super.initState();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+    _ticker = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => setState(() {}),
+    );
   }
 
   @override
@@ -300,7 +314,9 @@ class _TurnTimerCountdownState extends State<_TurnTimerCountdown> {
     return Text(
       l10n.turnTimerBanner(remaining < 0 ? 0 : remaining),
       key: const Key('turn-timer-banner'),
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.neutral),
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(color: colors.neutral),
     );
   }
 }
@@ -335,11 +351,12 @@ class StagingBar extends ConsumerWidget {
         runSpacing: 8,
         children: [
           if (mustPass && !stagedPass) ...[
-            Text(l10n.mustPassBanner,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: colors.ink)),
+            Text(
+              l10n.mustPassBanner,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: colors.ink),
+            ),
             FilledButton(
               key: const Key('pass'),
               onPressed: () => controller.stageMove(const PassMove()),
@@ -382,9 +399,10 @@ class _ResultOverlay extends ConsumerWidget {
         : l10n.drawBanner;
     final subtitle = switch (status.reason) {
       EndReason.repetition => l10n.resultReasonRepetition,
-      EndReason.tiebreak => status.outcome == GameOutcome.draw
-          ? l10n.resultReasonExactTie
-          : l10n.resultReasonTiebreak,
+      EndReason.tiebreak =>
+        status.outcome == GameOutcome.draw
+            ? l10n.resultReasonExactTie
+            : l10n.resultReasonTiebreak,
       EndReason.timeout => l10n.resultReasonTimeout,
       _ => null,
     };
@@ -402,15 +420,18 @@ class _ResultOverlay extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(headline,
-                  textAlign: TextAlign.center,
-                  style: textTheme.headlineSmall?.copyWith(color: colors.ink)),
+              Text(
+                headline,
+                textAlign: TextAlign.center,
+                style: textTheme.headlineSmall?.copyWith(color: colors.ink),
+              ),
               if (subtitle != null) ...[
                 const SizedBox(height: 8),
-                Text(subtitle,
-                    textAlign: TextAlign.center,
-                    style:
-                        textTheme.bodyMedium?.copyWith(color: colors.neutral)),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyMedium?.copyWith(color: colors.neutral),
+                ),
               ],
               const SizedBox(height: 20),
               // Rematch is the primary action, never blocked (design §3.5).
@@ -427,7 +448,11 @@ class _ResultOverlay extends ConsumerWidget {
                   // Between games, never mid-game and never between the
                   // rematch tap and the new game (design doc §3.5) — this
                   // is the one place that's genuinely "between games".
-                  unawaited(ref.read(adsControllerProvider.notifier).onReturnedToMenuAfterGame());
+                  unawaited(
+                    ref
+                        .read(adsControllerProvider.notifier)
+                        .onReturnedToMenuAfterGame(),
+                  );
                 },
                 child: Text(l10n.exitToMenu),
               ),
