@@ -135,6 +135,18 @@ void main() {
     expect(engine.ownerOf(4, 0), Player.one);
     expect(engine.targetBoard, 0);
 
+    // Regression: the committed mark must actually render at cell size, not
+    // collapse to a zero-size dot inside _AnimatedMark's AnimatedSwitcher
+    // (childless CustomPaint under loose constraints). Re-zoom into board 4
+    // to view it and assert its painted size is real.
+    await tapKey(tester, 'ult-4-1', warnIfMissed: false);
+    final markFinder = find.byWidgetPredicate((w) =>
+        w is CustomPaint &&
+        w.painter.runtimeType.toString() == '_MarkPainter');
+    expect(markFinder, findsWidgets);
+    expect(tester.getSize(markFinder.first).width, greaterThan(20));
+    await tapKey(tester, 'zoom-out');
+
     // Zoom into the WRONG board (not the send-rule target) and try to play
     // there: the controller rejects it, nothing stages — and nothing
     // committed, so this does NOT auto-zoom back out.

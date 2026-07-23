@@ -64,6 +64,7 @@ class _UltimateBoardState extends ConsumerState<UltimateBoard> {
     final currentPerson = session.currentPerson;
     final currentColor = currentPerson == 1 ? colors.playerA : colors.playerB;
     final staged = session.stagedMove as UltimateMove?;
+    final lastMove = session.lastMove as UltimateMove?;
 
     Widget smallBoard(int board, {required bool interactive}) => _SmallBoard(
       engine: engine,
@@ -71,6 +72,7 @@ class _UltimateBoardState extends ConsumerState<UltimateBoard> {
       playable: playable.contains(board),
       highlightColor: colors.highlightFor(currentColor),
       staged: staged?.board == board ? staged : null,
+      lastMoveCell: lastMove?.board == board ? lastMove!.cell : null,
       currentPerson: currentPerson,
       currentColor: currentColor,
       personFor: session.personFor,
@@ -188,6 +190,7 @@ class _SmallBoard extends StatelessWidget {
     required this.playable,
     required this.highlightColor,
     required this.staged,
+    required this.lastMoveCell,
     required this.currentPerson,
     required this.currentColor,
     required this.personFor,
@@ -200,6 +203,11 @@ class _SmallBoard extends StatelessWidget {
   final bool playable;
   final Color highlightColor;
   final UltimateMove? staged;
+
+  /// Cell of the most recently committed move on this board, if any — the
+  /// zoomed cell briefly highlights it (design: more visible where the AI
+  /// just played, not just human taps the player already saw themselves).
+  final int? lastMoveCell;
   final int currentPerson;
   final Color currentColor;
   final int Function(Player) personFor;
@@ -236,6 +244,7 @@ class _SmallBoard extends StatelessWidget {
               cell: cell,
               owner: engine.ownerOf(board, cell),
               stagedHere: staged?.cell == cell,
+              isLastMove: lastMoveCell == cell,
               currentPerson: currentPerson,
               currentColor: currentColor,
               personFor: personFor,
@@ -332,6 +341,7 @@ class _UltimateCell extends StatelessWidget {
     required this.cell,
     required this.owner,
     required this.stagedHere,
+    required this.isLastMove,
     required this.currentPerson,
     required this.currentColor,
     required this.personFor,
@@ -342,6 +352,11 @@ class _UltimateCell extends StatelessWidget {
   final int cell;
   final Player? owner;
   final bool stagedHere;
+
+  /// Whether this cell is where the most recently committed move (any
+  /// source) landed — briefly highlighted, distinct from the animated mark
+  /// itself, so it stays visible even after the placement pop settles.
+  final bool isLastMove;
   final int currentPerson;
   final Color currentColor;
   final int Function(Player) personFor;
@@ -350,6 +365,40 @@ class _UltimateCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
+    final mark = owner == null && !stagedHere
+        ? null
+        : Padding(
+            padding: const EdgeInsets.all(3),
+            child: Opacity(
+              opacity: stagedHere ? 0.45 : 1,
+              child: CustomPaint(
+                painter: _MarkPainter(
+                  color: stagedHere
+                      ? currentColor
+                      : personFor(owner!) == 1
+                      ? colors.playerA
+                      : colors.playerB,
+                  isX: (stagedHere ? currentPerson : personFor(owner!)) == 1,
+                ),
+                // A childless CustomPaint has no intrinsic size, so under the
+                // loose constraints inside _AnimatedMark's AnimatedSwitcher it
+                // would collapse to a zero-size dot. SizedBox.expand fills the
+                // available (cell) space so the mark paints at full size in
+                // both the animated (committed) and tight (staged) paths.
+                child: const SizedBox.expand(),
+              ),
+            ),
+          );
+    // Only an actually-committed mark animates in (scale pop, same treatment
+    // as StackingBoard's chips) — a staged ghost preview appears instantly,
+    // same as it always has, since it isn't a real move yet.
+    final animatedMark = owner == null
+        ? mark
+        : _AnimatedMark(
+            animationKey: ValueKey('$board-$cell-${owner!.name}'),
+            child: mark!,
+          );
+
     final cellContent = GestureDetector(
       onTap: onTap,
       child: DecoratedBox(
@@ -357,25 +406,22 @@ class _UltimateCell extends StatelessWidget {
           color: colors.surface,
           borderRadius: BorderRadius.circular(2),
         ),
-        child: owner == null && !stagedHere
-            ? null
-            : Padding(
-                padding: const EdgeInsets.all(3),
-                child: Opacity(
-                  opacity: stagedHere ? 0.45 : 1,
-                  child: CustomPaint(
-                    painter: _MarkPainter(
-                      color: stagedHere
-                          ? currentColor
-                          : personFor(owner!) == 1
-                          ? colors.playerA
-                          : colors.playerB,
-                      isX:
-                          (stagedHere ? currentPerson : personFor(owner!)) == 1,
-                    ),
-                  ),
-                ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ?animatedMark,
+            // Keyed on board-cell-owner so a fresh highlight (and its
+            // fade-out) restarts each time a *new* move lands here — not
+            // just when this cell happens to rebuild for an unrelated
+            // reason. Most useful for AI moves: they land with no tap of
+            // the human's own to have already drawn their eye there.
+            if (isLastMove)
+              _LastMoveGlow(
+                key: ValueKey('glow-$board-$cell-${owner?.name}'),
+                color: personFor(owner!) == 1 ? colors.playerA : colors.playerB,
               ),
+          ],
+        ),
       ),
     );
 
@@ -388,6 +434,65 @@ class _UltimateCell extends StatelessWidget {
       button: true,
       label: l10n.ultimateCellLabel(board + 1, cell + 1),
       child: cellContent,
+    );
+  }
+}
+
+/// A mark's entrance: a small scale-in pop, same treatment as
+/// StackingBoard's `_AnimatedChip` (design doc §4's "moderate" animation
+/// layer) — previously Ultimate placed marks with no animation at all.
+/// Respects OS reduced-motion by collapsing to an instant swap.
+class _AnimatedMark extends StatelessWidget {
+  const _AnimatedMark({required this.animationKey, required this.child});
+
+  final Key animationKey;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final duration =
+        reduceMotion ? Duration.zero : context.gameAnimations.placement;
+
+    return AnimatedSwitcher(
+      duration: duration,
+      transitionBuilder: (child, animation) => ScaleTransition(
+        scale: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        child: child,
+      ),
+      child: KeyedSubtree(key: animationKey, child: child),
+    );
+  }
+}
+
+/// A brief highlighted ring on the cell the most recent move landed on,
+/// fading out on its own. Most valuable for the AI's turn: unlike a human's
+/// own tap, nothing has already drawn the player's eye to where it played.
+/// Restarts whenever [key] changes identity (a fresh move on this cell),
+/// same trick as the `AnimatedSwitcher`s elsewhere in this file.
+class _LastMoveGlow extends StatelessWidget {
+  const _LastMoveGlow({super.key, required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    return IgnorePointer(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 1, end: 0),
+        duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 900),
+        curve: Curves.easeOut,
+        builder: (context, opacity, child) => Opacity(
+          opacity: opacity,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: color, width: 3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

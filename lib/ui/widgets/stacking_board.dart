@@ -42,6 +42,11 @@ class StackingBoard extends ConsumerWidget {
     final currentPerson = session.currentPerson;
     final currentColor =
         currentPerson == 1 ? colors.playerA : colors.playerB;
+    final lastMoveCell = switch (session.lastMove) {
+      PlaceMove(:final cell) => cell,
+      RelocateMove(:final to) => to,
+      _ => null,
+    };
 
     return AspectRatio(
       aspectRatio: 1,
@@ -61,6 +66,7 @@ class StackingBoard extends ConsumerWidget {
               isSelectedOrigin: session.selectedCell == cell,
               stagedLevel: stagedCell == cell ? stagedLevel : null,
               stagedOrigin: stagedFrom == cell,
+              isLastMove: lastMoveCell == cell,
               currentPersonIsFirst: currentPerson == 1,
               currentColor: currentColor,
               personFor: session.personFor,
@@ -83,6 +89,7 @@ class _StackingCell extends StatelessWidget {
     required this.isSelectedOrigin,
     required this.stagedLevel,
     required this.stagedOrigin,
+    required this.isLastMove,
     required this.currentPersonIsFirst,
     required this.currentColor,
     required this.personFor,
@@ -101,6 +108,11 @@ class _StackingCell extends StatelessWidget {
 
   /// Whether the staged relocation departs from this cell.
   final bool stagedOrigin;
+
+  /// Whether this cell is where the most recently committed move (any
+  /// source) landed — briefly highlighted, most useful for the AI's turn
+  /// where no human tap already drew the eye there.
+  final bool isLastMove;
   final bool currentPersonIsFirst;
   final Color currentColor;
   final int Function(Player) personFor;
@@ -209,6 +221,17 @@ class _StackingCell extends StatelessWidget {
                     ),
                   ),
                 ),
+              // Keyed on the top chip's identity so a fresh highlight (and
+              // its fade-out) restarts each time a *new* move lands here.
+              // Most useful for the AI's turn: unlike a human's own tap,
+              // nothing has already drawn the player's eye to this cell.
+              if (isLastMove && top != null)
+                _LastMoveGlow(
+                  key: ValueKey('glow-$cell-$depth-${top.owner.name}'),
+                  color: personFor(top.owner) == 1
+                      ? colors.playerA
+                      : colors.playerB,
+                ),
             ],
           ),
         ),
@@ -250,6 +273,38 @@ class _AnimatedChip extends StatelessWidget {
         child: child,
       ),
       child: KeyedSubtree(key: animationKey, child: child),
+    );
+  }
+}
+
+/// A brief highlighted ring on the cell the most recent move landed on,
+/// fading out on its own. Most valuable for the AI's turn: unlike a human's
+/// own tap, nothing has already drawn the player's eye to where it played.
+/// Restarts whenever [key] changes identity (a fresh move on this cell),
+/// same trick as [_AnimatedChip].
+class _LastMoveGlow extends StatelessWidget {
+  const _LastMoveGlow({super.key, required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    return IgnorePointer(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 1, end: 0),
+        duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 900),
+        curve: Curves.easeOut,
+        builder: (context, opacity, child) => Opacity(
+          opacity: opacity,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: color, width: 3),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

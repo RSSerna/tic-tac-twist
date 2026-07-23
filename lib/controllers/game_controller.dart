@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../ai/ai_runner.dart';
@@ -36,11 +38,14 @@ final aiRunnerProvider = Provider<AiMoveComputer>((ref) => AiRunner.chooseMove);
 /// A seam (not a direct `Duration(seconds: seconds)` call) so tests can
 /// swap in a millisecond-scale mapping instead of waiting out real
 /// 15s/30s countdowns.
-final turnTimerDurationProvider =
-    Provider<Duration Function(int seconds)>((ref) => (seconds) => Duration(seconds: seconds));
+final turnTimerDurationProvider = Provider<Duration Function(int seconds)>(
+  (ref) =>
+      (seconds) => Duration(seconds: seconds),
+);
 
-final gameControllerProvider =
-    NotifierProvider<GameController, GameSession?>(GameController.new);
+final gameControllerProvider = NotifierProvider<GameController, GameSession?>(
+  GameController.new,
+);
 
 /// Turn management and the single gateway for mutating game state.
 ///
@@ -68,7 +73,10 @@ class GameController extends Notifier<GameSession?> {
   /// Starts a fresh game. Person 1 starts the first game of a session
   /// (rules doc §5) and is always the human when [opponents] is vs-AI;
   /// rematch seating is handled by [rematch].
-  void startGame(GameMode mode, {SessionOpponents opponents = SessionOpponents.human}) {
+  void startGame(
+    GameMode mode, {
+    SessionOpponents opponents = SessionOpponents.human,
+  }) {
     final session = GameSession(
       mode: mode,
       engine: mode.createEngine(),
@@ -103,7 +111,9 @@ class GameController extends Notifier<GameSession?> {
     if (session.status.isOngoing &&
         !session.isTutorial &&
         session.opponents.personTwoIsAi) {
-      await ref.read(statsServiceProvider).recordVsAiResult(
+      await ref
+          .read(statsServiceProvider)
+          .recordVsAiResult(
             session.mode,
             session.opponents.difficulty!,
             MatchResult.loss,
@@ -219,17 +229,28 @@ class GameController extends Notifier<GameSession?> {
       const humanPerson = 1; // always true vs-AI (rules doc §5)
       final result = switch (status.outcome) {
         GameOutcome.draw => MatchResult.draw,
-        GameOutcome.won => session.personFor(status.winner!) == humanPerson
-            ? MatchResult.win
-            : MatchResult.loss,
-        GameOutcome.ongoing => throw StateError('unreachable: recorded while ongoing'),
+        GameOutcome.won =>
+          session.personFor(status.winner!) == humanPerson
+              ? MatchResult.win
+              : MatchResult.loss,
+        GameOutcome.ongoing => throw StateError(
+          'unreachable: recorded while ongoing',
+        ),
       };
       unawaited(
-          service.recordVsAiResult(session.mode, session.opponents.difficulty!, result));
+        service.recordVsAiResult(
+          session.mode,
+          session.opponents.difficulty!,
+          result,
+        ),
+      );
     } else {
-      final winnerPerson =
-          status.outcome == GameOutcome.won ? session.personFor(status.winner!) : null;
-      unawaited(service.recordLocalResult(session.mode, winnerPerson: winnerPerson));
+      final winnerPerson = status.outcome == GameOutcome.won
+          ? session.personFor(status.winner!)
+          : null;
+      unawaited(
+        service.recordLocalResult(session.mode, winnerPerson: winnerPerson),
+      );
     }
   }
 
@@ -239,11 +260,15 @@ class GameController extends Notifier<GameSession?> {
   // rationale as stats/achievements — analytics must never slow down a move.
 
   void _recordGameStarted(GameSession session) {
-    unawaited(ref.read(analyticsServiceProvider).gameStarted(
-          mode: session.mode,
-          opponentType: session.opponents.personTwoIsAi ? 'ai' : 'human',
-          difficulty: session.opponents.difficulty,
-        ));
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .gameStarted(
+            mode: session.mode,
+            opponentType: session.opponents.personTwoIsAi ? 'ai' : 'human',
+            difficulty: session.opponents.difficulty,
+          ),
+    );
   }
 
   void _recordGameEnded(GameSession session) {
@@ -251,19 +276,25 @@ class GameController extends Notifier<GameSession?> {
     final result = switch (status.outcome) {
       GameOutcome.won => 'win',
       GameOutcome.draw => 'draw',
-      GameOutcome.ongoing => throw StateError('unreachable: recorded while ongoing'),
+      GameOutcome.ongoing => throw StateError(
+        'unreachable: recorded while ongoing',
+      ),
     };
     final duration = session.startedAt == null
         ? Duration.zero
         : DateTime.now().difference(session.startedAt!);
-    unawaited(ref.read(analyticsServiceProvider).gameEnded(
-          mode: session.mode,
-          result: result,
-          endReason: status.reason!.name,
-          moveCount: session.moveCount,
-          duration: duration,
-          firstPlayer: session.starterPerson,
-        ));
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .gameEnded(
+            mode: session.mode,
+            result: result,
+            endReason: status.reason!.name,
+            moveCount: session.moveCount,
+            duration: duration,
+            firstPlayer: session.starterPerson,
+          ),
+    );
   }
 
   /// Product doc §3.1's example achievement set — unlocking any one of them
@@ -274,7 +305,8 @@ class GameController extends Notifier<GameSession?> {
   Future<void> _checkAchievements(Move move, GameSession session) async {
     final status = session.status;
     if (status.outcome != GameOutcome.won) return;
-    if (status.reason != EndReason.line && status.reason != EndReason.tiebreak) {
+    if (status.reason != EndReason.line &&
+        status.reason != EndReason.tiebreak) {
       return;
     }
 
@@ -308,7 +340,9 @@ class GameController extends Notifier<GameSession?> {
       if (await service.unlock(achievement)) anyNewlyUnlocked = true;
     }
     if (anyNewlyUnlocked) {
-      await ref.read(skinControllerProvider.notifier).unlockSkin(GameSkin.nestingDolls);
+      await ref
+          .read(skinControllerProvider.notifier)
+          .unlockSkin(GameSkin.nestingDolls);
     }
   }
 
@@ -336,7 +370,9 @@ class GameController extends Notifier<GameSession?> {
     // The deadline is presentation state for the live countdown display —
     // stamped once here, not ticked every second, so scheduling doesn't
     // touch persistence or stats on its own.
-    final withDeadline = session.copy(turnDeadline: DateTime.now().add(duration));
+    final withDeadline = session.copy(
+      turnDeadline: DateTime.now().add(duration),
+    );
     state = withDeadline;
     _turnTimer = Timer(duration, () => _forfeitOnTimeout(withDeadline));
   }
@@ -459,6 +495,7 @@ class GameController extends Notifier<GameSession?> {
       engine: newEngine,
       starterPerson: session.starterPerson,
       opponents: session.opponents,
+      lastMove: move,
       tutorial: tutorial?.advance(),
       turnTimerSeconds: session.turnTimerSeconds,
       moveCount: session.moveCount + 1,
@@ -490,7 +527,8 @@ class GameController extends Notifier<GameSession?> {
   // — never blocks or delays a move (same rationale as _playSfx itself).
 
   void _playSfx(SfxSound sound) {
-    final enabled = ref.read(settingsControllerProvider).value?.sfxEnabled ?? true;
+    final enabled =
+        ref.read(settingsControllerProvider).value?.sfxEnabled ?? true;
     if (!enabled) return;
     unawaited(ref.read(audioServiceProvider).playSfx(sound));
   }
@@ -513,8 +551,10 @@ class GameController extends Notifier<GameSession?> {
     } else {
       _playSfx(SfxSound.chipPlace);
       final board = (move as UltimateMove).board;
-      final wasClaimed = (oldEngine as UltimateEngine).resultOf(board).claimant != null;
-      final isClaimed = (newEngine as UltimateEngine).resultOf(board).claimant != null;
+      final wasClaimed =
+          (oldEngine as UltimateEngine).resultOf(board).claimant != null;
+      final isClaimed =
+          (newEngine as UltimateEngine).resultOf(board).claimant != null;
       if (!wasClaimed && isClaimed) _playSfx(SfxSound.boardClaim);
     }
   }
@@ -598,6 +638,14 @@ class GameController extends Notifier<GameSession?> {
     unawaited(_runAiTurn(session));
   }
 
+  // A fast/easy-difficulty search can resolve in a handful of milliseconds,
+  // so without a floor the AI's move lands before the human has had any
+  // chance to register the "thinking" state — it just looks like the board
+  // changed itself. This is a felt-pacing minimum, not a real computation
+  // cost, so it's a plain constant rather than a themeable GameAnimations
+  // token (skins restyle chip/board visuals, not AI turn-taking pace).
+  static const _minAiThinkTime = Duration(milliseconds: 1000);
+
   Future<void> _runAiTurn(GameSession session) async {
     final legal = session.engine.legalMoves();
     if (legal.length == 1) {
@@ -609,11 +657,22 @@ class GameController extends Notifier<GameSession?> {
 
     final thinking = session.copy(aiThinking: true);
     state = thinking;
+    final stopwatch = Stopwatch()..start();
     final move = await ref.read(aiRunnerProvider)(
       mode: session.mode,
       difficulty: session.opponents.difficulty!,
       engine: session.engine,
     );
+    // Skipped under `flutter test` — same rationale and mechanism as
+    // audio/ads/purchase's test no-ops (Phase 7/9): a widget test pumping a
+    // fixed number of frames shouldn't have to account for a purely
+    // cosmetic pacing delay. `kIsWeb` must short-circuit first since
+    // `Platform.environment` throws on web at runtime (Phase 10 bug).
+    final isTest = !kIsWeb && Platform.environment['FLUTTER_TEST'] == 'true';
+    if (!isTest) {
+      final remaining = _minAiThinkTime - stopwatch.elapsed;
+      if (remaining > Duration.zero) await Future<void>.delayed(remaining);
+    }
     // The session may have moved on (exited, restarted) while awaiting —
     // compare against `thinking` (the state we ourselves set), not the
     // original `session`, since setting aiThinking already changed identity.
@@ -652,7 +711,8 @@ class GameController extends Notifier<GameSession?> {
   Set<int> ultimatePlayableBoards() {
     final session = state;
     if (session == null || session.status.isOver) return const {};
-    return session.engine.legalMoves()
+    return session.engine
+        .legalMoves()
         .whereType<UltimateMove>()
         .map((m) => m.board)
         .toSet();

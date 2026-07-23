@@ -29,6 +29,7 @@ class GameSession {
     this.selectedCell,
     this.stagedMove,
     this.aiThinking = false,
+    this.lastMove,
     this.tutorial,
     this.forfeitStatus,
     this.turnTimerSeconds,
@@ -61,6 +62,12 @@ class GameSession {
   /// show a "thinking" indicator and to keep the human from staging moves
   /// on the AI's turn.
   final bool aiThinking;
+
+  /// The most recently committed move (any source — human, AI, or a
+  /// tutorial's scripted opponent), so the board can briefly highlight
+  /// where it landed. Presentation state only, like [aiThinking]: never
+  /// persisted, and a resumed game comes back with no highlight to show.
+  final Move? lastMove;
 
   /// Non-null iff this is a tutorial session (design doc §7): the human's
   /// moves are restricted to the script's next expected move, and the
@@ -120,6 +127,7 @@ class GameSession {
     Object? selectedCell = _unset,
     Object? stagedMove = _unset,
     bool? aiThinking,
+    Object? lastMove = _unset,
     Object? tutorial = _unset,
     Object? forfeitStatus = _unset,
     Object? turnDeadline = _unset,
@@ -142,6 +150,8 @@ class GameSession {
         stagedMove:
             identical(stagedMove, _unset) ? this.stagedMove : stagedMove as Move?,
         aiThinking: aiThinking ?? this.aiThinking,
+        lastMove:
+            identical(lastMove, _unset) ? this.lastMove : lastMove as Move?,
         forfeitStatus: identical(forfeitStatus, _unset)
             ? this.forfeitStatus
             : forfeitStatus as GameStatus?,
