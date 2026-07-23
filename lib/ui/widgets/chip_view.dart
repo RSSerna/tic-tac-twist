@@ -7,11 +7,15 @@ import '../../theme/skin.dart';
 /// (design doc §2.3). Persons are additionally told apart by a centre
 /// marker (dot vs cross) so colour is never the only signal (§6).
 ///
-/// [form] is the one thing a skin may vary here (design doc §2.6: "chip
-/// form (rings → dolls...)"). The band-count mechanic itself, and every
-/// value [sizeFactor] returns, stay identical across forms — those are
+/// [appearance] is the one thing a skin may vary here (design doc §2.6: "chip
+/// form (rings → dolls...)"), and it also carries the painted-vs-asset flag:
+/// a [PaintedAppearance] draws the silhouette procedurally, an
+/// [AssetAppearance] blits a bundled image (falling back to the painter if the
+/// asset can't be loaded). Either way the band-count mechanic and every value
+/// [sizeFactor] returns stay identical across skins — those are
 /// gameplay-critical, not decorative (CLAUDE.md: skins may never alter chip
-/// size relationships or level legibility).
+/// size relationships or level legibility), which is why the size wrapper
+/// lives outside the appearance switch.
 class ChipView extends StatelessWidget {
   const ChipView({
     super.key,
@@ -19,7 +23,7 @@ class ChipView extends StatelessWidget {
     required this.ringColor,
     required this.level,
     required this.isFirstPerson,
-    required this.form,
+    required this.appearance,
     this.ghost = false,
   });
 
@@ -27,7 +31,7 @@ class ChipView extends StatelessWidget {
   final Color ringColor;
   final int level;
   final bool isFirstPerson;
-  final ChipForm form;
+  final ChipAppearance appearance;
 
   /// Translucent staged-preview rendering.
   final bool ghost;
@@ -42,18 +46,38 @@ class ChipView extends StatelessWidget {
       child: FractionallySizedBox(
         widthFactor: sizeFactor(level),
         heightFactor: sizeFactor(level),
-        child: CustomPaint(
-          painter: _ChipPainter(
-            color: color,
-            ringColor: ringColor,
-            level: level,
-            isFirstPerson: isFirstPerson,
-            form: form,
-          ),
-        ),
+        child: _forAppearance(appearance),
       ),
     );
   }
+
+  /// The painted rendering, also the fallback when an asset fails to load.
+  Widget _painted(ChipForm form) => CustomPaint(
+        painter: _ChipPainter(
+          color: color,
+          ringColor: ringColor,
+          level: level,
+          isFirstPerson: isFirstPerson,
+          form: form,
+        ),
+        // A childless CustomPaint has no intrinsic size; the enclosing
+        // FractionallySizedBox gives tight constraints, so an explicit child
+        // isn't needed here — but SizedBox.expand keeps it robust if this
+        // painter is ever reused under looser constraints.
+        child: const SizedBox.expand(),
+      );
+
+  Widget _forAppearance(ChipAppearance appearance) => switch (appearance) {
+        PaintedAppearance(:final form) => _painted(form),
+        AssetAppearance(:final resolve, :final fallbackForm) => Image.asset(
+            resolve(ChipAssetRequest(level: level, isFirstPerson: isFirstPerson)),
+            fit: BoxFit.contain,
+            // Missing/broken art never shows a broken-image glyph — it paints
+            // the equivalent procedural chip instead (design decision: asset
+            // skins degrade to painted, they never break the board).
+            errorBuilder: (context, error, stackTrace) => _painted(fallbackForm),
+          ),
+      };
 }
 
 class _ChipPainter extends CustomPainter {

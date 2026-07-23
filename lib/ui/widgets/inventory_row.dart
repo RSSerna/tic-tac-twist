@@ -24,9 +24,9 @@ class InventoryRow extends ConsumerWidget {
     );
     final person = session.currentPerson;
     final color = person == 1 ? colors.playerA : colors.playerB;
-    final chipForm =
-        ref.watch(skinControllerProvider).value?.selectedSkin.chipForm ??
-        ChipForm.rings;
+    final appearance =
+        ref.watch(skinControllerProvider).value?.selectedSkin.appearance ??
+        const PaintedAppearance(ChipForm.rings);
 
     // Wrap, not Row: each chip is a fixed 64x76 + its own horizontal margin,
     // so four of them need ~288px of width. That fits in portrait but not
@@ -49,7 +49,7 @@ class InventoryRow extends ConsumerWidget {
             neutral: colors.neutral,
             isFirstPerson: person == 1,
             selected: session.selectedLevel == level,
-            chipForm: chipForm,
+            appearance: appearance,
             onTap: () => controller.selectInventoryLevel(level),
           ),
       ],
@@ -68,7 +68,7 @@ class _InventoryChip extends StatelessWidget {
     required this.neutral,
     required this.isFirstPerson,
     required this.selected,
-    required this.chipForm,
+    required this.appearance,
     required this.onTap,
   });
 
@@ -80,7 +80,7 @@ class _InventoryChip extends StatelessWidget {
   final Color neutral;
   final bool isFirstPerson;
   final bool selected;
-  final ChipForm chipForm;
+  final ChipAppearance appearance;
   final VoidCallback onTap;
 
   @override
@@ -114,7 +114,7 @@ class _InventoryChip extends StatelessWidget {
                         ringColor: surface,
                         level: level,
                         isFirstPerson: isFirstPerson,
-                        form: chipForm,
+                        appearance: appearance,
                       ),
                     ),
                   ),

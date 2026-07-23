@@ -218,9 +218,9 @@ class _TurnBanner extends ConsumerWidget {
     final colors = context.gameColors;
     final person = session.currentPerson;
     final color = person == 1 ? colors.playerA : colors.playerB;
-    final chipForm =
-        ref.watch(skinControllerProvider).value?.selectedSkin.chipForm ??
-        ChipForm.rings;
+    final appearance =
+        ref.watch(skinControllerProvider).value?.selectedSkin.appearance ??
+        const PaintedAppearance(ChipForm.rings);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -244,7 +244,7 @@ class _TurnBanner extends ConsumerWidget {
                   ringColor: colors.surface,
                   level: 1,
                   isFirstPerson: person == 1,
-                  form: chipForm,
+                  appearance: appearance,
                 ),
               ),
               Text(

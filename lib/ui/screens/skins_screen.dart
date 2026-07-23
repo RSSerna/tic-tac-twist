@@ -112,7 +112,7 @@ class _SkinCard extends ConsumerWidget {
                   ringColor: colors.surface,
                   level: 4,
                   isFirstPerson: true,
-                  form: skin.chipForm,
+                  appearance: skin.appearance,
                 ),
               ),
             ),

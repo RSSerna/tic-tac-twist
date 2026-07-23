@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/game_controller.dart';
+import '../../controllers/skin_controller.dart';
 import '../../engines/common/player.dart';
 import '../../engines/ultimate/ultimate_engine.dart';
 import '../../engines/ultimate/ultimate_move.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
 
 /// The Ultimate board: 3×3 grid of 3×3 small boards, with tap-to-zoom
@@ -65,6 +67,9 @@ class _UltimateBoardState extends ConsumerState<UltimateBoard> {
     final currentColor = currentPerson == 1 ? colors.playerA : colors.playerB;
     final staged = session.stagedMove as UltimateMove?;
     final lastMove = session.lastMove as UltimateMove?;
+    final appearance =
+        ref.watch(skinControllerProvider).value?.selectedSkin.appearance ??
+            const PaintedAppearance(ChipForm.rings);
 
     Widget smallBoard(int board, {required bool interactive}) => _SmallBoard(
       engine: engine,
@@ -75,6 +80,7 @@ class _UltimateBoardState extends ConsumerState<UltimateBoard> {
       lastMoveCell: lastMove?.board == board ? lastMove!.cell : null,
       currentPerson: currentPerson,
       currentColor: currentColor,
+      appearance: appearance,
       personFor: session.personFor,
       onCellTap: interactive
           ? (cell) => controller.onUltimateCellTapped(board, cell)
@@ -193,6 +199,7 @@ class _SmallBoard extends StatelessWidget {
     required this.lastMoveCell,
     required this.currentPerson,
     required this.currentColor,
+    required this.appearance,
     required this.personFor,
     required this.onCellTap,
     required this.onZoomTap,
@@ -210,6 +217,10 @@ class _SmallBoard extends StatelessWidget {
   final int? lastMoveCell;
   final int currentPerson;
   final Color currentColor;
+
+  /// How this skin draws move marks (painted vs. asset). Threaded down from
+  /// the board so every cell shares one lookup.
+  final ChipAppearance appearance;
   final int Function(Player) personFor;
 
   /// Null when unzoomed — cells don't respond to individual taps at that
@@ -247,6 +258,7 @@ class _SmallBoard extends StatelessWidget {
               isLastMove: lastMoveCell == cell,
               currentPerson: currentPerson,
               currentColor: currentColor,
+              appearance: appearance,
               personFor: personFor,
               onTap: onCellTap == null ? null : () => onCellTap!(cell),
             ),
@@ -344,6 +356,7 @@ class _UltimateCell extends StatelessWidget {
     required this.isLastMove,
     required this.currentPerson,
     required this.currentColor,
+    required this.appearance,
     required this.personFor,
     required this.onTap,
   });
@@ -359,33 +372,32 @@ class _UltimateCell extends StatelessWidget {
   final bool isLastMove;
   final int currentPerson;
   final Color currentColor;
+
+  /// How this skin draws the move mark (painted X/O vs. a bundled asset).
+  final ChipAppearance appearance;
   final int Function(Player) personFor;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
-    final mark = owner == null && !stagedHere
+    // The person this mark represents: the current player while staging a
+    // preview, otherwise whoever actually owns the cell.
+    final markPerson = stagedHere ? currentPerson : (owner == null ? null : personFor(owner!));
+    final mark = markPerson == null
         ? null
         : Padding(
             padding: const EdgeInsets.all(3),
             child: Opacity(
               opacity: stagedHere ? 0.45 : 1,
-              child: CustomPaint(
-                painter: _MarkPainter(
-                  color: stagedHere
-                      ? currentColor
-                      : personFor(owner!) == 1
-                      ? colors.playerA
-                      : colors.playerB,
-                  isX: (stagedHere ? currentPerson : personFor(owner!)) == 1,
-                ),
-                // A childless CustomPaint has no intrinsic size, so under the
-                // loose constraints inside _AnimatedMark's AnimatedSwitcher it
-                // would collapse to a zero-size dot. SizedBox.expand fills the
-                // available (cell) space so the mark paints at full size in
-                // both the animated (committed) and tight (staged) paths.
-                child: const SizedBox.expand(),
+              child: _UltimateMark(
+                appearance: appearance,
+                isFirstPerson: markPerson == 1,
+                color: stagedHere
+                    ? currentColor
+                    : personFor(owner!) == 1
+                    ? colors.playerA
+                    : colors.playerB,
               ),
             ),
           );
@@ -435,6 +447,44 @@ class _UltimateCell extends StatelessWidget {
       label: l10n.ultimateCellLabel(board + 1, cell + 1),
       child: cellContent,
     );
+  }
+}
+
+/// One player's move mark, drawn per the active skin's [ChipAppearance]:
+/// procedurally (the X/O painter) for a [PaintedAppearance], or from a
+/// bundled image for an [AssetAppearance] — the same painted-vs-asset flag
+/// [ChipView] uses for stacking chips, so a future skin can supply art here
+/// too. An asset that can't load falls back to the painter.
+///
+/// The outer [SizedBox.expand] is what keeps the mark full-size under the
+/// loose constraints inside [_AnimatedMark]'s `AnimatedSwitcher`: a childless
+/// `CustomPaint` (or an unsized `Image`) would otherwise collapse to a
+/// zero-size dot in the cell centre.
+class _UltimateMark extends StatelessWidget {
+  const _UltimateMark({
+    required this.appearance,
+    required this.isFirstPerson,
+    required this.color,
+  });
+
+  final ChipAppearance appearance;
+  final bool isFirstPerson;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final painted = CustomPaint(
+      painter: _MarkPainter(color: color, isX: isFirstPerson),
+    );
+    final Widget content = switch (appearance) {
+      PaintedAppearance() => painted,
+      AssetAppearance(:final resolve) => Image.asset(
+          resolve(ChipAssetRequest(isFirstPerson: isFirstPerson)),
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => painted,
+        ),
+    };
+    return SizedBox.expand(child: content);
   }
 }
 

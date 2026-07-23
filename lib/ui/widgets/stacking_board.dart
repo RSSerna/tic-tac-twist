@@ -24,9 +24,9 @@ class StackingBoard extends ConsumerWidget {
     final controller = ref.read(gameControllerProvider.notifier);
     final engine = session.engine as StackingEngine;
     final colors = context.gameColors;
-    final chipForm =
-        ref.watch(skinControllerProvider).value?.selectedSkin.chipForm ??
-            ChipForm.rings;
+    final appearance =
+        ref.watch(skinControllerProvider).value?.selectedSkin.appearance ??
+            const PaintedAppearance(ChipForm.rings);
 
     final highlights = controller.stackingHighlightTargets();
     final staged = session.stagedMove;
@@ -70,7 +70,7 @@ class StackingBoard extends ConsumerWidget {
               currentPersonIsFirst: currentPerson == 1,
               currentColor: currentColor,
               personFor: session.personFor,
-              chipForm: chipForm,
+              appearance: appearance,
               onTap: () => controller.onStackingCellTapped(cell),
             ),
         ],
@@ -93,7 +93,7 @@ class _StackingCell extends StatelessWidget {
     required this.currentPersonIsFirst,
     required this.currentColor,
     required this.personFor,
-    required this.chipForm,
+    required this.appearance,
     required this.onTap,
   });
 
@@ -116,7 +116,7 @@ class _StackingCell extends StatelessWidget {
   final bool currentPersonIsFirst;
   final Color currentColor;
   final int Function(Player) personFor;
-  final ChipForm chipForm;
+  final ChipAppearance appearance;
   final VoidCallback onTap;
 
   @override
@@ -181,7 +181,7 @@ class _StackingCell extends StatelessWidget {
                         ringColor: colors.surface,
                         level: top.level,
                         isFirstPerson: personFor(top.owner) == 1,
-                        form: chipForm,
+                        appearance: appearance,
                       ),
                     ),
                   ),
@@ -193,7 +193,7 @@ class _StackingCell extends StatelessWidget {
                     ringColor: colors.surface,
                     level: stagedLevel!,
                     isFirstPerson: currentPersonIsFirst,
-                    form: chipForm,
+                    appearance: appearance,
                     ghost: true,
                   ),
                 ),
