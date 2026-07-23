@@ -171,7 +171,7 @@ class BoardArea extends StatelessWidget {
       ignoring: session.isAiTurn,
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.only(left: 12, right: 12, bottom: 12),
+          padding: const EdgeInsets.all(12),
           child: ConstrainedBox(
             constraints: BoxConstraints(
               // maxWidth: 640,
