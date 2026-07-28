@@ -138,5 +138,12 @@
   "removeAdsOwned": "Anuncios eliminados",
   "restorePurchases": "Restaurar compras",
 
-  "skinBuyButton": "Comprar"
+  "skinBuyButton": "Comprar",
+
+  "shopTitle": "Tienda",
+  "shopIntro": "Solo artículos cosméticos — nada de aquí cambia cómo se juega.",
+  "shopTestItemName": "Artículo de prueba",
+  "shopTestItemDesc": "Un producto de prueba para verificar el diseño de la tienda y el flujo de compra.",
+  "shopBuyButton": "Comprar",
+  "shopPaymentsUnavailable": "Los pagos aún no están configurados — esto es un marcador de posición."
 }

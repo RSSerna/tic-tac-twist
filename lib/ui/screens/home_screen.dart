@@ -9,6 +9,7 @@ import '../../services/tutorial_progress_service.dart';
 import '../../theme/tokens.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
+import 'shop_screen.dart';
 import 'skins_screen.dart';
 import 'stats_screen.dart';
 import 'sub_mode_screen.dart';
@@ -73,6 +74,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         foregroundColor: colors.ink,
         automaticallyImplyLeading: false,
         actions: [
+          IconButton(
+            key: const Key('open-shop'),
+            icon: const Icon(Icons.storefront),
+            tooltip: l10n.shopTitle,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
+            ),
+          ),
           IconButton(
             key: const Key('open-skins'),
             icon: const Icon(Icons.palette),

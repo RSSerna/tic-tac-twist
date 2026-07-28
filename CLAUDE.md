@@ -15,6 +15,7 @@ Read the one relevant to the current task. Do not load all of them at once.
 | `docs/05-V2-DEFERRED.md` | Only when explicitly asked about post-launch work. **Do not build from this file.** |
 | `docs/06-PRIVACY-COMPLIANCE.md` | Privacy policy text, App Store/Play Store nutrition-label mapping, before store submission |
 | `docs/07-SKINS.md` | Adding or wiring a cosmetic skin (painted or asset-backed): the `ChipAppearance` model, naming, unlock routes, and constraints |
+| `docs/08-STORE-ITEMS.md` | Adding purchasable items to the Shop: `ShopItem`/`ProductId` wiring, store-console setup, granting/restoring, and the "direct purchase vs. currency" decision |
 
 ## Architecture — non-negotiable
 

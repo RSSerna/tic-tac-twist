@@ -231,5 +231,12 @@
   "removeAdsOwned": "Ads removed",
   "restorePurchases": "Restore purchases",
 
-  "skinBuyButton": "Buy"
+  "skinBuyButton": "Buy",
+
+  "shopTitle": "Shop",
+  "shopIntro": "Cosmetic items only — nothing here changes how the game plays.",
+  "shopTestItemName": "Test Item",
+  "shopTestItemDesc": "A placeholder product used to verify the shop layout and buy flow.",
+  "shopBuyButton": "Buy",
+  "shopPaymentsUnavailable": "Payments aren't set up yet — this is a placeholder."
 }
