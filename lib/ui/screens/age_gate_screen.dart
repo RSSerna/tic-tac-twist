@@ -45,13 +45,7 @@ class _AgeGateScreenState extends ConsumerState<AgeGateScreen> {
                   decoration: BoxDecoration(
                     color: colors.surface,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: colors.ink.withValues(alpha: 0.2),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: context.gameElevations.raised,
                   ),
                   child: ClipOval(
                     child: Image.asset(

@@ -18,8 +18,10 @@ ThemeData buildAppTheme({
   GameColors colors = GameColors.baseSkin,
   GameAnimations animations = GameAnimations.standard,
   GameTextStyles? textStyles,
+  GameElevations? elevations,
 }) {
   final styles = textStyles ?? GameTextStyles.from(colors);
+  final shadows = elevations ?? GameElevations.from(colors);
   return ThemeData(
     useMaterial3: true,
     fontFamily: kFontFamily,
@@ -33,6 +35,6 @@ ThemeData buildAppTheme({
     // Stock Material widgets read these slots; ours read the extension. Both
     // come from the same scale so a restyle can't leave them disagreeing.
     textTheme: styles.toTextTheme(),
-    extensions: [colors, animations, styles],
+    extensions: [colors, animations, styles, shadows],
   );
 }

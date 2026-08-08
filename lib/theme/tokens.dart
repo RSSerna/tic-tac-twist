@@ -93,6 +93,70 @@ extension GameColorsContext on BuildContext {
   GameColors get gameColors => Theme.of(this).extension<GameColors>()!;
 }
 
+/// Drop shadows, tinted from [GameColors.ink] rather than plain black so a
+/// skin's palette carries through to its shadows.
+///
+/// A [ThemeExtension] for the same reason [GameColors] is: widgets must not
+/// invent shadow colours, and a skin swapping the palette must not leave
+/// black shadows under a warm one.
+@immutable
+class GameElevations extends ThemeExtension<GameElevations> {
+  const GameElevations({required this.resting, required this.raised});
+
+  /// Cards and buttons sitting on the background.
+  final List<BoxShadow> resting;
+
+  /// Elements that read as floating above the layout — circular icon
+  /// buttons, the home screen's mode pills.
+  final List<BoxShadow> raised;
+
+  factory GameElevations.from(GameColors colors) => GameElevations(
+    resting: [
+      BoxShadow(
+        color: colors.ink.withValues(alpha: 0.12),
+        blurRadius: 6,
+        offset: const Offset(0, 2),
+      ),
+    ],
+    raised: [
+      BoxShadow(
+        color: colors.ink.withValues(alpha: 0.2),
+        blurRadius: 12,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  );
+
+  static List<BoxShadow> _lerpShadows(
+    List<BoxShadow> a,
+    List<BoxShadow> b,
+    double t,
+  ) => BoxShadow.lerpList(a, b, t) ?? b;
+
+  @override
+  GameElevations copyWith({
+    List<BoxShadow>? resting,
+    List<BoxShadow>? raised,
+  }) => GameElevations(
+    resting: resting ?? this.resting,
+    raised: raised ?? this.raised,
+  );
+
+  @override
+  GameElevations lerp(ThemeExtension<GameElevations>? other, double t) {
+    if (other is! GameElevations) return this;
+    return GameElevations(
+      resting: _lerpShadows(resting, other.resting, t),
+      raised: _lerpShadows(raised, other.raised, t),
+    );
+  }
+}
+
+extension GameElevationsContext on BuildContext {
+  GameElevations get gameElevations =>
+      Theme.of(this).extension<GameElevations>()!;
+}
+
 /// Animation durations from `docs/02-DESIGN-SYSTEM.md` §4 ("moderate":
 /// covering has weight, board claims get a flourish, wins get a line reveal).
 ///

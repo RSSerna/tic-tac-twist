@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/game_controller.dart';
 import '../../controllers/game_session.dart';
+import '../../controllers/settings_controller.dart';
 import '../../engines/common/game_mode.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../services/tutorial_progress_service.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
+import '../widgets/app_mark.dart';
+import '../widgets/buttons/circle_icon_button.dart';
+import '../widgets/buttons/menu_pill_button.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
 import 'shop_screen.dart';
@@ -17,10 +21,10 @@ import 'sub_mode_screen.dart';
 import 'tutorial_screen.dart';
 
 String _modeName(AppLocalizations l10n, GameMode mode) => switch (mode) {
-      GameMode.stackStatic => l10n.modeStackStatic,
-      GameMode.stackMovable => l10n.modeStackMovable,
-      GameMode.ultimate => l10n.modeUltimate,
-    };
+  GameMode.stackStatic => l10n.modeStackStatic,
+  GameMode.stackMovable => l10n.modeStackMovable,
+  GameMode.ultimate => l10n.modeUltimate,
+};
 
 /// Home / mode select: the three v1 modes.
 ///
@@ -55,9 +59,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (resume == true) {
       controller.resumeSession(saved);
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const GameScreen()),
-      );
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const GameScreen()));
     } else {
       await controller.discardSavedGame();
     }
@@ -65,72 +69,148 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
-    final styles = context.gameTextStyles;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: colors.ground,
-        foregroundColor: colors.ink,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            key: const Key('open-shop'),
-            icon: const Icon(Icons.storefront),
-            tooltip: l10n.shopTitle,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const ShopScreen()),
-            ),
-          ),
-          IconButton(
-            key: const Key('open-skins'),
-            icon: const Icon(Icons.palette),
-            tooltip: l10n.skinsTitle,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const SkinsScreen()),
-            ),
-          ),
-          IconButton(
-            key: const Key('open-stats'),
-            icon: const Icon(Icons.bar_chart),
-            tooltip: l10n.statsTitle,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const StatsScreen()),
-            ),
-          ),
-          IconButton(
-            key: const Key('open-settings'),
-            icon: const Icon(Icons.settings),
-            tooltip: l10n.settingsTitle,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
-            ),
-          ),
-        ],
-      ),
+      backgroundColor: colors.ground,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            Text(
-              l10n.appTitle,
-              textAlign: TextAlign.center,
-              style: styles.display,
-            ),
-            Text(
-              l10n.homeTagline,
-              textAlign: TextAlign.center,
-              style: styles.subtitle,
-            ),
-            const SizedBox(height: 32),
-            for (final mode in GameMode.values) ...[
-              _ModeCard(mode: mode),
-              const SizedBox(height: 12),
-            ],
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Landscape phones are the tight case: ~390pt of height has to
+            // hold the wordmark and three buttons. Everything shrinks
+            // together rather than the layout switching shape, so the screen
+            // reads the same in both orientations.
+            final compact = constraints.maxHeight < 560;
+
+            return Stack(
+              children: [
+                // Corner controls are stacked over the menu, not laid out
+                // beside it, so the menu stays optically centred on the
+                // screen instead of being pushed off-centre by them.
+                Positioned.fill(child: _MenuColumn(compact: compact)),
+                Positioned(top: 8, right: 8, child: _CornerControls()),
+                Positioned(left: 8, bottom: 8, child: _MusicToggle()),
+              ],
+            );
+          },
         ),
       ),
+    );
+  }
+}
+
+/// The wordmark and the three mode buttons — the centre of the screen.
+class _MenuColumn extends StatelessWidget {
+  const _MenuColumn({required this.compact});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final styles = context.gameTextStyles;
+
+    return SingleChildScrollView(
+      // Vertical padding clears the corner controls stacked above this
+      // layer, so nothing collides with them at small heights.
+      padding: EdgeInsets.fromLTRB(24, compact ? 56 : 72, 24, 72),
+      child: Center(
+        child: ConstrainedBox(
+          // Design doc §1: on a tablet, let things "grow to a sensible
+          // maximum with margin" rather than stretching across the width.
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppMark(size: compact ? 48 : 88),
+              SizedBox(height: compact ? 4 : 8),
+              Text(
+                l10n.appTitle,
+                textAlign: TextAlign.center,
+                style: compact ? styles.banner : styles.display,
+              ),
+              Text(
+                l10n.homeTagline,
+                textAlign: TextAlign.center,
+                style: styles.subtitle,
+              ),
+              SizedBox(height: compact ? 20 : 40),
+              for (final mode in GameMode.values) ...[
+                _ModeCard(mode: mode, compact: compact),
+                SizedBox(height: compact ? 10 : 16),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Stats, skins, shop and settings, clustered in the top-right corner.
+class _CornerControls extends StatelessWidget {
+  const _CornerControls();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    void open(Widget screen) => Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => screen));
+
+    return Wrap(
+      spacing: 8,
+      children: [
+        CircleIconButton(
+          key: const Key('open-stats'),
+          icon: Icons.bar_chart,
+          tooltip: l10n.statsTitle,
+          onPressed: () => open(const StatsScreen()),
+        ),
+        CircleIconButton(
+          key: const Key('open-skins'),
+          icon: Icons.palette,
+          tooltip: l10n.skinsTitle,
+          onPressed: () => open(const SkinsScreen()),
+        ),
+        CircleIconButton(
+          key: const Key('open-shop'),
+          icon: Icons.storefront,
+          tooltip: l10n.shopTitle,
+          onPressed: () => open(const ShopScreen()),
+        ),
+        CircleIconButton(
+          key: const Key('open-settings'),
+          icon: Icons.settings,
+          tooltip: l10n.settingsTitle,
+          onPressed: () => open(const SettingsScreen()),
+        ),
+      ],
+    );
+  }
+}
+
+/// Bottom-left music toggle — a shortcut to the same setting the Settings
+/// screen owns, not a second source of truth.
+class _MusicToggle extends ConsumerWidget {
+  const _MusicToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final settings = ref.watch(settingsControllerProvider).value;
+    // Defaults to on while settings are still loading, matching
+    // SettingsScreen — the toggle must not flicker to "muted" on launch.
+    final musicOn = settings?.musicEnabled ?? true;
+
+    return CircleIconButton(
+      key: const Key('home-music-toggle'),
+      icon: musicOn ? Icons.music_note : Icons.music_off,
+      tooltip: l10n.settingsMusicLabel,
+      onPressed: () => ref
+          .read(settingsControllerProvider.notifier)
+          .setMusicEnabled(!musicOn),
     );
   }
 }
@@ -163,20 +243,23 @@ class _ResumeGameDialog extends StatelessWidget {
 }
 
 class _ModeCard extends ConsumerWidget {
-  const _ModeCard({required this.mode});
+  const _ModeCard({required this.mode, required this.compact});
 
   final GameMode mode;
+  final bool compact;
 
   Future<void> _onTap(BuildContext context, WidgetRef ref) async {
     // Triggered automatically the first time a mode is opened (design doc
     // §7); once completed (or explicitly skipped), opening the mode goes
     // straight to sub-mode select from then on.
-    final completed =
-        await ref.read(tutorialProgressServiceProvider).isCompleted(mode);
+    final completed = await ref
+        .read(tutorialProgressServiceProvider)
+        .isCompleted(mode);
     if (!context.mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => completed ? SubModeScreen(mode: mode) : TutorialScreen(mode: mode),
+        builder: (_) =>
+            completed ? SubModeScreen(mode: mode) : TutorialScreen(mode: mode),
       ),
     );
   }
@@ -184,37 +267,14 @@ class _ModeCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final colors = context.gameColors;
-    final styles = context.gameTextStyles;
 
-    final description = switch (mode) {
-      GameMode.stackStatic => l10n.modeStackStaticDesc,
-      GameMode.stackMovable => l10n.modeStackMovableDesc,
-      GameMode.ultimate => l10n.modeUltimateDesc,
-    };
-
-    return Material(
-      color: colors.surface,
-      borderRadius: BorderRadius.circular(4),
-      child: InkWell(
-        key: Key('mode-${mode.name}'),
-        borderRadius: BorderRadius.circular(4),
-        onTap: () => _onTap(context, ref),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_modeName(l10n, mode),
-                  style: styles.screenTitle),
-              const SizedBox(height: 4),
-              Text(description,
-                  style:
-                      styles.bodyMuted),
-            ],
-          ),
-        ),
-      ),
+    // The mode's one-line blurb isn't shown here any more — the sub-mode
+    // screen it opens already repeats it, so the menu stays uncluttered.
+    return MenuPillButton(
+      key: Key('mode-${mode.name}'),
+      label: _modeName(l10n, mode),
+      height: compact ? 56 : 84,
+      onPressed: () => _onTap(context, ref),
     );
   }
 }

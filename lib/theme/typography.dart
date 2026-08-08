@@ -89,6 +89,7 @@ class GameTextStyles extends ThemeExtension<GameTextStyles> {
       FontWeight weight,
       Color color, {
       double height = 1.3,
+      double? letterSpacing,
       List<FontFeature>? features,
     }) => TextStyle(
       fontFamily: kFontFamily,
@@ -96,15 +97,31 @@ class GameTextStyles extends ThemeExtension<GameTextStyles> {
       fontWeight: weight,
       color: color,
       height: height,
+      letterSpacing: letterSpacing,
       fontFeatures: features,
     );
 
     return GameTextStyles(
-      display: base(44, FontWeight.w700, colors.ink, height: 1.1),
+      // Wide tracking on the wordmark, per the home-screen design. Only
+      // works because `display` is reserved for a handful of short strings —
+      // it would hurt readability on anything longer.
+      display: base(
+        44,
+        FontWeight.w700,
+        colors.ink,
+        height: 1.1,
+        letterSpacing: 6,
+      ),
       banner: base(24, FontWeight.w600, colors.ink, height: 1.2),
       screenTitle: base(22, FontWeight.w600, colors.ink, height: 1.2),
       cardTitle: base(16, FontWeight.w600, colors.ink),
-      subtitle: base(16, FontWeight.w400, colors.neutral, height: 1.35),
+      subtitle: base(
+        16,
+        FontWeight.w400,
+        colors.neutral,
+        height: 1.35,
+        letterSpacing: 2,
+      ),
       bodyLarge: base(16, FontWeight.w400, colors.ink, height: 1.45),
       body: base(14, FontWeight.w400, colors.ink, height: 1.4),
       bodyMuted: base(14, FontWeight.w400, colors.neutral, height: 1.4),
