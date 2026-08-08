@@ -6,6 +6,7 @@ import '../../controllers/skin_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
+import '../../theme/typography.dart';
 import 'chip_view.dart';
 
 /// The current player's remaining chips, one button per level with a count.
@@ -122,9 +123,11 @@ class _InventoryChip extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Text(
                       '×$count',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelMedium?.copyWith(color: ink),
+                      // `ink` rather than the style's own colour: this row is
+                      // handed its palette by the caller, not the theme.
+                      style: context.gameTextStyles.dataSmall.copyWith(
+                        color: ink,
+                      ),
                     ),
                   ),
                 ],

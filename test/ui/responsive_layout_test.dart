@@ -20,16 +20,39 @@ Future<void> pumpApp(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+/// Taps [finder] after scrolling it fully into view.
+///
+/// These tests run at deliberately cramped surface sizes, so a target can sit
+/// below the fold of a `ListView`. Getting it on screen takes two distinct
+/// steps, and skipping either makes the tap silently miss:
+///
+/// 1. `scrollUntilVisible` gets the widget **built** — a lazy list won't
+///    construct an element that far off-screen, so nothing can find it yet.
+///    On an already-built target this is a no-op.
+/// 2. `ensureVisible` gets it **on screen**. Step 1 stops the moment the
+///    element exists, and a `ListView` builds past the viewport edge
+///    (`cacheExtent`), so the widget is routinely found while still outside
+///    the visible area.
+///
+/// The settle then lets that scroll finish before the tap — a drag leaves the
+/// list moving, and tapping mid-flight hits wherever the target happens to be
+/// in that frame. Without all three, whether the tap lands depends on the
+/// pixel height of the text above it, so an unrelated change to a font or
+/// line height silently breaks these tests.
+Future<void> tapAfterScrollingIntoView(
+  WidgetTester tester,
+  Finder finder,
+) async {
+  await tester.scrollUntilVisible(finder, 200);
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
 Future<void> startGame(WidgetTester tester, String modeName) async {
-  // Small landscape surfaces don't fit every mode card above the fold now
-  // that the home screen has an AppBar — scroll the target into the
-  // ListView's lazy-build range before tapping it.
-  final modeFinder = find.byKey(Key('mode-$modeName'));
-  await tester.scrollUntilVisible(modeFinder, 200);
-  await tester.tap(modeFinder);
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('play-local')));
-  await tester.pumpAndSettle();
+  await tapAfterScrollingIntoView(tester, find.byKey(Key('mode-$modeName')));
+  await tapAfterScrollingIntoView(tester, find.byKey(const Key('play-local')));
 }
 
 void main() {

@@ -13,6 +13,7 @@ import '../../engines/stacking/stacking_move.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
+import '../../theme/typography.dart';
 import '../widgets/chip_view.dart';
 import '../widgets/inventory_row.dart';
 import '../widgets/stacking_board.dart';
@@ -216,6 +217,7 @@ class _TurnBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
+    final styles = context.gameTextStyles;
     final person = session.currentPerson;
     final color = person == 1 ? colors.playerA : colors.playerB;
     final appearance =
@@ -249,9 +251,7 @@ class _TurnBanner extends ConsumerWidget {
               ),
               Text(
                 l10n.turnBanner(person),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(color: colors.ink),
+                style: styles.cardTitle,
               ),
             ],
           ),
@@ -260,9 +260,7 @@ class _TurnBanner extends ConsumerWidget {
             Text(
               l10n.aiThinking,
               key: const Key('ai-thinking'),
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: colors.neutral),
+              style: styles.caption,
             ),
           ],
           if (session.turnDeadline != null) ...[
@@ -309,14 +307,12 @@ class _TurnTimerCountdownState extends State<_TurnTimerCountdown> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = context.gameColors;
+    final styles = context.gameTextStyles;
     final remaining = widget.deadline.difference(DateTime.now()).inSeconds;
     return Text(
       l10n.turnTimerBanner(remaining < 0 ? 0 : remaining),
       key: const Key('turn-timer-banner'),
-      style: Theme.of(
-        context,
-      ).textTheme.bodySmall?.copyWith(color: colors.neutral),
+      style: styles.caption,
     );
   }
 }
@@ -329,7 +325,7 @@ class StagingBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final colors = context.gameColors;
+    final styles = context.gameTextStyles;
     final controller = ref.read(gameControllerProvider.notifier);
 
     if (session.status.isOver) return const SizedBox(height: 64);
@@ -353,9 +349,7 @@ class StagingBar extends ConsumerWidget {
           if (mustPass && !stagedPass) ...[
             Text(
               l10n.mustPassBanner,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: colors.ink),
+              style: styles.body,
             ),
             FilledButton(
               key: const Key('pass'),
@@ -392,7 +386,7 @@ class _ResultOverlay extends ConsumerWidget {
     final colors = context.gameColors;
     final controller = ref.read(gameControllerProvider.notifier);
     final status = session.status;
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
 
     final headline = status.outcome == GameOutcome.won
         ? l10n.winBanner(session.personFor(status.winner!))
@@ -423,14 +417,14 @@ class _ResultOverlay extends ConsumerWidget {
               Text(
                 headline,
                 textAlign: TextAlign.center,
-                style: textTheme.headlineSmall?.copyWith(color: colors.ink),
+                style: styles.banner,
               ),
               if (subtitle != null) ...[
                 const SizedBox(height: 8),
                 Text(
                   subtitle,
                   textAlign: TextAlign.center,
-                  style: textTheme.bodyMedium?.copyWith(color: colors.neutral),
+                  style: styles.bodyMuted,
                 ),
               ],
               const SizedBox(height: 20),

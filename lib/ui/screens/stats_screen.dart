@@ -7,6 +7,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../services/stats/mode_stats.dart';
 import '../../services/stats/stats_service.dart';
 import '../../theme/tokens.dart';
+import '../../theme/typography.dart';
 
 String _modeName(AppLocalizations l10n, GameMode mode) => switch (mode) {
       GameMode.stackStatic => l10n.modeStackStatic,
@@ -73,7 +74,7 @@ class _ModeStatsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
     final hasAnyGames =
         stats.local.total > 0 || stats.vsAi.values.any((c) => c.total > 0);
 
@@ -86,27 +87,27 @@ class _ModeStatsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(_modeName(l10n, mode),
-                style: textTheme.titleLarge?.copyWith(color: colors.ink)),
+                style: styles.screenTitle),
             const SizedBox(height: 12),
             if (!hasAnyGames)
               Text(l10n.statsNoGamesYet,
-                  style: textTheme.bodyMedium?.copyWith(color: colors.neutral))
+                  style: styles.bodyMuted)
             else ...[
               if (stats.local.total > 0) ...[
                 Text(l10n.statsLocalHeading,
-                    style: textTheme.labelLarge?.copyWith(color: colors.neutral)),
+                    style: styles.labelMuted),
                 const SizedBox(height: 4),
                 Text(
                   '${l10n.statsPlayerWins(1, stats.local.p1Wins)}   '
                   '${l10n.statsPlayerWins(2, stats.local.p2Wins)}   '
                   '${l10n.statsDrawsCount(stats.local.draws)}',
-                  style: textTheme.bodyMedium?.copyWith(color: colors.ink),
+                  style: styles.data,
                 ),
                 const SizedBox(height: 12),
               ],
               if (stats.vsAi.values.any((c) => c.total > 0)) ...[
                 Text(l10n.statsVsAiHeading,
-                    style: textTheme.labelLarge?.copyWith(color: colors.neutral)),
+                    style: styles.labelMuted),
                 const SizedBox(height: 4),
                 for (final difficulty in Difficulty.values)
                   if (stats.vsAi[difficulty]!.total > 0)
@@ -119,7 +120,7 @@ class _ModeStatsCard extends StatelessWidget {
                           stats.vsAi[difficulty]!.losses,
                           stats.vsAi[difficulty]!.draws,
                         )}',
-                        style: textTheme.bodyMedium?.copyWith(color: colors.ink),
+                        style: styles.data,
                       ),
                     ),
               ],

@@ -5,6 +5,7 @@ import '../../controllers/game_controller.dart';
 import '../../engines/common/game_mode.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/tokens.dart';
+import '../../theme/typography.dart';
 import 'difficulty_screen.dart';
 import 'game_screen.dart';
 
@@ -82,7 +83,7 @@ class _OptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
 
     return Material(
       color: colors.surface,
@@ -95,10 +96,10 @@ class _OptionCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: textTheme.titleLarge?.copyWith(color: colors.ink)),
+              Text(title, style: styles.screenTitle),
               const SizedBox(height: 4),
               Text(description,
-                  style: textTheme.bodyMedium?.copyWith(color: colors.neutral)),
+                  style: styles.bodyMuted),
             ],
           ),
         ),

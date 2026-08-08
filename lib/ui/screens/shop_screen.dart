@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/tokens.dart';
+import '../../theme/typography.dart';
 
 /// A single purchasable entry in the shop.
 ///
@@ -44,7 +45,7 @@ class ShopScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
 
     // The catalog. One placeholder entry for now; add real items here once
     // their products exist in the stores (see _ShopItemCard._buy).
@@ -70,7 +71,7 @@ class ShopScreen extends ConsumerWidget {
           children: [
             Text(
               l10n.shopIntro,
-              style: textTheme.bodyMedium?.copyWith(color: colors.neutral),
+              style: styles.bodyMuted,
             ),
             const SizedBox(height: 20),
             for (final item in items) ...[
@@ -124,7 +125,7 @@ class _ShopItemCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
 
     return Material(
       key: Key('shop-item-${item.id}'),
@@ -142,12 +143,12 @@ class _ShopItemCard extends ConsumerWidget {
                 children: [
                   Text(
                     item.name,
-                    style: textTheme.titleMedium?.copyWith(color: colors.ink),
+                    style: styles.cardTitle,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     item.description,
-                    style: textTheme.bodySmall?.copyWith(color: colors.neutral),
+                    style: styles.caption,
                   ),
                 ],
               ),

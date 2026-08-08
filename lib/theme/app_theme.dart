@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'tokens.dart';
+import 'typography.dart';
 
 /// The bundled display/UI typeface (design system §2.2). Declared in
 /// pubspec.yaml under this exact family name; the four bundled weights are
@@ -16,7 +17,9 @@ const String kFontFamily = 'BricolageGrotesque';
 ThemeData buildAppTheme({
   GameColors colors = GameColors.baseSkin,
   GameAnimations animations = GameAnimations.standard,
+  GameTextStyles? textStyles,
 }) {
+  final styles = textStyles ?? GameTextStyles.from(colors);
   return ThemeData(
     useMaterial3: true,
     fontFamily: kFontFamily,
@@ -27,6 +30,9 @@ ThemeData buildAppTheme({
       surface: colors.surface,
       onSurface: colors.ink,
     ),
-    extensions: [colors, animations],
+    // Stock Material widgets read these slots; ours read the extension. Both
+    // come from the same scale so a restyle can't leave them disagreeing.
+    textTheme: styles.toTextTheme(),
+    extensions: [colors, animations, styles],
   );
 }

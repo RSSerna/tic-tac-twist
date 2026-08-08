@@ -7,6 +7,7 @@ import '../../controllers/session_opponents.dart';
 import '../../engines/common/game_mode.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/tokens.dart';
+import '../../theme/typography.dart';
 import 'game_screen.dart';
 
 /// Difficulty picker for a vs-AI game, shown after choosing "Vs AI" for a
@@ -78,7 +79,7 @@ class _DifficultyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
 
     return Material(
       color: colors.surface,
@@ -91,10 +92,10 @@ class _DifficultyCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: textTheme.titleLarge?.copyWith(color: colors.ink)),
+              Text(title, style: styles.screenTitle),
               const SizedBox(height: 4),
               Text(description,
-                  style: textTheme.bodyMedium?.copyWith(color: colors.neutral)),
+                  style: styles.bodyMuted),
             ],
           ),
         ),

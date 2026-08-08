@@ -9,6 +9,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../services/purchase_service.dart';
 import '../../services/stats/stats_service.dart';
 import '../../theme/tokens.dart';
+import '../../theme/typography.dart';
 import 'tutorial_screen.dart';
 
 String _modeName(AppLocalizations l10n, GameMode mode) => switch (mode) {
@@ -268,7 +269,7 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.gameColors;
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
 
     return Material(
       color: colors.surface,
@@ -278,7 +279,7 @@ class _SectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: textTheme.titleMedium?.copyWith(color: colors.ink)),
+            Text(title, style: styles.cardTitle),
             const SizedBox(height: 8),
             child,
           ],

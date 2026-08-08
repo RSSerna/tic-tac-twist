@@ -5,6 +5,7 @@ import '../../controllers/game_controller.dart';
 import '../../engines/common/game_mode.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/tokens.dart';
+import '../../theme/typography.dart';
 import '../../tutorial/tutorial_step.dart';
 import '../widgets/inventory_row.dart';
 import 'game_screen.dart';
@@ -58,6 +59,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
     final session = ref.watch(gameControllerProvider);
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
+    final styles = context.gameTextStyles;
 
     if (session == null || session.tutorial == null) {
       return const Scaffold(body: SizedBox.shrink());
@@ -73,7 +75,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
           TextButton(
             key: const Key('skip-tutorial'),
             onPressed: _exitToSubMode,
-            child: Text(l10n.tutorialSkip, style: TextStyle(color: colors.ink)),
+            child: Text(l10n.tutorialSkip, style: styles.label),
           ),
         ],
       ),
@@ -110,7 +112,7 @@ class _PromptBanner extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
     final controller = ref.read(gameControllerProvider.notifier);
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
 
     return Container(
       key: const Key('tutorial-prompt'),
@@ -123,7 +125,7 @@ class _PromptBanner extends ConsumerWidget {
           Text(
             tutorialPromptText(l10n, step.prompt),
             textAlign: TextAlign.center,
-            style: textTheme.bodyLarge?.copyWith(color: colors.ink),
+            style: styles.bodyLarge,
           ),
           if (step is TutorialMessage) ...[
             const SizedBox(height: 12),
@@ -149,7 +151,7 @@ class _TutorialCompleteOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
 
     return ColoredBox(
       color: colors.ink.withValues(alpha: 0.5),
@@ -167,7 +169,7 @@ class _TutorialCompleteOverlay extends StatelessWidget {
               Text(
                 tutorialPromptText(l10n, step.prompt),
                 textAlign: TextAlign.center,
-                style: textTheme.headlineSmall?.copyWith(color: colors.ink),
+                style: styles.banner,
               ),
               const SizedBox(height: 20),
               FilledButton(

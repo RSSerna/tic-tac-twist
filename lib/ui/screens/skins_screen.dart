@@ -7,6 +7,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../services/purchase_service.dart';
 import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
+import '../../theme/typography.dart';
 import '../widgets/chip_view.dart';
 
 String _skinName(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
@@ -91,7 +92,7 @@ class _SkinCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
     final product = _productFor(skin);
 
     return Material(
@@ -122,11 +123,11 @@ class _SkinCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(_skinName(l10n, skin),
-                      style: textTheme.titleMedium?.copyWith(color: colors.ink)),
+                      style: styles.cardTitle),
                   const SizedBox(height: 4),
                   Text(
                     unlocked ? _skinDesc(l10n, skin) : l10n.skinUnlockHint,
-                    style: textTheme.bodySmall?.copyWith(color: colors.neutral),
+                    style: styles.caption,
                   ),
                 ],
               ),
@@ -144,7 +145,7 @@ class _SkinCard extends ConsumerWidget {
               ],
             ] else if (selected)
               Text(l10n.skinSelected,
-                  style: textTheme.labelLarge?.copyWith(color: colors.ink))
+                  style: styles.label)
             else
               FilledButton(
                 key: Key('select-skin-${skin.id}'),

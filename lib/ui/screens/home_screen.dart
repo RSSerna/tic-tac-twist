@@ -7,6 +7,7 @@ import '../../engines/common/game_mode.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../services/tutorial_progress_service.dart';
 import '../../theme/tokens.dart';
+import '../../theme/typography.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
 import 'shop_screen.dart';
@@ -66,7 +67,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
 
     return Scaffold(
       appBar: AppBar(
@@ -115,12 +116,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text(
               l10n.appTitle,
               textAlign: TextAlign.center,
-              style: textTheme.displayMedium?.copyWith(color: colors.ink),
+              style: styles.display,
             ),
             Text(
               l10n.homeTagline,
               textAlign: TextAlign.center,
-              style: textTheme.titleMedium?.copyWith(color: colors.neutral),
+              style: styles.subtitle,
             ),
             const SizedBox(height: 32),
             for (final mode in GameMode.values) ...[
@@ -184,7 +185,7 @@ class _ModeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
-    final textTheme = Theme.of(context).textTheme;
+    final styles = context.gameTextStyles;
 
     final description = switch (mode) {
       GameMode.stackStatic => l10n.modeStackStaticDesc,
@@ -205,11 +206,11 @@ class _ModeCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(_modeName(l10n, mode),
-                  style: textTheme.titleLarge?.copyWith(color: colors.ink)),
+                  style: styles.screenTitle),
               const SizedBox(height: 4),
               Text(description,
                   style:
-                      textTheme.bodyMedium?.copyWith(color: colors.neutral)),
+                      styles.bodyMuted),
             ],
           ),
         ),
