@@ -31,3 +31,20 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+
+  # Bricolage Grotesque (design system §2.2), bundled rather than fetched at
+  # runtime. Static instances from the upstream project, SIL OFL 1.1 —
+  # licence text ships in assets/fonts/OFL.txt. Only these four weights are
+  # bundled; add ExtraLight/Light/ExtraBold from the same source if a design
+  # ever calls for them.
+  fonts:
+    - family: BricolageGrotesque
+      fonts:
+        - asset: assets/fonts/BricolageGrotesque-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/BricolageGrotesque-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/BricolageGrotesque-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/BricolageGrotesque-Bold.ttf
+          weight: 700

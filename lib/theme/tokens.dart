@@ -22,7 +22,9 @@ class GameColors extends ThemeExtension<GameColors> {
   /// Board squares, cards, sheets.
   final Color surface;
 
-  /// Text, outlines, grid structure.
+  /// Text, outlines, grid structure. Also the default font colour — the
+  /// Material 3 [TextTheme] derives from `colorScheme.onSurface`, which
+  /// `buildAppTheme` wires to this token.
   final Color ink;
 
   /// Player 1 — deep indigo.
@@ -39,9 +41,11 @@ class GameColors extends ThemeExtension<GameColors> {
   Color highlightFor(Color playerColor) => playerColor.withValues(alpha: 0.15);
 
   static const GameColors baseSkin = GameColors(
-    ground: Color(0xFFDCDAD1),
-    surface: Color(0xFFF2F0EA),
-    ink: Color(0xFF2E2C29),
+    ground: Color(0xFFB7B3B2),
+    surface: Color(0xFFE3DBD3),
+    // Neutral near-black, replacing the doc's warmer #2E2C29. Keeps AA
+    // comfortably on both backgrounds (9.62:1 on surface, 6.34:1 on ground).
+    ink: Color(0xFF303032),
     playerA: Color(0xFF1B4B7A),
     playerB: Color(0xFFC9601F),
     // Darkened from the doc's original #8A8C84 during the Phase 4
@@ -125,9 +129,9 @@ class GameAnimations extends ThemeExtension<GameAnimations> {
   );
 
   static Duration _lerpDuration(Duration a, Duration b, double t) => Duration(
-        microseconds:
-            (a.inMicroseconds + (b.inMicroseconds - a.inMicroseconds) * t).round(),
-      );
+    microseconds: (a.inMicroseconds + (b.inMicroseconds - a.inMicroseconds) * t)
+        .round(),
+  );
 
   @override
   GameAnimations copyWith({
@@ -157,5 +161,6 @@ class GameAnimations extends ThemeExtension<GameAnimations> {
 }
 
 extension GameAnimationsContext on BuildContext {
-  GameAnimations get gameAnimations => Theme.of(this).extension<GameAnimations>()!;
+  GameAnimations get gameAnimations =>
+      Theme.of(this).extension<GameAnimations>()!;
 }

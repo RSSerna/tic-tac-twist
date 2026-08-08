@@ -36,6 +36,39 @@ class _AgeGateScreenState extends ConsumerState<AgeGateScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Placeholder art. The PNG isn't bundled yet — drop it at
+                // `assets/images/age_gate_logo.png`, add `assets/images/` under
+                // `flutter: assets:` in pubspec.yaml, and it picks up with no
+                // code change. Until then `errorBuilder` degrades to an icon
+                // rather than a broken-image glyph, same convention as
+                // `ChipView`'s asset skins.
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: colors.ink.withValues(alpha: 0.2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/age_gate_logo.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.cake_outlined,
+                        size: 56,
+                        color: colors.ink,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 Text(
                   l10n.ageGateQuestion,
                   textAlign: TextAlign.center,
@@ -58,8 +91,11 @@ class _AgeGateScreenState extends ConsumerState<AgeGateScreen> {
                   onPressed: _selectedYear == null
                       ? null
                       : () => ref
-                          .read(ageGateControllerProvider.notifier)
-                          .answerBirthYear(_selectedYear!, currentYear: currentYear),
+                            .read(ageGateControllerProvider.notifier)
+                            .answerBirthYear(
+                              _selectedYear!,
+                              currentYear: currentYear,
+                            ),
                   child: Text(l10n.ageGateContinue),
                 ),
               ],
