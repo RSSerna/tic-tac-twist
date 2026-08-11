@@ -35,6 +35,7 @@ class GameTextStyles extends ThemeExtension<GameTextStyles> {
     required this.caption,
     required this.data,
     required this.dataSmall,
+    required this.mainMenuButton,
   });
 
   /// The app name on the home screen. Used sparingly (design system §2.2).
@@ -79,6 +80,8 @@ class GameTextStyles extends ThemeExtension<GameTextStyles> {
   /// size would crowd the layout.
   final TextStyle dataSmall;
 
+  final TextStyle mainMenuButton;
+
   /// Builds the scale against a palette. Sizes and weights are fixed; only
   /// the colours vary with the skin.
   factory GameTextStyles.from(GameColors colors) {
@@ -113,7 +116,7 @@ class GameTextStyles extends ThemeExtension<GameTextStyles> {
         letterSpacing: 6,
       ),
       banner: base(24, FontWeight.w600, colors.ink, height: 1.2),
-      screenTitle: base(22, FontWeight.w600, colors.ink, height: 1.2),
+      screenTitle: base(48, FontWeight.w900, colors.ink, height: 1.2),
       cardTitle: base(16, FontWeight.w600, colors.ink),
       subtitle: base(
         16,
@@ -140,6 +143,7 @@ class GameTextStyles extends ThemeExtension<GameTextStyles> {
         colors.ink,
         features: const [FontFeature.tabularFigures()],
       ),
+      mainMenuButton: base(32, FontWeight.w400, colors.ink),
     );
   }
 
@@ -182,6 +186,7 @@ class GameTextStyles extends ThemeExtension<GameTextStyles> {
     TextStyle? caption,
     TextStyle? data,
     TextStyle? dataSmall,
+    TextStyle? mainMenuButton,
   }) {
     return GameTextStyles(
       display: display ?? this.display,
@@ -197,6 +202,7 @@ class GameTextStyles extends ThemeExtension<GameTextStyles> {
       caption: caption ?? this.caption,
       data: data ?? this.data,
       dataSmall: dataSmall ?? this.dataSmall,
+      mainMenuButton: mainMenuButton ?? this.mainMenuButton,
     );
   }
 
@@ -217,6 +223,7 @@ class GameTextStyles extends ThemeExtension<GameTextStyles> {
       caption: TextStyle.lerp(caption, other.caption, t)!,
       data: TextStyle.lerp(data, other.data, t)!,
       dataSmall: TextStyle.lerp(dataSmall, other.dataSmall, t)!,
+      mainMenuButton: TextStyle.lerp(mainMenuButton, other.mainMenuButton, t)!,
     );
   }
 }

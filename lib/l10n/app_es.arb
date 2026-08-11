@@ -145,5 +145,14 @@
   "shopTestItemName": "Artículo de prueba",
   "shopTestItemDesc": "Un producto de prueba para verificar el diseño de la tienda y el flujo de compra.",
   "shopBuyButton": "Comprar",
-  "shopPaymentsUnavailable": "Los pagos aún no están configurados — esto es un marcador de posición."
+  "shopPaymentsUnavailable": "Los pagos aún no están configurados — esto es un marcador de posición.",
+  "challengesTitle": "Desafíos",
+  "challengesProgress": "{completed} de {total} completados",
+  "challengeLocked": "Bloqueado",
+  "challengeCompleted": "Completado",
+  "challengeBeatImpossibleStatic": "Gana en Imposible en Stack: Static",
+  "challengeBeatImpossibleMovable": "Gana en Imposible en Stack: Movable",
+  "challengeBeatImpossibleUltimate": "Gana en Imposible en Ultimate",
+  "challengeWinWithL4OnFinalMove": "Gana con una ficha de nivel 4 en tu última jugada",
+  "challengeClaimBoardMajority": "Gana una partida de Ultimate con seis o más tableros"
 }

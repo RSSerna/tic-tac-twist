@@ -238,5 +238,30 @@
   "shopTestItemName": "Test Item",
   "shopTestItemDesc": "A placeholder product used to verify the shop layout and buy flow.",
   "shopBuyButton": "Buy",
-  "shopPaymentsUnavailable": "Payments aren't set up yet — this is a placeholder."
+  "shopPaymentsUnavailable": "Payments aren't set up yet — this is a placeholder.",
+  "challengesTitle": "Challenges",
+  "@challengesTitle": {
+    "description": "Title of the screen listing in-game achievements, and the tooltip of the home-screen button that opens it."
+  },
+  "challengesProgress": "{completed} of {total} completed",
+  "@challengesProgress": {
+    "description": "Summary line at the top of the Challenges screen.",
+    "placeholders": {
+      "completed": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "challengeLocked": "Locked",
+  "@challengeLocked": {
+    "description": "State label on a challenge that has not been completed yet."
+  },
+  "challengeCompleted": "Completed",
+  "@challengeCompleted": {
+    "description": "State label on a challenge the player has completed."
+  },
+  "challengeBeatImpossibleStatic": "Beat Impossible at Stack: Static",
+  "challengeBeatImpossibleMovable": "Beat Impossible at Stack: Movable",
+  "challengeBeatImpossibleUltimate": "Beat Impossible at Ultimate",
+  "challengeWinWithL4OnFinalMove": "Win with a level 4 chip as your final move",
+  "challengeClaimBoardMajority": "Win an Ultimate game holding six or more boards"
 }

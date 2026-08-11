@@ -10,8 +10,10 @@ import '../../services/tutorial_progress_service.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../widgets/app_mark.dart';
+import '../widgets/buttons/circle_button_cluster.dart';
 import '../widgets/buttons/circle_icon_button.dart';
 import '../widgets/buttons/menu_pill_button.dart';
+import 'challenges_screen.dart';
 import 'game_screen.dart';
 import 'settings_screen.dart';
 import 'shop_screen.dart';
@@ -82,14 +84,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // reads the same in both orientations.
             final compact = constraints.maxHeight < 560;
 
+            // The corner clusters run down the sides now, so on a narrow
+            // screen they occupy the same band of height as the menu. Inset
+            // the menu past them — symmetrically, so it stays centred even
+            // though only one side has buttons at any given height.
+            final sideInset = constraints.maxWidth < 640 ? 72.0 : 24.0;
+
             return Stack(
               children: [
                 // Corner controls are stacked over the menu, not laid out
                 // beside it, so the menu stays optically centred on the
                 // screen instead of being pushed off-centre by them.
-                Positioned.fill(child: _MenuColumn(compact: compact)),
+                Positioned.fill(
+                  child: _MenuColumn(compact: compact, sideInset: sideInset),
+                ),
                 Positioned(top: 8, right: 8, child: _CornerControls()),
-                Positioned(left: 8, bottom: 8, child: _MusicToggle()),
+                Positioned(left: 8, bottom: 8, child: _QuickControls()),
               ],
             );
           },
@@ -101,9 +111,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 /// The wordmark and the three mode buttons — the centre of the screen.
 class _MenuColumn extends StatelessWidget {
-  const _MenuColumn({required this.compact});
+  const _MenuColumn({required this.compact, required this.sideInset});
 
   final bool compact;
+
+  /// Horizontal room left for the corner clusters running down the sides.
+  final double sideInset;
 
   @override
   Widget build(BuildContext context) {
@@ -111,9 +124,12 @@ class _MenuColumn extends StatelessWidget {
     final styles = context.gameTextStyles;
 
     return SingleChildScrollView(
-      // Vertical padding clears the corner controls stacked above this
-      // layer, so nothing collides with them at small heights.
-      padding: EdgeInsets.fromLTRB(24, compact ? 56 : 72, 24, 72),
+      padding: EdgeInsets.fromLTRB(
+        sideInset,
+        compact ? 24 : 48,
+        sideInset,
+        compact ? 24 : 48,
+      ),
       child: Center(
         child: ConstrainedBox(
           // Design doc §1: on a tablet, let things "grow to a sensible
@@ -159,8 +175,8 @@ class _CornerControls extends StatelessWidget {
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => screen));
 
-    return Wrap(
-      spacing: 8,
+    return CircleButtonCluster(
+      direction: Axis.horizontal,
       children: [
         CircleIconButton(
           key: const Key('open-stats'),
@@ -191,10 +207,11 @@ class _CornerControls extends StatelessWidget {
   }
 }
 
-/// Bottom-left music toggle — a shortcut to the same setting the Settings
-/// screen owns, not a second source of truth.
-class _MusicToggle extends ConsumerWidget {
-  const _MusicToggle();
+/// Bottom-left quick toggles. A cluster like [_CornerControls] rather than a
+/// lone button, so the other shortcuts in the design have somewhere to land
+/// without re-doing the corner.
+class _QuickControls extends ConsumerWidget {
+  const _QuickControls();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -204,13 +221,30 @@ class _MusicToggle extends ConsumerWidget {
     // SettingsScreen — the toggle must not flicker to "muted" on launch.
     final musicOn = settings?.musicEnabled ?? true;
 
-    return CircleIconButton(
-      key: const Key('home-music-toggle'),
-      icon: musicOn ? Icons.music_note : Icons.music_off,
-      tooltip: l10n.settingsMusicLabel,
-      onPressed: () => ref
-          .read(settingsControllerProvider.notifier)
-          .setMusicEnabled(!musicOn),
+    return CircleButtonCluster(
+      growUpwards: true,
+      children: [
+        // A shortcut to the setting the Settings screen owns, not a second
+        // source of truth for it.
+        CircleIconButton(
+          key: const Key('home-music-toggle'),
+          icon: musicOn ? Icons.music_note : Icons.music_off,
+          tooltip: l10n.settingsMusicLabel,
+          onPressed: () => ref
+              .read(settingsControllerProvider.notifier)
+              .setMusicEnabled(!musicOn),
+        ),
+        // A target, echoing both the mockup's missions glyph and the
+        // concentric-ring language the chips are built on.
+        CircleIconButton(
+          key: const Key('open-challenges'),
+          icon: Icons.track_changes,
+          tooltip: l10n.challengesTitle,
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const ChallengesScreen()),
+          ),
+        ),
+      ],
     );
   }
 }
