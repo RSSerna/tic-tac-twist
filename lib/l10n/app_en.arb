@@ -263,5 +263,17 @@
   "challengeBeatImpossibleMovable": "Beat Impossible at Stack: Movable",
   "challengeBeatImpossibleUltimate": "Beat Impossible at Ultimate",
   "challengeWinWithL4OnFinalMove": "Win with a level 4 chip as your final move",
-  "challengeClaimBoardMajority": "Win an Ultimate game holding six or more boards"
+  "challengeClaimBoardMajority": "Win an Ultimate game holding six or more boards",
+  "settingsSubtitle": "Select category",
+  "@settingsSubtitle": {
+    "description": "Line under the Settings screen title, describing what the screen contains."
+  },
+  "settingsReplayAction": "Play",
+  "@settingsReplayAction": {
+    "description": "Label on the button that replays a mode's tutorial."
+  },
+  "close": "Close",
+  "@close": {
+    "description": "Accessibility label for the button that dismisses a full-screen panel."
+  }
 }

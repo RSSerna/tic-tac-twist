@@ -154,5 +154,8 @@
   "challengeBeatImpossibleMovable": "Gana en Imposible en Stack: Movable",
   "challengeBeatImpossibleUltimate": "Gana en Imposible en Ultimate",
   "challengeWinWithL4OnFinalMove": "Gana con una ficha de nivel 4 en tu última jugada",
-  "challengeClaimBoardMajority": "Gana una partida de Ultimate con seis o más tableros"
+  "challengeClaimBoardMajority": "Gana una partida de Ultimate con seis o más tableros",
+  "settingsSubtitle": "Elige una categoría",
+  "settingsReplayAction": "Jugar",
+  "close": "Cerrar"
 }

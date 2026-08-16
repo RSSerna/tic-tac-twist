@@ -19,7 +19,33 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../test_helpers.dart';
 
 Future<void> tapKey(WidgetTester tester, String key) async {
-  await tester.tap(find.byKey(Key(key)));
+  final finder = find.byKey(Key(key));
+  // Settings is a lazy ListView now, so a control near the bottom isn't
+  // built until scrolled to. scrollUntilVisible builds it; ensureVisible
+  // then brings it fully on screen (it stops as soon as the element exists,
+  // which a ListView does past the viewport edge).
+  if (finder.evaluate().isEmpty) {
+    await tester.scrollUntilVisible(finder, 200);
+  }
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+/// Picks [optionKey] out of the pill dropdown keyed [pickerKey].
+///
+/// Dropdown options only exist while the menu is open, so they can't be
+/// tapped directly the way the old radio tiles could.
+Future<void> pickFromDropdown(
+  WidgetTester tester,
+  String pickerKey,
+  String optionKey,
+) async {
+  await tapKey(tester, pickerKey);
+  // The open menu renders its own copy of every item, so the option key
+  // matches twice — the closed pill's and the menu's. The menu's is last.
+  await tester.tap(find.byKey(Key(optionKey)).last);
   await tester.pumpAndSettle();
 }
 
@@ -139,7 +165,7 @@ void main() {
       await tapKey(tester, 'open-settings');
       expect(find.text('Settings'), findsOneWidget);
 
-      await tapKey(tester, 'language-es');
+      await pickFromDropdown(tester, 'language-picker', 'language-es');
 
       expect(find.text('Ajustes'), findsOneWidget);
       expect(find.text('Settings'), findsNothing);
@@ -151,9 +177,13 @@ void main() {
         await pumpNestedApp(tester);
 
         await tapKey(tester, 'open-settings');
-        await tapKey(tester, 'turn-timer-seconds15');
-        await tester.pageBack();
-        await tester.pumpAndSettle();
+        await pickFromDropdown(
+          tester,
+          'turn-timer-picker',
+          'turn-timer-seconds15',
+        );
+        // Settings closes via its own X now — it has no AppBar back button.
+        await tapKey(tester, 'close-settings');
 
         await tapKey(tester, 'mode-stackStatic');
         await tapKey(tester, 'play-local');
@@ -179,18 +209,21 @@ void main() {
 
       await tapKey(tester, 'sfx-toggle');
 
-      final enabled = await containerOf(tester, screen: SettingsScreen)
-          .read(settingsServiceProvider)
-          .sfxEnabled();
+      final enabled = await containerOf(
+        tester,
+        screen: SettingsScreen,
+      ).read(settingsServiceProvider).sfxEnabled();
       expect(enabled, isFalse);
     });
 
-    testWidgets('music toggle drives playback through the app-level listener',
-        (tester) async {
+    testWidgets('music toggle drives playback through the app-level listener', (
+      tester,
+    ) async {
       final audio = FakeAudioService();
-      await pumpNestedApp(tester, overrides: [
-        audioServiceProvider.overrideWithValue(audio),
-      ]);
+      await pumpNestedApp(
+        tester,
+        overrides: [audioServiceProvider.overrideWithValue(audio)],
+      );
       // Music defaults on (design doc §5) — starts as soon as settings
       // resolve, with no user action needed.
       expect(audio.musicPlaying, isTrue);
@@ -216,16 +249,21 @@ void main() {
       );
 
       await tapKey(tester, 'open-settings');
-      await tapKey(tester, 'turn-timer-seconds15');
-      await tester.pageBack();
-      await tester.pumpAndSettle();
+      await pickFromDropdown(
+        tester,
+        'turn-timer-picker',
+        'turn-timer-seconds15',
+      );
+      // Settings closes via its own X now — it has no AppBar back button.
+      await tapKey(tester, 'close-settings');
 
       await tapKey(tester, 'mode-stackStatic');
       await tapKey(tester, 'play-local');
 
       int secondsShown() {
-        final text =
-            tester.widget<Text>(find.byKey(const Key('turn-timer-banner'))).data!;
+        final text = tester
+            .widget<Text>(find.byKey(const Key('turn-timer-banner')))
+            .data!;
         return int.parse(text.replaceAll('s', ''));
       }
 
@@ -240,7 +278,9 @@ void main() {
       // pick up the new real elapsed time in its rebuild.
       final initial = secondsShown();
       expect(initial, lessThanOrEqualTo(20));
-      await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 3)));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(seconds: 3)),
+      );
       await tester.pump(const Duration(seconds: 1));
       expect(secondsShown(), lessThan(initial));
 

@@ -10,16 +10,22 @@ import '../../services/purchase_service.dart';
 import '../../services/stats/stats_service.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
+import '../widgets/buttons/pill_action_button.dart';
+import '../widgets/buttons/pill_dropdown.dart';
 import 'tutorial_screen.dart';
 
 String _modeName(AppLocalizations l10n, GameMode mode) => switch (mode) {
-      GameMode.stackStatic => l10n.modeStackStatic,
-      GameMode.stackMovable => l10n.modeStackMovable,
-      GameMode.ultimate => l10n.modeUltimate,
-    };
+  GameMode.stackStatic => l10n.modeStackStatic,
+  GameMode.stackMovable => l10n.modeStackMovable,
+  GameMode.ultimate => l10n.modeUltimate,
+};
 
 /// Design doc §10: reset stats, replay tutorial, sound toggles, language,
 /// local turn timer.
+///
+/// Laid out as a full-bleed panel — its own header with a close button rather
+/// than an `AppBar`, and label-left/control-right rows on the bare `ground`
+/// instead of section cards.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -31,121 +37,123 @@ class SettingsScreen extends ConsumerWidget {
     final settingsController = ref.read(settingsControllerProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.settingsTitle),
-        backgroundColor: colors.ground,
-        foregroundColor: colors.ink,
-      ),
+      backgroundColor: colors.ground,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
+        child: Column(
           children: [
-            _SectionCard(
-              title: l10n.settingsResetStats,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: FilledButton(
-                  key: const Key('reset-stats'),
-                  onPressed: () => _confirmResetStats(context, ref),
-                  child: Text(l10n.settingsResetStats),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _SectionCard(
-              title: l10n.settingsReplayTutorialHeading,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            const _SettingsHeader(),
+            Expanded(
+              child: ListView(
+                // Full screen width, inset only by a horizontal gutter —
+                // rows read as a single column of settings rather than a
+                // centred card.
+                padding: const EdgeInsets.fromLTRB(32, 8, 32, 32),
                 children: [
+                  _SettingRow(
+                    label: l10n.settingsSfxLabel,
+                    control: _SettingSwitch(
+                      switchKey: const Key('sfx-toggle'),
+                      value: settings?.sfxEnabled ?? true,
+                      onChanged: settingsController.setSfxEnabled,
+                    ),
+                  ),
+                  _SettingRow(
+                    label: l10n.settingsMusicLabel,
+                    control: _SettingSwitch(
+                      switchKey: const Key('music-toggle'),
+                      value: settings?.musicEnabled ?? true,
+                      onChanged: settingsController.setMusicEnabled,
+                    ),
+                  ),
+                  const _RowDivider(),
+
+                  // One row per mode rather than the mockup's single
+                  // "Repeat tutorial" button: there are three separate
+                  // tutorials, and a lone button couldn't say which.
+                  _SectionLabel(l10n.settingsReplayTutorialHeading),
                   for (final mode in GameMode.values)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: TextButton(
+                    _SettingRow(
+                      label: _modeName(l10n, mode),
+                      control: PillActionButton(
                         key: Key('replay-tutorial-${mode.name}'),
+                        label: l10n.settingsReplayAction,
                         onPressed: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                              builder: (_) => TutorialScreen(mode: mode)),
+                            builder: (_) => TutorialScreen(mode: mode),
+                          ),
                         ),
-                        child: Text(_modeName(l10n, mode)),
                       ),
                     ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            _SectionCard(
-              title: l10n.settingsSoundHeading,
-              child: Column(
-                children: [
-                  SwitchListTile(
-                    key: const Key('sfx-toggle'),
-                    title: Text(l10n.settingsSfxLabel),
-                    value: settings?.sfxEnabled ?? true,
-                    onChanged: (value) => settingsController.setSfxEnabled(value),
+                  const _RowDivider(),
+
+                  _SettingRow(
+                    label: l10n.settingsLanguageHeading,
+                    control: PillDropdown<String?>(
+                      key: const Key('language-picker'),
+                      value: settings?.languageCode,
+                      onChanged: settingsController.setLanguageCode,
+                      items: [
+                        DropdownMenuItem(
+                          key: const Key('language-system'),
+                          value: null,
+                          child: Text(l10n.languageSystem),
+                        ),
+                        DropdownMenuItem(
+                          key: const Key('language-en'),
+                          value: 'en',
+                          child: Text(l10n.languageEnglish),
+                        ),
+                        DropdownMenuItem(
+                          key: const Key('language-es'),
+                          value: 'es',
+                          child: Text(l10n.languageSpanish),
+                        ),
+                      ],
+                    ),
                   ),
-                  SwitchListTile(
-                    key: const Key('music-toggle'),
-                    title: Text(l10n.settingsMusicLabel),
-                    value: settings?.musicEnabled ?? true,
-                    onChanged: (value) => settingsController.setMusicEnabled(value),
+                  _SettingRow(
+                    label: l10n.settingsTurnTimerHeading,
+                    control: PillDropdown<TurnTimerPreset>(
+                      key: const Key('turn-timer-picker'),
+                      value: settings?.turnTimer,
+                      onChanged: (value) {
+                        if (value != null) {
+                          settingsController.setTurnTimer(value);
+                        }
+                      },
+                      items: [
+                        for (final preset in TurnTimerPreset.values)
+                          DropdownMenuItem(
+                            key: Key('turn-timer-${preset.name}'),
+                            value: preset,
+                            child: Text(
+                              preset == TurnTimerPreset.off
+                                  ? l10n.turnTimerOff
+                                  : l10n.turnTimerSeconds(preset.seconds!),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
+                  const _RowDivider(),
+
+                  _SettingRow(
+                    label: l10n.settingsResetStats,
+                    control: PillActionButton(
+                      key: const Key('reset-stats'),
+                      label: l10n.settingsReset,
+                      onPressed: () => _confirmResetStats(context, ref),
+                    ),
+                  ),
+                  // Web is inherently ad-free and purchase-free (design
+                  // doc §9) — AdMob and in_app_purchase have no web
+                  // implementation, so there's nothing to remove and
+                  // nothing to buy there.
+                  if (!kIsWeb) ...[
+                    const _RowDivider(),
+                    const _RemoveAdsSection(),
+                  ],
                 ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            _SectionCard(
-              title: l10n.settingsLanguageHeading,
-              child: RadioGroup<String?>(
-                groupValue: settings?.languageCode,
-                onChanged: (code) => settingsController.setLanguageCode(code),
-                child: Column(
-                  children: [
-                    RadioListTile<String?>(
-                      key: const Key('language-system'),
-                      title: Text(l10n.languageSystem),
-                      value: null,
-                    ),
-                    RadioListTile<String?>(
-                      key: const Key('language-en'),
-                      title: Text(l10n.languageEnglish),
-                      value: 'en',
-                    ),
-                    RadioListTile<String?>(
-                      key: const Key('language-es'),
-                      title: Text(l10n.languageSpanish),
-                      value: 'es',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Web is inherently ad-free and purchase-free (design doc §9) —
-            // AdMob and in_app_purchase have no web implementation, so
-            // there's nothing to remove and nothing to buy there.
-            if (!kIsWeb) ...[
-              const SizedBox(height: 12),
-              const _RemoveAdsSection(),
-            ],
-            const SizedBox(height: 12),
-            _SectionCard(
-              title: l10n.settingsTurnTimerHeading,
-              child: RadioGroup<TurnTimerPreset>(
-                groupValue: settings?.turnTimer,
-                onChanged: (value) {
-                  if (value != null) settingsController.setTurnTimer(value);
-                },
-                child: Column(
-                  children: [
-                    for (final preset in TurnTimerPreset.values)
-                      RadioListTile<TurnTimerPreset>(
-                        key: Key('turn-timer-${preset.name}'),
-                        title: Text(preset == TurnTimerPreset.off
-                            ? l10n.turnTimerOff
-                            : l10n.turnTimerSeconds(preset.seconds!)),
-                        value: preset,
-                      ),
-                  ],
-                ),
               ),
             ),
           ],
@@ -177,8 +185,161 @@ class SettingsScreen extends ConsumerWidget {
     if (confirmed != true) return;
     await ref.read(statsServiceProvider).resetAll();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.settingsResetStatsDone)),
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.settingsResetStatsDone)));
+  }
+}
+
+/// Gear badge, title and subtitle on the left; close on the right.
+class _SettingsHeader extends StatelessWidget {
+  const _SettingsHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = context.gameColors;
+    final styles = context.gameTextStyles;
+    final elevations = context.gameElevations;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 16, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: colors.surface,
+              shape: BoxShape.circle,
+              boxShadow: elevations.raised,
+            ),
+            child: Icon(Icons.settings, size: 34, color: colors.neutral),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.settingsTitle, style: styles.display),
+                Text(l10n.settingsSubtitle, style: styles.subtitle),
+              ],
+            ),
+          ),
+          IconButton(
+            key: const Key('close-settings'),
+            icon: const Icon(Icons.close),
+            iconSize: 40,
+            color: colors.neutral,
+            tooltip: l10n.close,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A label on the left, its control on the right.
+class _SettingRow extends StatelessWidget {
+  const _SettingRow({required this.label, required this.control});
+
+  final String label;
+  final Widget control;
+
+  @override
+  Widget build(BuildContext context) {
+    final styles = context.gameTextStyles;
+    // Deliberately a step below the section headings above them, so a group
+    // of rows reads as belonging to its heading rather than competing with it.
+    final text = Text(label, style: styles.cardTitle);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // A long translated label and a wide control can't share a line on
+          // a phone — Spanish's turn-timer row is the worst case (design
+          // system §8). Stack them rather than squeezing the label into a
+          // column of one character per line.
+          if (constraints.maxWidth < 420) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [text, const SizedBox(height: 8), control],
+            );
+          }
+          return Row(
+            children: [
+              Expanded(child: text),
+              const SizedBox(width: 16),
+              Flexible(child: control),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Heading over a group of related rows.
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      child: Text(text, style: context.gameTextStyles.screenTitle),
+    );
+  }
+}
+
+class _RowDivider extends StatelessWidget {
+  const _RowDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 32,
+      color: context.gameColors.neutral.withValues(alpha: 0.3),
+    );
+  }
+}
+
+/// A [Switch] painted from the palette rather than Material's defaults, so it
+/// reads as the same family as the pills beside it.
+class _SettingSwitch extends StatelessWidget {
+  const _SettingSwitch({
+    required this.switchKey,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final Key switchKey;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.gameColors;
+
+    return Switch(
+      key: switchKey,
+      value: value,
+      onChanged: onChanged,
+      thumbColor: WidgetStatePropertyAll(colors.surface),
+      // `ink`, not `playerA`: indigo is Player 1's colour and carries that
+      // meaning everywhere else in the app — borrowing it for a generic UI
+      // control would say something the control doesn't mean.
+      trackColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? colors.ink
+            : colors.neutral.withValues(alpha: 0.4),
+      ),
+      trackOutlineColor: WidgetStatePropertyAll(Colors.transparent),
     );
   }
 }
@@ -206,85 +367,57 @@ class _RemoveAdsSectionState extends ConsumerState<_RemoveAdsSection> {
   }
 
   void _refresh() => setState(() {
-        _removed = ref.read(purchaseServiceProvider).isRemoved();
-      });
+    _removed = ref.read(purchaseServiceProvider).isRemoved();
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-
-    return _SectionCard(
-      title: l10n.removeAdsTitle,
-      child: FutureBuilder<bool>(
-        future: _removed,
-        builder: (context, snapshot) {
-          final removed = snapshot.data ?? false;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.removeAdsDesc),
-              const SizedBox(height: 8),
-              if (removed)
-                Text(l10n.removeAdsOwned)
-              else
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    FilledButton(
-                      key: const Key('remove-ads-buy'),
-                      onPressed: () async {
-                        await ref
-                            .read(purchaseServiceProvider)
-                            .buy(ProductId.removeAds);
-                        _refresh();
-                      },
-                      child: Text(l10n.removeAdsButton),
-                    ),
-                    TextButton(
-                      key: const Key('restore-purchases'),
-                      onPressed: () async {
-                        await ref.read(purchaseServiceProvider).restorePurchases();
-                        _refresh();
-                      },
-                      child: Text(l10n.restorePurchases),
-                    ),
-                  ],
-                ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.child});
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.gameColors;
     final styles = context.gameTextStyles;
 
-    return Material(
-      color: colors.surface,
-      borderRadius: BorderRadius.circular(4),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+    return FutureBuilder<bool>(
+      future: _removed,
+      builder: (context, snapshot) {
+        final removed = snapshot.data ?? false;
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: styles.cardTitle),
-            const SizedBox(height: 8),
-            child,
+            _SectionLabel(l10n.removeAdsTitle),
+            Text(l10n.removeAdsDesc, style: styles.bodyMuted),
+            const SizedBox(height: 12),
+            if (removed)
+              Text(l10n.removeAdsOwned, style: styles.body)
+            else
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  PillActionButton(
+                    key: const Key('remove-ads-buy'),
+                    label: l10n.removeAdsButton,
+                    onPressed: () async {
+                      await ref
+                          .read(purchaseServiceProvider)
+                          .buy(ProductId.removeAds);
+                      _refresh();
+                    },
+                  ),
+                  TextButton(
+                    key: const Key('restore-purchases'),
+                    onPressed: () async {
+                      await ref
+                          .read(purchaseServiceProvider)
+                          .restorePurchases();
+                      _refresh();
+                    },
+                    child: Text(l10n.restorePurchases),
+                  ),
+                ],
+              ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
