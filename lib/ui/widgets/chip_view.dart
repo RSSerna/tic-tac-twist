@@ -53,31 +53,31 @@ class ChipView extends StatelessWidget {
 
   /// The painted rendering, also the fallback when an asset fails to load.
   Widget _painted(ChipForm form) => CustomPaint(
-        painter: _ChipPainter(
-          color: color,
-          ringColor: ringColor,
-          level: level,
-          isFirstPerson: isFirstPerson,
-          form: form,
-        ),
-        // A childless CustomPaint has no intrinsic size; the enclosing
-        // FractionallySizedBox gives tight constraints, so an explicit child
-        // isn't needed here — but SizedBox.expand keeps it robust if this
-        // painter is ever reused under looser constraints.
-        child: const SizedBox.expand(),
-      );
+    painter: _ChipPainter(
+      color: color,
+      ringColor: ringColor,
+      level: level,
+      isFirstPerson: isFirstPerson,
+      form: form,
+    ),
+    // A childless CustomPaint has no intrinsic size; the enclosing
+    // FractionallySizedBox gives tight constraints, so an explicit child
+    // isn't needed here — but SizedBox.expand keeps it robust if this
+    // painter is ever reused under looser constraints.
+    child: const SizedBox.expand(),
+  );
 
   Widget _forAppearance(ChipAppearance appearance) => switch (appearance) {
-        PaintedAppearance(:final form) => _painted(form),
-        AssetAppearance(:final resolve, :final fallbackForm) => Image.asset(
-            resolve(ChipAssetRequest(level: level, isFirstPerson: isFirstPerson)),
-            fit: BoxFit.contain,
-            // Missing/broken art never shows a broken-image glyph — it paints
-            // the equivalent procedural chip instead (design decision: asset
-            // skins degrade to painted, they never break the board).
-            errorBuilder: (context, error, stackTrace) => _painted(fallbackForm),
-          ),
-      };
+    PaintedAppearance(:final form) => _painted(form),
+    AssetAppearance(:final resolve, :final fallbackForm) => Image.asset(
+      resolve(ChipAssetRequest(level: level, isFirstPerson: isFirstPerson)),
+      fit: BoxFit.contain,
+      // Missing/broken art never shows a broken-image glyph — it paints
+      // the equivalent procedural chip instead (design decision: asset
+      // skins degrade to painted, they never break the board).
+      errorBuilder: (context, error, stackTrace) => _painted(fallbackForm),
+    ),
+  };
 }
 
 class _ChipPainter extends CustomPainter {
@@ -115,9 +115,9 @@ class _ChipPainter extends CustomPainter {
       Path()..addOval(Rect.fromCircle(center: center, radius: radius));
 
   Path _silhouetteAt(Offset center, double radius) => switch (form) {
-        ChipForm.rings => _ringSilhouette(center, radius),
-        ChipForm.dolls => _dollSilhouette(center, radius),
-      };
+    ChipForm.rings => _ringSilhouette(center, radius),
+    ChipForm.dolls => _dollSilhouette(center, radius),
+  };
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -145,10 +145,16 @@ class _ChipPainter extends CustomPainter {
         ..strokeWidth = radius * 0.08
         ..strokeCap = StrokeCap.round;
       final arm = radius * 0.12;
-      canvas.drawLine(center - Offset(arm, arm), center + Offset(arm, arm),
-          markPaint);
-      canvas.drawLine(center - Offset(arm, -arm), center + Offset(arm, -arm),
-          markPaint);
+      canvas.drawLine(
+        center - Offset(arm, arm),
+        center + Offset(arm, arm),
+        markPaint,
+      );
+      canvas.drawLine(
+        center - Offset(arm, -arm),
+        center + Offset(arm, -arm),
+        markPaint,
+      );
     }
   }
 

@@ -69,7 +69,7 @@ class _UltimateBoardState extends ConsumerState<UltimateBoard> {
     final lastMove = session.lastMove as UltimateMove?;
     final appearance =
         ref.watch(skinControllerProvider).value?.selectedSkin.appearance ??
-            const PaintedAppearance(ChipForm.rings);
+        const PaintedAppearance(ChipForm.rings);
 
     Widget smallBoard(int board, {required bool interactive}) => _SmallBoard(
       engine: engine,
@@ -383,7 +383,9 @@ class _UltimateCell extends StatelessWidget {
     final colors = context.gameColors;
     // The person this mark represents: the current player while staging a
     // preview, otherwise whoever actually owns the cell.
-    final markPerson = stagedHere ? currentPerson : (owner == null ? null : personFor(owner!));
+    final markPerson = stagedHere
+        ? currentPerson
+        : (owner == null ? null : personFor(owner!));
     final mark = markPerson == null
         ? null
         : Padding(
@@ -479,10 +481,10 @@ class _UltimateMark extends StatelessWidget {
     final Widget content = switch (appearance) {
       PaintedAppearance() => painted,
       AssetAppearance(:final resolve) => Image.asset(
-          resolve(ChipAssetRequest(isFirstPerson: isFirstPerson)),
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => painted,
-        ),
+        resolve(ChipAssetRequest(isFirstPerson: isFirstPerson)),
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => painted,
+      ),
     };
     return SizedBox.expand(child: content);
   }
@@ -501,8 +503,9 @@ class _AnimatedMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.of(context).disableAnimations;
-    final duration =
-        reduceMotion ? Duration.zero : context.gameAnimations.placement;
+    final duration = reduceMotion
+        ? Duration.zero
+        : context.gameAnimations.placement;
 
     return AnimatedSwitcher(
       duration: duration,
@@ -531,7 +534,9 @@ class _LastMoveGlow extends StatelessWidget {
     return IgnorePointer(
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 1, end: 0),
-        duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 900),
+        duration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 900),
         curve: Curves.easeOut,
         builder: (context, opacity, child) => Opacity(
           opacity: opacity,

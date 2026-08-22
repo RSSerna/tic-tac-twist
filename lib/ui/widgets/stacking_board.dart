@@ -26,22 +26,21 @@ class StackingBoard extends ConsumerWidget {
     final colors = context.gameColors;
     final appearance =
         ref.watch(skinControllerProvider).value?.selectedSkin.appearance ??
-            const PaintedAppearance(ChipForm.rings);
+        const PaintedAppearance(ChipForm.rings);
 
     final highlights = controller.stackingHighlightTargets();
     final staged = session.stagedMove;
     final (stagedCell, stagedLevel, stagedFrom) = switch (staged) {
       PlaceMove(:final cell, :final level) => (cell, level, null),
       RelocateMove(:final from, :final to) => (
-          to,
-          engine.topChipAt(from)?.level,
-          from,
-        ),
+        to,
+        engine.topChipAt(from)?.level,
+        from,
+      ),
       _ => (null, null, null),
     };
     final currentPerson = session.currentPerson;
-    final currentColor =
-        currentPerson == 1 ? colors.playerA : colors.playerB;
+    final currentColor = currentPerson == 1 ? colors.playerA : colors.playerB;
     final lastMoveCell = switch (session.lastMove) {
       PlaceMove(:final cell) => cell,
       RelocateMove(:final to) => to,
@@ -168,7 +167,9 @@ class _StackingCell extends StatelessWidget {
                     // it only ever moves in the direction that produced a
                     // genuinely new top chip (placement, cover, or a
                     // relocation revealing what's underneath).
-                    animationKey: ValueKey('$cell-$depth-${top.owner.name}-${top.level}'),
+                    animationKey: ValueKey(
+                      '$cell-$depth-${top.owner.name}-${top.level}',
+                    ),
                     isCover: depth > 1,
                     child: Opacity(
                       // The origin chip of a staged relocation dims: it is
@@ -293,7 +294,9 @@ class _LastMoveGlow extends StatelessWidget {
     return IgnorePointer(
       child: TweenAnimationBuilder<double>(
         tween: Tween(begin: 1, end: 0),
-        duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 900),
+        duration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 900),
         curve: Curves.easeOut,
         builder: (context, opacity, child) => Opacity(
           opacity: opacity,

@@ -157,5 +157,13 @@
   "challengeClaimBoardMajority": "Gana una partida de Ultimate con seis o más tableros",
   "settingsSubtitle": "Elige una categoría",
   "settingsReplayAction": "Jugar",
-  "close": "Cerrar"
+  "close": "Cerrar",
+  "customTitle": "Personalizar",
+  "customSubtitle": "Elige una categoría",
+  "categoryBoard": "Tablero",
+  "categoryChips": "Fichas",
+  "categoryEmote": "Emotes",
+  "categoryFlexing": "Celebración",
+  "categoryComingSoon": "Próximamente",
+  "categoryNext": "Más categorías"
 }

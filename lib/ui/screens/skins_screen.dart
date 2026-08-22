@@ -1,73 +1,109 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../controllers/skin_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../services/purchase_service.dart';
-import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
-import '../../theme/typography.dart';
-import '../widgets/chip_view.dart';
+import '../widgets/app_mark.dart';
+import '../widgets/buttons/category_tile.dart';
+import '../widgets/panel_header.dart';
+import 'chip_skins_screen.dart';
 
-String _skinName(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
-      'turned_wood' => l10n.skinTurnedWoodName,
-      'nesting_dolls' => l10n.skinNestingDollsName,
-      _ => skin.id,
-    };
+/// The cosmetic categories a player can customise.
+///
+/// Only [chips] has content today ([ChipSkinsScreen], roadmap Phase 8). The
+/// rest are declared here because the screen is built around the category
+/// row — they render locked until each has a system behind it, rather than
+/// being hidden and then needing the layout redesigned when they land.
+enum CustomizationCategory {
+  board(available: false),
+  chips(available: true),
+  emote(available: false),
+  flexing(available: false);
 
-String _skinDesc(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
-      'turned_wood' => l10n.skinTurnedWoodDesc,
-      'nesting_dolls' => l10n.skinNestingDollsDesc,
-      _ => '',
-    };
+  const CustomizationCategory({required this.available});
 
-/// The direct-purchase route design doc §2.2 names alongside "earned
-/// through play" — null for skins (like the free default) that have no
-/// purchase route at all, and always null on web (design doc §9:
-/// in_app_purchase has no web implementation, so there's nothing to sell —
-/// achievement-unlocking still works there, since it's just local storage).
-ProductId? _productFor(GameSkin skin) {
-  if (kIsWeb) return null;
-  return switch (skin.id) {
-    'nesting_dolls' => ProductId.skinNestingDolls,
-    _ => null,
-  };
+  final bool available;
 }
 
-/// Skin picker (roadmap Phase 8): the free default plus one premium set,
-/// unlockable either by achievement (design doc §2.6 / product doc §3.1) or
-/// direct purchase (product doc §2.2's other cosmetics route).
-class SkinsScreen extends ConsumerWidget {
+/// Customisation root: pick a category, then a cosmetic within it.
+class SkinsScreen extends StatelessWidget {
   const SkinsScreen({super.key});
 
+  static String _label(AppLocalizations l10n, CustomizationCategory category) =>
+      switch (category) {
+        CustomizationCategory.board => l10n.categoryBoard,
+        CustomizationCategory.chips => l10n.categoryChips,
+        CustomizationCategory.emote => l10n.categoryEmote,
+        CustomizationCategory.flexing => l10n.categoryFlexing,
+      };
+
+  static Widget _icon(BuildContext context, CustomizationCategory category) {
+    final colors = context.gameColors;
+    return switch (category) {
+      CustomizationCategory.board => const AppMark(size: 64),
+      // `ink`, not `neutral`: these are the tile's subject, not a disabled
+      // or secondary state, and they carry the same weight as `AppMark`
+      // beside them (which paints in `ink` too).
+      CustomizationCategory.chips => Icon(
+        Icons.palette,
+        size: 64,
+        color: colors.ink,
+      ),
+      CustomizationCategory.emote => Icon(
+        Icons.emoji_emotions,
+        size: 64,
+        color: colors.ink,
+      ),
+      CustomizationCategory.flexing => Icon(
+        Icons.accessibility_new,
+        size: 64,
+        color: colors.ink,
+      ),
+    };
+  }
+
+  void _open(BuildContext context, CustomizationCategory category) {
+    switch (category) {
+      case CustomizationCategory.chips:
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const ChipSkinsScreen()),
+        );
+      case CustomizationCategory.board:
+      case CustomizationCategory.emote:
+      case CustomizationCategory.flexing:
+        // Unreachable: CategoryTile refuses taps when unavailable. Left
+        // explicit so adding a system means filling this in, not hunting for
+        // where navigation was supposed to go.
+        break;
+    }
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
-    final skinState = ref.watch(skinControllerProvider).value;
-    final skinController = ref.read(skinControllerProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.skinsTitle),
-        backgroundColor: colors.ground,
-        foregroundColor: colors.ink,
-      ),
+      backgroundColor: colors.ground,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final skin in GameSkin.values) ...[
-              _SkinCard(
-                skin: skin,
-                unlocked: skinState?.isUnlocked(skin) ??
-                    skin.id == GameSkin.turnedWood.id,
-                selected: skinState?.selectedId == skin.id,
-                onSelect: () => skinController.selectSkin(skin),
+            PanelHeader(
+              closeKey: const Key('close-custom'),
+              icon: const AppMark(size: 34),
+              title: l10n.customTitle,
+              subtitle: l10n.customSubtitle,
+            ),
+            Expanded(
+              child: Center(
+                child: _CategoryRow(
+                  categories: CustomizationCategory.values,
+                  label: _label,
+                  icon: _icon,
+                  onOpen: _open,
+                ),
               ),
-              const SizedBox(height: 12),
-            ],
+            ),
           ],
         ),
       ),
@@ -75,86 +111,130 @@ class SkinsScreen extends ConsumerWidget {
   }
 }
 
-class _SkinCard extends ConsumerWidget {
-  const _SkinCard({
-    required this.skin,
-    required this.unlocked,
-    required this.selected,
-    required this.onSelect,
+/// The horizontally scrolling row of category tiles, with a chevron that
+/// appears only when there's more row to reach.
+class _CategoryRow extends StatefulWidget {
+  const _CategoryRow({
+    required this.categories,
+    required this.label,
+    required this.icon,
+    required this.onOpen,
   });
 
-  final GameSkin skin;
-  final bool unlocked;
-  final bool selected;
-  final VoidCallback onSelect;
+  final List<CustomizationCategory> categories;
+  final String Function(AppLocalizations, CustomizationCategory) label;
+  final Widget Function(BuildContext, CustomizationCategory) icon;
+  final void Function(BuildContext, CustomizationCategory) onOpen;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  State<_CategoryRow> createState() => _CategoryRowState();
+}
+
+class _CategoryRowState extends State<_CategoryRow> {
+  final _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// A few pixels of remaining extent aren't a tile the player can't see —
+  /// offering an arrow that scrolls by 2px reads as a broken control.
+  static const _endSlack = 8.0;
+
+  bool get _canScrollForward =>
+      _controller.hasClients &&
+      _controller.position.pixels <
+          _controller.position.maxScrollExtent - _endSlack;
+
+  void _scrollForward() {
+    final viewport = _controller.position.viewportDimension;
+    _controller.animateTo(
+      (_controller.position.pixels + viewport * 0.8).clamp(
+        0,
+        _controller.position.maxScrollExtent,
+      ),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
-    final styles = context.gameTextStyles;
-    final product = _productFor(skin);
 
-    return Material(
-      key: Key('skin-card-${skin.id}'),
-      color: colors.surface,
-      borderRadius: BorderRadius.circular(4),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Opacity(
-              opacity: unlocked ? 1 : 0.4,
-              child: SizedBox(
-                width: 56,
-                height: 56,
-                child: ChipView(
-                  color: colors.playerA,
-                  ringColor: colors.surface,
-                  level: 4,
-                  isFirstPerson: true,
-                  appearance: skin.appearance,
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_skinName(l10n, skin),
-                      style: styles.cardTitle),
-                  const SizedBox(height: 4),
-                  Text(
-                    unlocked ? _skinDesc(l10n, skin) : l10n.skinUnlockHint,
-                    style: styles.caption,
+    const gutter = 32.0;
+    const chevronSlot = 56.0;
+
+    return Row(
+      children: [
+        // Mirrors the chevron's slot on the left so the tiles centre against
+        // the screen rather than against the space the chevron leaves.
+        const SizedBox(width: chevronSlot),
+        Expanded(
+          // Rebuilds the chevron whenever the row's extent or offset changes,
+          // so it can't linger after the last tile is already in view.
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (_) {
+              setState(() {});
+              return false;
+            },
+            child: NotificationListener<ScrollMetricsNotification>(
+              onNotification: (_) {
+                setState(() {});
+                return false;
+              },
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  controller: _controller,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: gutter),
+                  child: ConstrainedBox(
+                    // Filling the viewport lets the Row centre its tiles when
+                    // they fit; when they don't, the Row is wider than this
+                    // minimum and simply scrolls. A ListView can't do the
+                    // first half — it always packs from the leading edge.
+                    constraints: BoxConstraints(
+                      minWidth: constraints.maxWidth - gutter * 2,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (final category in widget.categories) ...[
+                          CategoryTile(
+                            key: Key('category-${category.name}'),
+                            label: widget.label(l10n, category),
+                            icon: widget.icon(context, category),
+                            available: category.available,
+                            onPressed: () => widget.onOpen(context, category),
+                          ),
+                          if (category != widget.categories.last)
+                            const SizedBox(width: 20),
+                        ],
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
-            const SizedBox(width: 12),
-            if (!unlocked) ...[
-              Icon(Icons.lock, color: colors.neutral, semanticLabel: l10n.skinLocked),
-              if (product != null) ...[
-                const SizedBox(width: 8),
-                FilledButton(
-                  key: Key('buy-skin-${skin.id}'),
-                  onPressed: () => ref.read(purchaseServiceProvider).buy(product),
-                  child: Text(l10n.skinBuyButton),
-                ),
-              ],
-            ] else if (selected)
-              Text(l10n.skinSelected,
-                  style: styles.label)
-            else
-              FilledButton(
-                key: Key('select-skin-${skin.id}'),
-                onPressed: onSelect,
-                child: Text(l10n.skinSelect),
-              ),
-          ],
+          ),
         ),
-      ),
+        SizedBox(
+          width: chevronSlot,
+          child: _canScrollForward
+              ? IconButton(
+                  key: const Key('category-scroll-forward'),
+                  icon: const Icon(Icons.chevron_right),
+                  iconSize: 44,
+                  color: colors.ink,
+                  tooltip: l10n.categoryNext,
+                  onPressed: _scrollForward,
+                )
+              : null,
+        ),
+      ],
     );
   }
 }

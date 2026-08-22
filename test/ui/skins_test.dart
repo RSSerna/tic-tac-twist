@@ -5,6 +5,7 @@ import 'package:nested_game/controllers/skin_controller.dart';
 import 'package:nested_game/main.dart';
 import 'package:nested_game/services/skin_service.dart';
 import 'package:nested_game/theme/skin.dart';
+import 'package:nested_game/ui/screens/chip_skins_screen.dart';
 import 'package:nested_game/ui/screens/skins_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -33,54 +34,107 @@ void main() {
     await markAgeGateAnswered();
   });
 
-  testWidgets('Skins icon on Home opens the Skins screen', (tester) async {
+  testWidgets('Skins icon on Home opens the Custom category screen', (
+    tester,
+  ) async {
     await pumpNestedApp(tester);
     await tapKey(tester, 'open-skins');
     expect(find.byType(SkinsScreen), findsOneWidget);
+
+    // Chips is the only category with content; the rest are locked until
+    // they have a system behind them.
+    expect(find.byKey(const Key('category-chips')), findsOneWidget);
+    for (final locked in ['board', 'emote', 'flexing']) {
+      expect(find.byKey(Key('category-$locked')), findsOneWidget);
+    }
   });
 
-  testWidgets(
-      'Turned Wood is unlocked and selected by default; Nesting Dolls starts locked',
-      (tester) async {
+  testWidgets('the scroll chevron appears only when tiles overflow', (
+    tester,
+  ) async {
+    // Wide enough for all four tiles: no chevron.
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await pumpNestedApp(tester);
+    await tapKey(tester, 'open-skins');
+    expect(find.byKey(const Key('category-scroll-forward')), findsNothing);
+
+    // Narrow: the chevron shows, and tapping it scrolls the row to the end,
+    // at which point there's nothing left to reach and it goes away again.
+    await tester.binding.setSurfaceSize(const Size(390, 800));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('category-scroll-forward')), findsOneWidget);
+
+    // Tap until it goes away rather than assuming a step count — how many
+    // taps reach the end depends on tile and viewport size. The bound just
+    // stops a broken chevron from looping forever.
+    final chevron = find.byKey(const Key('category-scroll-forward'));
+    for (var taps = 0; taps < 6 && chevron.evaluate().isNotEmpty; taps++) {
+      await tapKey(tester, 'category-scroll-forward');
+    }
+    expect(chevron, findsNothing);
+  });
+
+  testWidgets('locked categories refuse taps', (tester) async {
     await pumpNestedApp(tester);
     await tapKey(tester, 'open-skins');
 
-    expect(find.byKey(const Key('skin-card-turned_wood')), findsOneWidget);
-    expect(find.byKey(const Key('skin-card-nesting_dolls')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('category-board')));
+    await tester.pumpAndSettle();
 
-    // Turned Wood: already selected, no select button.
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('skin-card-turned_wood')),
-        matching: find.text('Selected'),
-      ),
-      findsOneWidget,
-    );
-
-    // Nesting Dolls: locked — a lock icon, no select button.
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('skin-card-nesting_dolls')),
-        matching: find.byIcon(Icons.lock),
-      ),
-      findsOneWidget,
-    );
-    expect(find.byKey(const Key('select-skin-nesting_dolls')), findsNothing);
+    // Still on the category screen — nothing was pushed.
+    expect(find.byType(SkinsScreen), findsOneWidget);
+    expect(find.byType(ChipSkinsScreen), findsNothing);
   });
 
-  testWidgets('selecting an unlocked premium skin persists the choice',
-      (tester) async {
+  testWidgets(
+    'Turned Wood is unlocked and selected by default; Nesting Dolls starts locked',
+    (tester) async {
+      await pumpNestedApp(tester);
+      await tapKey(tester, 'open-skins');
+      await tapKey(tester, 'category-chips');
+
+      expect(find.byKey(const Key('skin-card-turned_wood')), findsOneWidget);
+      expect(find.byKey(const Key('skin-card-nesting_dolls')), findsOneWidget);
+
+      // Turned Wood: already selected, no select button.
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('skin-card-turned_wood')),
+          matching: find.text('Selected'),
+        ),
+        findsOneWidget,
+      );
+
+      // Nesting Dolls: locked — a lock icon, no select button.
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('skin-card-nesting_dolls')),
+          matching: find.byIcon(Icons.lock),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('select-skin-nesting_dolls')), findsNothing);
+    },
+  );
+
+  testWidgets('selecting an unlocked premium skin persists the choice', (
+    tester,
+  ) async {
     // Pre-unlock the premium skin, as an achievement normally would.
     await SharedPreferencesSkinService().unlockSkin(GameSkin.nestingDolls.id);
 
     await pumpNestedApp(tester);
     await tapKey(tester, 'open-skins');
+    await tapKey(tester, 'category-chips');
 
     expect(find.byKey(const Key('select-skin-nesting_dolls')), findsOneWidget);
     await tapKey(tester, 'select-skin-nesting_dolls');
 
-    final skinState =
-        await containerOf(tester, screen: SkinsScreen).read(skinControllerProvider.future);
+    final skinState = await containerOf(
+      tester,
+      screen: ChipSkinsScreen,
+    ).read(skinControllerProvider.future);
     expect(skinState.selectedId, GameSkin.nestingDolls.id);
     expect(
       find.descendant(

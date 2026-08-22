@@ -275,5 +275,37 @@
   "close": "Close",
   "@close": {
     "description": "Accessibility label for the button that dismisses a full-screen panel."
+  },
+  "customTitle": "Custom",
+  "@customTitle": {
+    "description": "Title of the customization screen, which lists the categories of cosmetic a player can change."
+  },
+  "customSubtitle": "Select category",
+  "@customSubtitle": {
+    "description": "Line under the Custom screen title."
+  },
+  "categoryBoard": "Board",
+  "@categoryBoard": {
+    "description": "Customization category: the look of the board itself."
+  },
+  "categoryChips": "Skins",
+  "@categoryChips": {
+    "description": "Customization category: the look of the playing chips."
+  },
+  "categoryEmote": "Emote",
+  "@categoryEmote": {
+    "description": "Customization category: in-game emotes."
+  },
+  "categoryFlexing": "Flexing",
+  "@categoryFlexing": {
+    "description": "Customization category: victory celebrations."
+  },
+  "categoryComingSoon": "Coming soon",
+  "@categoryComingSoon": {
+    "description": "Shown on a customization category that has no content yet."
+  },
+  "categoryNext": "More categories",
+  "@categoryNext": {
+    "description": "Accessibility label for the arrow that scrolls the category row forward."
   }
 }

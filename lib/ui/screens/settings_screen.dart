@@ -12,6 +12,7 @@ import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../widgets/buttons/pill_action_button.dart';
 import '../widgets/buttons/pill_dropdown.dart';
+import '../widgets/panel_header.dart';
 import 'tutorial_screen.dart';
 
 String _modeName(AppLocalizations l10n, GameMode mode) => switch (mode) {
@@ -41,7 +42,16 @@ class SettingsScreen extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const _SettingsHeader(),
+            PanelHeader(
+              closeKey: const Key('close-settings'),
+              icon: Icon(
+                Icons.settings,
+                size: 34,
+                color: context.gameColors.neutral,
+              ),
+              title: l10n.settingsTitle,
+              subtitle: l10n.settingsSubtitle,
+            ),
             Expanded(
               child: ListView(
                 // Full screen width, inset only by a horizontal gutter —
@@ -188,56 +198,6 @@ class SettingsScreen extends ConsumerWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(l10n.settingsResetStatsDone)));
-  }
-}
-
-/// Gear badge, title and subtitle on the left; close on the right.
-class _SettingsHeader extends StatelessWidget {
-  const _SettingsHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = context.gameColors;
-    final styles = context.gameTextStyles;
-    final elevations = context.gameElevations;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 16, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: colors.surface,
-              shape: BoxShape.circle,
-              boxShadow: elevations.raised,
-            ),
-            child: Icon(Icons.settings, size: 34, color: colors.neutral),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.settingsTitle, style: styles.display),
-                Text(l10n.settingsSubtitle, style: styles.subtitle),
-              ],
-            ),
-          ),
-          IconButton(
-            key: const Key('close-settings'),
-            icon: const Icon(Icons.close),
-            iconSize: 40,
-            color: colors.neutral,
-            tooltip: l10n.close,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
-      ),
-    );
   }
 }
 

@@ -31,7 +31,9 @@ Future<void> main() async {
     return true;
   };
 
-  runApp(UncontrolledProviderScope(container: container, child: const NestedApp()));
+  runApp(
+    UncontrolledProviderScope(container: container, child: const NestedApp()),
+  );
 }
 
 class NestedApp extends ConsumerWidget {
@@ -42,7 +44,10 @@ class NestedApp extends ConsumerWidget {
     // null (follow system) until settings finish loading, or if the user
     // has never overridden the language — both perfectly reasonable
     // defaults, so there's no need to gate the UI on this resolving first.
-    final languageCode = ref.watch(settingsControllerProvider).value?.languageCode;
+    final languageCode = ref
+        .watch(settingsControllerProvider)
+        .value
+        ?.languageCode;
 
     // Music defaults on (design doc §5) and reacts live to the settings
     // toggle. `previous == null` on the very first resolution is what
@@ -58,6 +63,7 @@ class NestedApp extends ConsumerWidget {
     });
 
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       theme: buildAppTheme(),
       locale: languageCode == null ? null : Locale(languageCode),
