@@ -15,7 +15,7 @@ import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../widgets/chip_view.dart';
-import '../widgets/inventory_row.dart';
+import '../widgets/inventory_grid.dart';
 import '../widgets/stacking_board.dart';
 import '../widgets/ultimate_board.dart';
 import '../widgets/winning_line_overlay.dart';
@@ -78,7 +78,7 @@ class GameScreen extends ConsumerWidget {
                     if (session.mode.isStacking && session.status.isOngoing)
                       IgnorePointer(
                         ignoring: session.isAiTurn,
-                        child: const InventoryRow(),
+                        child: const InventoryGrid(),
                       ),
                     StagingBar(session: session),
                   ];
@@ -231,7 +231,7 @@ class _TurnBanner extends ConsumerWidget {
           // Wrap, not Row: a narrow landscape side panel (or Spanish's
           // longer strings, design doc §8) can leave less width than the
           // icon + text need together — reflow onto a second line instead
-          // of overflowing (same reasoning as StagingBar/InventoryRow).
+          // of overflowing (same reasoning as StagingBar/InventoryGrid).
           Wrap(
             alignment: WrapAlignment.center,
             crossAxisAlignment: WrapCrossAlignment.center,

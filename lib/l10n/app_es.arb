@@ -165,5 +165,7 @@
   "categoryEmote": "Emotes",
   "categoryFlexing": "Celebración",
   "categoryComingSoon": "Próximamente",
-  "categoryNext": "Más categorías"
+  "categoryNext": "Más categorías",
+  "tutorialTitle": "Tutorial",
+  "tutorialInstructions": "Instrucciones"
 }

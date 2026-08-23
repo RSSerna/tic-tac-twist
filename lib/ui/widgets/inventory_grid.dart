@@ -9,10 +9,16 @@ import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import 'chip_view.dart';
 
-/// The current player's remaining chips, one button per level with a count.
-/// Tapping selects that level; legal placements then highlight on the board.
-class InventoryRow extends ConsumerWidget {
-  const InventoryRow({super.key});
+/// The current player's remaining chips as a 2×2 block, one button per level
+/// with a count. Tapping selects that level; legal placements then highlight
+/// on the board.
+class InventoryGrid extends ConsumerWidget {
+  const InventoryGrid({super.key, this.compact = false});
+
+  /// Shrinks the tiles for screens too short to seat the full-size block —
+  /// an SE-class phone in portrait, where 220pt of chips would push the
+  /// staging bar off the bottom.
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,30 +35,30 @@ class InventoryRow extends ConsumerWidget {
         ref.watch(skinControllerProvider).value?.selectedSkin.appearance ??
         const PaintedAppearance(ChipForm.rings);
 
-    // Wrap, not Row: each chip is a fixed 64x76 + its own horizontal margin,
-    // so four of them need ~288px of width. That fits in portrait but not
-    // always in a narrow landscape side panel — Wrap reflows onto a second
-    // line (effectively a grid) instead of overflowing (same reasoning as
-    // StagingBar's Wrap).
-    return Wrap(
-      alignment: WrapAlignment.center,
-      runSpacing: 8,
+    Widget chip(int level) => _InventoryChip(
+      key: Key('inventory-$level'),
+      level: level,
+      count: remaining[level] ?? 0,
+      color: color,
+      surface: colors.surface,
+      ink: colors.ink,
+      neutral: colors.neutral,
+      isFirstPerson: person == 1,
+      selected: session.selectedLevel == level,
+      appearance: appearance,
+      compact: compact,
+      onTap: () => controller.selectInventoryLevel(level),
+    );
 
+    // A fixed 2×2 block rather than a reflowing row. Four chips in a line
+    // need ~400px, which a narrow landscape side panel doesn't have; two
+    // columns need ~208 and, unlike a Wrap, the arrangement doesn't change
+    // with the width — the chips stay where the player learned they were.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        for (var level = 1; level <= 4; level++)
-          _InventoryChip(
-            key: Key('inventory-$level'),
-            level: level,
-            count: remaining[level] ?? 0,
-            color: color,
-            surface: colors.surface,
-            ink: colors.ink,
-            neutral: colors.neutral,
-            isFirstPerson: person == 1,
-            selected: session.selectedLevel == level,
-            appearance: appearance,
-            onTap: () => controller.selectInventoryLevel(level),
-          ),
+        Row(mainAxisSize: MainAxisSize.min, children: [chip(1), chip(2)]),
+        Row(mainAxisSize: MainAxisSize.min, children: [chip(3), chip(4)]),
       ],
     );
   }
@@ -70,6 +76,7 @@ class _InventoryChip extends StatelessWidget {
     required this.isFirstPerson,
     required this.selected,
     required this.appearance,
+    required this.compact,
     required this.onTap,
   });
 
@@ -82,6 +89,7 @@ class _InventoryChip extends StatelessWidget {
   final bool isFirstPerson;
   final bool selected;
   final ChipAppearance appearance;
+  final bool compact;
   final VoidCallback onTap;
 
   @override
@@ -94,13 +102,14 @@ class _InventoryChip extends StatelessWidget {
       child: GestureDetector(
         onTap: depleted ? null : onTap,
         child: Container(
-          width: 64,
-          height: 76,
-          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: compact ? 64 : 92,
+          height: compact ? 76 : 104,
+          margin: EdgeInsets.all(compact ? 4 : 6),
           decoration: BoxDecoration(
             color: surface,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(16),
             border: selected ? Border.all(color: ink, width: 2) : null,
+            boxShadow: context.gameElevations.raised,
           ),
           child: Opacity(
             opacity: depleted ? 0.25 : 1,

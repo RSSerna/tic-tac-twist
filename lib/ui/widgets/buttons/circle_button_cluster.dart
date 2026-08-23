@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 ///
 /// Uses [Wrap] rather than a [Column] so a cluster that outgrows the screen
 /// spills into a second line instead of overflowing — the same reasoning as
-/// `InventoryRow` and `StagingBar`.
+/// `InventoryGrid` and `StagingBar`.
 class CircleButtonCluster extends StatelessWidget {
   const CircleButtonCluster({
     super.key,

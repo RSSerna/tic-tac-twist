@@ -307,5 +307,13 @@
   "categoryNext": "More categories",
   "@categoryNext": {
     "description": "Accessibility label for the arrow that scrolls the category row forward."
+  },
+  "tutorialTitle": "Tutorial",
+  "@tutorialTitle": {
+    "description": "Heading of the guided-first-game tutorial screen."
+  },
+  "tutorialInstructions": "Instructions",
+  "@tutorialInstructions": {
+    "description": "Accessibility label for the tutorial's instruction panel."
   }
 }
