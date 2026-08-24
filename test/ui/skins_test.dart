@@ -97,16 +97,14 @@ void main() {
       expect(find.byKey(const Key('skin-card-turned_wood')), findsOneWidget);
       expect(find.byKey(const Key('skin-card-nesting_dolls')), findsOneWidget);
 
-      // Turned Wood: already selected, no select button.
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('skin-card-turned_wood')),
-          matching: find.text('Selected'),
-        ),
-        findsOneWidget,
-      );
+      // Turned Wood starts centred, and it's already the selected skin — so
+      // the actions below the carousel say "Selected" rather than offering
+      // a Select button.
+      expect(find.text('Selected'), findsOneWidget);
+      expect(find.byKey(const Key('select-skin-turned_wood')), findsNothing);
 
-      // Nesting Dolls: locked — a lock icon, no select button.
+      // Nesting Dolls: locked, so its tile shows a lock instead of the art
+      // it's selling, and it can't be selected.
       expect(
         find.descendant(
           of: find.byKey(const Key('skin-card-nesting_dolls')),
@@ -128,6 +126,11 @@ void main() {
     await tapKey(tester, 'open-skins');
     await tapKey(tester, 'category-chips');
 
+    // Actions belong to the centred skin, so it has to be brought to the
+    // centre before it can be selected — tapping its tile does that.
+    expect(find.byKey(const Key('select-skin-nesting_dolls')), findsNothing);
+    await tapKey(tester, 'skin-card-nesting_dolls');
+
     expect(find.byKey(const Key('select-skin-nesting_dolls')), findsOneWidget);
     await tapKey(tester, 'select-skin-nesting_dolls');
 
@@ -136,12 +139,6 @@ void main() {
       screen: ChipSkinsScreen,
     ).read(skinControllerProvider.future);
     expect(skinState.selectedId, GameSkin.nestingDolls.id);
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('skin-card-nesting_dolls')),
-        matching: find.text('Selected'),
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('Selected'), findsOneWidget);
   });
 }

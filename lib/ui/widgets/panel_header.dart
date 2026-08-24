@@ -17,7 +17,12 @@ class PanelHeader extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.closeKey,
+    this.trailing,
   });
+
+  /// Optional controls sitting between the title block and the close button —
+  /// the Skins screen's source tabs, for instance.
+  final Widget? trailing;
 
   /// Drawn inside the badge. A widget rather than an `IconData` so a panel
   /// can use painted art (`AppMark`) where an icon won't do.
@@ -52,12 +57,30 @@ class PanelHeader extends StatelessWidget {
             child: Center(child: icon),
           ),
           const SizedBox(width: 16),
+          // One Expanded holding the title and any trailing controls, rather
+          // than making each of them flexible in the outer Row. It absorbs
+          // all the slack, which is what keeps the close button pinned to the
+          // right edge no matter how short the title is. Inside it, both
+          // parts are Flexible so they squeeze instead of overflowing — a
+          // translated subtitle beside a set of pills doesn't fit a phone
+          // width at full size.
           Expanded(
-            child: Column(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: styles.display),
-                Text(subtitle, style: styles.subtitle),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: styles.display),
+                      Text(subtitle, style: styles.subtitle),
+                    ],
+                  ),
+                ),
+                if (trailing != null) ...[
+                  const SizedBox(width: 16),
+                  Flexible(child: trailing!),
+                ],
               ],
             ),
           ),

@@ -167,5 +167,14 @@
   "categoryComingSoon": "Próximamente",
   "categoryNext": "Más categorías",
   "tutorialTitle": "Tutorial",
-  "tutorialInstructions": "Instrucciones"
+  "tutorialInstructions": "Instrucciones",
+  "skinsSourceLocal": "Local",
+  "skinsSourceOnline": "En línea",
+  "skinsSelectPrompt": "Elige un aspecto",
+  "skinPreviewAsPlayer1": "Vista previa como Jugador 1",
+  "skinPreviewAsPlayer2": "Vista previa como Jugador 2",
+  "rarityCommon": "Común",
+  "rarityRare": "Raro",
+  "rarityEpic": "Épico",
+  "rarityLegendary": "Legendario"
 }

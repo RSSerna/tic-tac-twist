@@ -315,5 +315,32 @@
   "tutorialInstructions": "Instructions",
   "@tutorialInstructions": {
     "description": "Accessibility label for the tutorial's instruction panel."
-  }
+  },
+  "skinsSourceLocal": "Local",
+  "@skinsSourceLocal": {
+    "description": "Tab showing skins already on this device."
+  },
+  "skinsSourceOnline": "Online",
+  "@skinsSourceOnline": {
+    "description": "Tab for skins fetched from a server. Not available yet."
+  },
+  "skinsSelectPrompt": "Select skin",
+  "@skinsSelectPrompt": {
+    "description": "Line above the skin carousel telling the player what to do."
+  },
+  "skinPreviewAsPlayer1": "Preview as Player 1",
+  "@skinPreviewAsPlayer1": {
+    "description": "Accessibility label for the toggle that previews skins in the first player's rendering."
+  },
+  "skinPreviewAsPlayer2": "Preview as Player 2",
+  "@skinPreviewAsPlayer2": {
+    "description": "Accessibility label for the toggle that previews skins in the second player's rendering."
+  },
+  "rarityCommon": "Common",
+  "@rarityCommon": {
+    "description": "Rarity tier name, shown in the legend under the skin carousel."
+  },
+  "rarityRare": "Rare",
+  "rarityEpic": "Epic",
+  "rarityLegendary": "Legendary"
 }

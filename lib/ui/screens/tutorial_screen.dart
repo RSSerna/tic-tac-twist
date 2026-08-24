@@ -178,52 +178,95 @@ class _LandscapeLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Both flanks get the same width so the board's remaining space is
-        // centred on the *screen*, not on whatever the instruction panel
-        // leaves over. Ultimate keeps its (empty) left slot for the same
-        // reason — losing it would shunt the board sideways.
-        // Floor is set by the inventory: a 2×2 of 92pt tiles plus margins is
-        // 208pt, so anything under ~224 would clip it.
-        final sideWidth = (constraints.maxWidth * 0.22).clamp(224.0, 320.0);
+    return Column(
+      children: [
+        Expanded(
+          // The staging bar sits below this Row rather than inside the board
+          // column, so the Row's height *is* the board's band. That's what
+          // lets the flanks line up against the board instead of against a
+          // column that also holds the confirm/cancel controls.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // The board is given exactly the width it will draw at, rather
+              // than a slot it floats inside. That's what makes the flanks
+              // the *real* space either side of it: give the board a wider
+              // slot and the panel ends up centred on the slot instead of on
+              // the gap the player actually sees.
+              //
+              // Both boards are square (`AspectRatio(1)`) inside BoardArea's
+              // padding and size cap, so the drawn side is whichever of those
+              // three limits bites first. The 224 floor is the inventory: a
+              // 2×2 of 92pt tiles plus margins is 208pt wide.
+              const minFlank = 224.0;
+              final boardSide = [
+                constraints.maxWidth - minFlank * 2 - kBoardPadding * 2,
+                constraints.maxHeight - kBoardPadding * 2,
+                kMaxBoardSize(stacking: session.mode.isStacking),
+              ].reduce((a, b) => a < b ? a : b);
+              final boardBox = boardSide + kBoardPadding * 2;
 
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              width: sideWidth,
-              child: session.mode.isStacking
-                  ? const Center(child: InventoryGrid())
-                  : null,
-            ),
-            Expanded(
-              child: Column(
+              // BoardArea centres the board vertically, so its top edge sits
+              // half the leftover height down. The instruction panel starts
+              // there instead of at the top of the row.
+              final boardTop = ((constraints.maxHeight - boardSide) / 2).clamp(
+                0.0,
+                constraints.maxHeight,
+              );
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(child: BoardArea(session: session)),
-                  StagingBar(session: session),
+                  // Equal flexes keep the board centred on the screen; each
+                  // flank is then exactly the space beside it. Ultimate keeps
+                  // its (empty) left flank for the same reason — dropping it
+                  // would shunt the board sideways.
+                  Expanded(
+                    // Centred against this row, whose height is the board's
+                    // band, so the chips sit level with the board's middle.
+                    //
+                    // The inner padding leans the content toward the board by
+                    // BoardArea's own padding: this flank stops at the padded
+                    // box, but the gap the player sees runs to the drawn
+                    // board's edge, half a padding further in.
+                    child: session.mode.isStacking
+                        ? const Padding(
+                            padding: EdgeInsets.only(left: kBoardPadding),
+                            child: Center(child: InventoryGrid()),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  SizedBox(
+                    width: boardBox,
+                    child: BoardArea(session: session),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      // Centres the panel in the gap beside the board — the
+                      // extra 12 on the right offsets BoardArea's padding,
+                      // which sits inside this flank's left edge (see the
+                      // left flank for the same correction).
+                      padding: EdgeInsets.fromLTRB(
+                        12,
+                        boardTop,
+                        12 + kBoardPadding,
+                        0,
+                      ),
+                      child: Column(
+                        children: [
+                          Flexible(child: _InstructionPanel(step: step)),
+                          const SizedBox(height: 12),
+                          _SkipButton(onSkip: onSkip),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
-              ),
-            ),
-            SizedBox(
-              width: sideWidth,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 16, 12),
-                child: Column(
-                  children: [
-                    // Stretched rather than sized to its text, so the panel
-                    // starts just under the title and runs down the side —
-                    // a card floating mid-height reads as an afterthought.
-                    Expanded(child: _InstructionPanel(step: step)),
-                    const SizedBox(height: 12),
-                    _SkipButton(onSkip: onSkip),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+              );
+            },
+          ),
+        ),
+        StagingBar(session: session),
+      ],
     );
   }
 }
@@ -258,7 +301,13 @@ class _PortraitLayout extends StatelessWidget {
                     // inventory and the staging bar off the bottom. Past the
                     // cap the text scrolls inside the panel instead.
                     constraints: BoxConstraints(
-                      maxHeight: constraints.maxHeight * (short ? 0.2 : 0.3),
+                      // Floored as well as capped: below ~150 the pinned
+                      // Next button has nowhere to sit, and a message step
+                      // becomes unadvanceable.
+                      maxHeight: [
+                        constraints.maxHeight * (short ? 0.24 : 0.3),
+                        150.0,
+                      ].reduce((a, b) => a > b ? a : b),
                     ),
                     child: _InstructionPanel(step: step),
                   ),
@@ -305,29 +354,31 @@ class _InstructionPanel extends ConsumerWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: elevations.raised,
         ),
-        // The whole panel scrolls, not just the prompt: the layout sets this
-        // card's height, and on a short screen that height can be less than
-        // the text *and* the Next button need. Scrolling only the text would
-        // still overflow on the button.
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                tutorialPromptText(l10n, step.prompt),
-                style: styles.bodyLarge,
-              ),
-              if (step is TutorialMessage) ...[
-                const SizedBox(height: 16),
-                PillActionButton(
-                  key: const Key('tutorial-next'),
-                  label: l10n.tutorialNext,
-                  onPressed: controller.tutorialNext,
+        // Only the prompt scrolls; Next stays pinned to the bottom of the
+        // card. Scrolling the whole panel let Next slide out of view on a
+        // short screen, which strands the player on a message step — there's
+        // nothing else on screen that advances it.
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Flexible(
+              child: SingleChildScrollView(
+                child: Text(
+                  tutorialPromptText(l10n, step.prompt),
+                  style: styles.bodyLarge,
                 ),
-              ],
+              ),
+            ),
+            if (step is TutorialMessage) ...[
+              const SizedBox(height: 12),
+              PillActionButton(
+                key: const Key('tutorial-next'),
+                label: l10n.tutorialNext,
+                onPressed: controller.tutorialNext,
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );

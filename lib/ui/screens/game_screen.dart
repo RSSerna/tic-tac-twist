@@ -147,6 +147,18 @@ class GameScreen extends ConsumerWidget {
   }
 }
 
+/// Breathing room between [BoardArea]'s edge and the board inside it.
+///
+/// Public because the tutorial reproduces this maths to line its side panels
+/// up with the board's real edges — if the two ever disagree, the panels sit
+/// a few pixels off.
+const double kBoardPadding = 12;
+
+/// The largest a board may render, per design doc §1 ("let boards grow to a
+/// sensible maximum with margin"). Ultimate gets more room: it's nine boards
+/// in the same square, so its cells shrink much faster.
+double kMaxBoardSize({required bool stacking}) => stacking ? 640 : 722;
+
 /// The board itself, capped to a sensible maximum size so it doesn't
 /// stretch edge-to-edge on tablets (design doc §1: "let boards grow to a
 /// sensible maximum with margin").
@@ -172,13 +184,11 @@ class BoardArea extends StatelessWidget {
       ignoring: session.isAiTurn,
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(kBoardPadding),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              // maxWidth: 640,
-              // maxHeight: 700,
-              maxWidth: session.mode.isStacking ? 640 : 722,
-              maxHeight: session.mode.isStacking ? 640 : 722,
+              maxWidth: kMaxBoardSize(stacking: session.mode.isStacking),
+              maxHeight: kMaxBoardSize(stacking: session.mode.isStacking),
             ),
             child: Stack(
               children: [
@@ -249,10 +259,7 @@ class _TurnBanner extends ConsumerWidget {
                   appearance: appearance,
                 ),
               ),
-              Text(
-                l10n.turnBanner(person),
-                style: styles.cardTitle,
-              ),
+              Text(l10n.turnBanner(person), style: styles.cardTitle),
             ],
           ),
           if (session.aiThinking) ...[
@@ -347,10 +354,7 @@ class StagingBar extends ConsumerWidget {
         runSpacing: 8,
         children: [
           if (mustPass && !stagedPass) ...[
-            Text(
-              l10n.mustPassBanner,
-              style: styles.body,
-            ),
+            Text(l10n.mustPassBanner, style: styles.body),
             FilledButton(
               key: const Key('pass'),
               onPressed: () => controller.stageMove(const PassMove()),
@@ -414,11 +418,7 @@ class _ResultOverlay extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                headline,
-                textAlign: TextAlign.center,
-                style: styles.banner,
-              ),
+              Text(headline, textAlign: TextAlign.center, style: styles.banner),
               if (subtitle != null) ...[
                 const SizedBox(height: 8),
                 Text(
