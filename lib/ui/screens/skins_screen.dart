@@ -36,26 +36,32 @@ class SkinsScreen extends StatelessWidget {
         CustomizationCategory.flexing => l10n.categoryFlexing,
       };
 
-  static Widget _icon(BuildContext context, CustomizationCategory category) {
+  /// [size] is derived from the tile, so the glyph keeps its proportions
+  /// when a short screen shrinks the tiles rather than spilling out of one.
+  static Widget _icon(
+    BuildContext context,
+    CustomizationCategory category,
+    double size,
+  ) {
     final colors = context.gameColors;
     return switch (category) {
-      CustomizationCategory.board => const AppMark(size: 64),
+      CustomizationCategory.board => AppMark(size: size),
       // `ink`, not `neutral`: these are the tile's subject, not a disabled
       // or secondary state, and they carry the same weight as `AppMark`
       // beside them (which paints in `ink` too).
       CustomizationCategory.chips => Icon(
         Icons.palette,
-        size: 64,
+        size: size,
         color: colors.ink,
       ),
       CustomizationCategory.emote => Icon(
         Icons.emoji_emotions,
-        size: 64,
+        size: size,
         color: colors.ink,
       ),
       CustomizationCategory.flexing => Icon(
         Icons.accessibility_new,
-        size: 64,
+        size: size,
         color: colors.ink,
       ),
     };
@@ -95,12 +101,19 @@ class SkinsScreen extends StatelessWidget {
               subtitle: l10n.customSubtitle,
             ),
             Expanded(
-              child: Center(
-                child: _CategoryRow(
-                  categories: CustomizationCategory.values,
-                  label: _label,
-                  icon: _icon,
-                  onOpen: _open,
+              child: LayoutBuilder(
+                builder: (context, constraints) => Center(
+                  child: _CategoryRow(
+                    categories: CustomizationCategory.values,
+                    label: _label,
+                    icon: _icon,
+                    onOpen: _open,
+                    // Sized here so a short screen shrinks the tiles squarely
+                    // instead of the parent squashing a fixed 180 into a
+                    // rectangle — which is what happened at 320x480 in
+                    // Spanish, where the wrapped subtitle eats the height.
+                    tileSize: (constraints.maxHeight - 24).clamp(72.0, 180.0),
+                  ),
                 ),
               ),
             ),
@@ -119,12 +132,14 @@ class _CategoryRow extends StatefulWidget {
     required this.label,
     required this.icon,
     required this.onOpen,
+    required this.tileSize,
   });
 
   final List<CustomizationCategory> categories;
   final String Function(AppLocalizations, CustomizationCategory) label;
-  final Widget Function(BuildContext, CustomizationCategory) icon;
+  final Widget Function(BuildContext, CustomizationCategory, double) icon;
   final void Function(BuildContext, CustomizationCategory) onOpen;
+  final double tileSize;
 
   @override
   State<_CategoryRow> createState() => _CategoryRowState();
@@ -206,8 +221,16 @@ class _CategoryRowState extends State<_CategoryRow> {
                           CategoryTile(
                             key: Key('category-${category.name}'),
                             label: widget.label(l10n, category),
-                            icon: widget.icon(context, category),
+                            icon: widget.icon(
+                              context,
+                              category,
+                              widget.tileSize * 0.36,
+                            ),
                             available: category.available,
+                            // Set here rather than left to the widget's
+                            // default: how large these read is a decision
+                            // about this screen, not about the tile.
+                            size: widget.tileSize,
                             onPressed: () => widget.onOpen(context, category),
                           ),
                           if (category != widget.categories.last)

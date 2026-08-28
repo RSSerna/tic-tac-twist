@@ -21,21 +21,28 @@ class PillActionButton extends StatelessWidget {
     final styles = context.gameTextStyles;
     final elevations = context.gameElevations;
     final radius = BorderRadius.circular(24);
+    final enabled = onPressed != null;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: elevations.resting,
-      ),
-      child: Material(
-        color: colors.surface,
-        borderRadius: radius,
-        child: InkWell(
+    return Opacity(
+      // A null `onPressed` already stops the tap, but without this the pill
+      // still looks pressable — the same 0.45 the locked category tiles and
+      // source pills use.
+      opacity: enabled ? 1 : 0.45,
+      child: Container(
+        decoration: BoxDecoration(
           borderRadius: radius,
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Text(label, style: styles.label),
+          boxShadow: elevations.resting,
+        ),
+        child: Material(
+          color: colors.surface,
+          borderRadius: radius,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onPressed,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Text(label, style: styles.label),
+            ),
           ),
         ),
       ),

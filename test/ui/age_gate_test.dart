@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nested_game/controllers/age_gate_controller.dart';
 import 'package:nested_game/main.dart';
+import 'package:nested_game/ui/widgets/buttons/pill_action_button.dart';
 import 'package:nested_game/ui/screens/age_gate_screen.dart';
 import 'package:nested_game/ui/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,8 +38,9 @@ Future<void> selectBirthYear(WidgetTester tester, int year) async {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('a never-answered device sees the age gate before Home',
-      (tester) async {
+  testWidgets('a never-answered device sees the age gate before Home', (
+    tester,
+  ) async {
     await tester.pumpWidget(const ProviderScope(child: NestedApp()));
     await tester.pumpAndSettle();
 
@@ -46,53 +48,65 @@ void main() {
     expect(find.byType(HomeScreen), findsNothing);
   });
 
-  testWidgets('answering with an adult birth year classifies as non-child and reaches Home',
-      (tester) async {
+  testWidgets(
+    'answering with an adult birth year classifies as non-child and reaches Home',
+    (tester) async {
+      await tester.pumpWidget(const ProviderScope(child: NestedApp()));
+      await tester.pumpAndSettle();
+
+      await selectBirthYear(tester, DateTime.now().year - 30);
+      await tester.tap(find.byKey(const Key('age-gate-continue')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HomeScreen), findsOneWidget);
+      final isChild = await containerOf(
+        tester,
+        screen: HomeScreen,
+      ).read(ageGateControllerProvider.future);
+      expect(isChild, isFalse);
+    },
+  );
+
+  testWidgets(
+    'answering with a birth year under 13 years old classifies as a child',
+    (tester) async {
+      await tester.pumpWidget(const ProviderScope(child: NestedApp()));
+      await tester.pumpAndSettle();
+
+      await selectBirthYear(tester, DateTime.now().year - 8);
+      await tester.tap(find.byKey(const Key('age-gate-continue')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HomeScreen), findsOneWidget);
+      final isChild = await containerOf(
+        tester,
+        screen: HomeScreen,
+      ).read(ageGateControllerProvider.future);
+      expect(isChild, isTrue);
+    },
+  );
+
+  testWidgets(
+    'an already-answered device goes straight to Home, never re-prompted',
+    (tester) async {
+      await markAgeGateAnswered();
+      await tester.pumpWidget(const ProviderScope(child: NestedApp()));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.byType(AgeGateScreen), findsNothing);
+    },
+  );
+
+  testWidgets('the Continue button stays disabled until a year is chosen', (
+    tester,
+  ) async {
     await tester.pumpWidget(const ProviderScope(child: NestedApp()));
     await tester.pumpAndSettle();
 
-    await selectBirthYear(tester, DateTime.now().year - 30);
-    await tester.tap(find.byKey(const Key('age-gate-continue')));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(HomeScreen), findsOneWidget);
-    final isChild = await containerOf(tester, screen: HomeScreen)
-        .read(ageGateControllerProvider.future);
-    expect(isChild, isFalse);
-  });
-
-  testWidgets('answering with a birth year under 13 years old classifies as a child',
-      (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: NestedApp()));
-    await tester.pumpAndSettle();
-
-    await selectBirthYear(tester, DateTime.now().year - 8);
-    await tester.tap(find.byKey(const Key('age-gate-continue')));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(HomeScreen), findsOneWidget);
-    final isChild = await containerOf(tester, screen: HomeScreen)
-        .read(ageGateControllerProvider.future);
-    expect(isChild, isTrue);
-  });
-
-  testWidgets('an already-answered device goes straight to Home, never re-prompted',
-      (tester) async {
-    await markAgeGateAnswered();
-    await tester.pumpWidget(const ProviderScope(child: NestedApp()));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.byType(AgeGateScreen), findsNothing);
-  });
-
-  testWidgets('the Continue button stays disabled until a year is chosen',
-      (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: NestedApp()));
-    await tester.pumpAndSettle();
-
-    final button =
-        tester.widget<FilledButton>(find.byKey(const Key('age-gate-continue')));
+    final button = tester.widget<PillActionButton>(
+      find.byKey(const Key('age-gate-continue')),
+    );
     expect(button.onPressed, isNull);
   });
 }
