@@ -14,8 +14,36 @@ Read the one relevant to the current task. Do not load all of them at once.
 | `docs/04-ROADMAP.md` | Planning what to build next, or checking phase scope |
 | `docs/05-V2-DEFERRED.md` | Only when explicitly asked about post-launch work. **Do not build from this file.** |
 | `docs/06-PRIVACY-COMPLIANCE.md` | Privacy policy text, App Store/Play Store nutrition-label mapping, before store submission |
-| `docs/07-SKINS.md` | Adding or wiring any cosmetic — chip skins (painted or asset-backed) **or emotes**: the `ChipAppearance`/`Emote` models, the category root, naming, unlock routes, and constraints |
+| `docs/07-SKINS.md` | Adding or wiring any cosmetic — chip skins (painted or asset-backed), **emotes**, or **celebrations**: the `ChipAppearance`/`Emote`/`Celebration` models, the category root, naming, unlock routes, and constraints |
 | `docs/08-STORE-ITEMS.md` | Adding purchasable items to the Shop: `ShopItem`/`ProductId` wiring, store-console setup, granting/restoring, and the "direct purchase vs. currency" decision |
+
+## Documentation — a feature isn't done until the docs are true
+
+These documents are the project's memory. Code that contradicts them is worse than no docs at all, because the next reader trusts the wrong thing. **Updating them is part of the change, not a follow-up task.**
+
+This is not a request to document everything. A private helper, a refactor that changes no behaviour, a bug fix that restores documented behaviour — none need a word. The trigger is narrow: **a document is now wrong, or silent about something a future reader would need.**
+
+When that happens, update the one that's now wrong:
+
+| What changed | What to update |
+|---|---|
+| Any game rule or engine behaviour | `01-GAME-RULES.md` — the single source of truth. Change it **first**, then the code. |
+| A new screen, or a widget meant to be reused | `02-DESIGN-SYSTEM.md` §10 (screens), §11 (shared components) |
+| A design token — a new one, or a changed value | `02-DESIGN-SYSTEM.md` §2, with the actual value and, for colours, the contrast check |
+| A new kind of cosmetic, or how one is authored | `07-SKINS.md` |
+| Anything sellable, or a new `ProductId` | `08-STORE-ITEMS.md` |
+| Work built for — or blocking — post-launch | `05-V2-DEFERRED.md` |
+| Monetization, ads, analytics, age gating | `03-PRODUCT.md` |
+| Anything that changes what data leaves the device | `06-PRIVACY-COMPLIANCE.md` |
+| A decision someone could reasonably re-litigate | **Decided**, below — with the reasoning, not just the outcome |
+| A choice deliberately left open | **Still undecided**, below |
+
+Four rules for the update itself:
+
+1. **Describe what is, not what's intended.** If something renders but does nothing — a locked tab, a legend nothing filters on, a picker for a thing that never plays — say that in those words. A reader must be able to tell built from planned without running the app.
+2. **Renames break docs silently.** The docs name files and symbols, and nothing type-checks them. After moving or renaming anything they reference, grep the docs for the old name.
+3. **Record the why.** "Chose X" ages badly. "Chose X because Y; Z is what would change our mind" survives long enough to be useful.
+4. **Not building something is a decision too.** Anything deliberately skipped goes in `05-V2-DEFERRED.md` or **Still undecided** — otherwise the next person either rebuilds it or assumes it already works.
 
 ## Architecture — non-negotiable
 
@@ -115,6 +143,8 @@ A design-led pass over the screens, driven by mockups. Engines, controllers and 
 - Panels replace `AppBar` on Settings, Custom, Chip skins and Emotes: `PanelHeader` (badge + title + subtitle + X). **Consequence:** `tester.pageBack()` no longer works on those screens — tests close them via their X key.
 - Cosmetics restructured into categories (`CustomizationCategory`): board, chips, emote, flexing. `SkinsScreen` is the category root; the chip picker moved to `ChipSkinsScreen`. Board and flexing render locked. See `05-V2-DEFERRED.md` §4.
 - **Emotes built** (`Emote` / `EmoteService` / `EmoteController` / `EmoteSkinsScreen`): a 10-entry catalogue, 4-slot loadout, persisted locally, 4 free and 6 locked. Sending one in a match is v2. Art isn't bundled — every emote renders its `fallbackIcon`, and `assets/emotes/` stays out of `pubspec.yaml` until real files exist (declaring an empty asset dir fails the build).
+- **Celebrations built** (`Celebration` / `CelebrationService` / `CelebrationController` / `CelebrationSkinsScreen`): a 16-entry catalogue paged 12 to a "block", one selection persisted, 4 free and 12 locked, with a preview frame beside the grid. **Nothing plays a celebration yet** — the format (still / sprite sequence / video) is undecided, and only the preview widget and asset convention depend on it. Locked entries can be *previewed* but not equipped; the header's lock pill reports the previewed one's state. Same no-art-bundled arrangement as emotes.
+- Shared cosmetic widgets rather than a third copy each time: `AssetGlyph` (bundled image degrading to an icon — `EmoteView` is a thin wrapper) and `RarityLegend` (the static tier row, lifted out of `ChipSkinsScreen` when the celebration picker needed it too).
 - Chip inventory is a **2×2 grid** (`InventoryGrid`, was `InventoryRow`) in both the game and the tutorial. Four in a line needs ~400pt, which a narrow landscape side panel doesn't have; the fixed arrangement also means chips don't move as the width changes.
 - Unbacked UI from the mockups was **not invented**: missions, currency, profile/gamertag/level and chests are absent from Home; the Skins screen's ONLINE tab and the rarity legend render but do nothing (both documented in `05-V2-DEFERRED.md` §4.3–4.4).
 - `kBoardPadding` / `kMaxBoardSize()` were made public in `game_screen.dart` because the tutorial reproduces that maths to align its side panels with the board's real edges. Duplicating the literals would let the panels drift the day the board size is tuned.
@@ -124,6 +154,7 @@ A design-led pass over the screens, driven by mockups. Engines, controllers and 
 
 - Chest rarity tiers, progress-meter length, ad-chest daily cap (deferred past Phase 9 — see `03-PRODUCT.md` §3 and the Phase 9 "chests deferred" decision above). **Note:** the Chip skins screen now *displays* COMMON/RARE/EPIC/LEGENDARY as a static legend. Nothing carries a rarity and nothing filters on one — giving a cosmetic a tier means settling this list first.
 - Which emotes (if any) are sold, and at what price point — the catalogue has 6 locked entries with no `ProductId` behind them (see `08-STORE-ITEMS.md` §2a)
-- Whether `board` and `flexing` become real categories, and what a "flexing" cosmetic actually is
+- **What format a celebration is** — still image, sprite sequence, or video — and what plays it at the end of a won game. The picker, persistence and catalogue don't depend on the answer; the preview frame and `Celebration.assetPath` do.
+- Whether `board` becomes a real category (it's the last locked one), and what a board skin may change without touching the gameplay-critical parts of `02-DESIGN-SYSTEM.md` §2.4
 - Which crash-reporting backend (Crashlytics vs. Sentry) to actually finish and switch on
 - Whether to switch on `FirebaseAnalyticsService` (and therefore configure a real Firebase project)

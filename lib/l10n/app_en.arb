@@ -377,5 +377,42 @@
   "emoteNameFire": "On fire",
   "emoteNameHeart": "Heart",
   "emoteNameParty": "Celebrate",
-  "emoteNameStar": "Star"
+  "emoteNameStar": "Star",
+  "celebrationsSubtitle": "Pick your victory celebration",
+  "@celebrationsSubtitle": {
+    "description": "Line under the Flexing screen title."
+  },
+  "celebrationsPreview": "Preview",
+  "@celebrationsPreview": {
+    "description": "Label above the frame previewing the chosen celebration."
+  },
+  "celebrationsBlock": "Block {number}",
+  "@celebrationsBlock": {
+    "description": "Label for one page of the celebration grid.",
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "celebrationsNextBlock": "Next block",
+  "@celebrationsNextBlock": {
+    "description": "Accessibility label for the arrow that shows the next page of celebrations."
+  },
+  "celebrationLockedStatus": "This celebration is locked",
+  "@celebrationLockedStatus": {
+    "description": "Accessibility label for the indicator showing the previewed celebration is not unlocked."
+  },
+  "celebrationNameHappy": "Happy",
+  "celebrationNameCheer": "Cheer",
+  "celebrationNameDance": "Dance",
+  "celebrationNameBow": "Bow",
+  "celebrationNameFlex": "Flex",
+  "celebrationNameWave": "Wave",
+  "celebrationNameSpin": "Spin",
+  "celebrationNameJump": "Jump",
+  "celebrationNameSalute": "Salute",
+  "celebrationNameShrug": "Shrug",
+  "celebrationNameFacepalm": "Facepalm",
+  "celebrationNameFistbump": "Fist bump",
+  "celebrationNameCrown": "Crown",
+  "celebrationNameTrophy": "Trophy",
+  "celebrationNameSparkle": "Sparkle",
+  "celebrationNameRocket": "Rocket"
 }

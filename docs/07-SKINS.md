@@ -90,21 +90,36 @@ screen per category. Two are live:
 |---|---|---|
 | `chips` | `ChipSkinsScreen` | `GameSkin` (`lib/theme/skin.dart`) |
 | `emote` | `EmoteSkinsScreen` | `Emote` (`lib/theme/emote.dart`) |
-| `board`, `flexing` | — (locked) | none yet |
+| `flexing` | `CelebrationSkinsScreen` | `Celebration` (`lib/theme/celebration.dart`) |
+| `board` | — (locked) | none yet |
 
-**Emotes are a separate model, deliberately.** A skin decides how one thing is
-*drawn*; an emote is a thing a player *equips and sends*. They share nothing
-but the "cosmetic, unlockable, purchasable" shape, so they get parallel —
-not shared — model/service/controller trios:
+**Each is a separate model, deliberately.** A skin decides how one thing is
+*drawn*; an emote is something a player *equips and sends*; a celebration is
+something that *plays on a win*. They share nothing but the "cosmetic,
+unlockable, purchasable" shape, so they get parallel — not shared —
+model/service/controller trios:
 
 ```
 Emote (theme/emote.dart)
-  -> EmoteService (services/emote_service.dart)      persists loadout + unlocks
+  -> EmoteService (services/emote_service.dart)           persists loadout + unlocks
   -> EmoteController (controllers/emote_controller.dart)  enforces the rules
-  -> EmoteView (ui/widgets/emote_view.dart)          asset, icon fallback
+  -> EmoteView (ui/widgets/emote_view.dart)               asset, icon fallback
+
+Celebration (theme/celebration.dart)
+  -> CelebrationService / CelebrationController           persists one selection
+  -> AssetGlyph (ui/widgets/asset_glyph.dart)             asset, icon fallback
 ```
 
-See `05-V2-DEFERRED.md` §4 for what's built vs. what waits for multiplayer.
+What they *do* share is rendering: `AssetGlyph` is the single place that
+draws a bundled image and degrades to an icon when the art isn't there.
+`EmoteView` is a thin wrapper over it. Anything else that ships before its
+art should use it rather than repeating the `errorBuilder`.
+
+They also share `RarityLegend` (`ui/widgets/rarity_legend.dart`), the static
+COMMON/RARE/EPIC/LEGENDARY row at the foot of the chip and celebration
+pickers. It's a legend, not a filter — nothing carries a rarity yet.
+
+See `05-V2-DEFERRED.md` §4 for what's built vs. what's still open.
 
 ### Adding an emote
 
@@ -118,12 +133,26 @@ Three steps, no code beyond them:
    point at it.
 3. Optionally drop art at `assets/emotes/<id>.png`.
 
-**Emote art is not bundled yet.** `assets/emotes/` isn't declared in
-`pubspec.yaml` — declaring a directory with no files fails the build. Every
-emote currently renders its `fallbackIcon` through `EmoteView`'s
-`errorBuilder`, the same degrade-to-something convention `ChipView` uses for
-asset skins. When real art arrives, add the files *and* the pubspec entry
-together.
+### Adding a celebration
+
+Identical shape: an entry in the `Celebration` enum, a `celebrationName<Name>`
+string in both ARBs plus a case in `celebrationName()`, and optionally art at
+`assets/celebrations/<id>.png`.
+
+Two things specific to celebrations:
+
+- **The grid pages in blocks of `Celebration.perBlock` (12).** Adding a 13th
+  celebration creates a second block automatically; no layout change needed.
+- **The playback format is undecided** — still, sequence or video. The picker
+  and persistence don't depend on it; only the preview frame and the asset
+  convention would change. See `05-V2-DEFERRED.md` §4.3.
+
+**No emote or celebration art is bundled yet.** Neither `assets/emotes/` nor
+`assets/celebrations/` is declared in `pubspec.yaml` — declaring a directory
+with no files fails the build. Every entry currently renders its
+`fallbackIcon` through `AssetGlyph`, the same degrade-to-something convention
+`ChipView` uses for asset skins. When real art arrives, add the files *and*
+the pubspec entry together.
 
 ---
 

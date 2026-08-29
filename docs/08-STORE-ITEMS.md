@@ -88,20 +88,24 @@ stores (§3 Step 1).
 |---|---|---|
 | Chip skins (`GameSkin`) | `nesting_dolls` | `SkinController.unlockSkin` — already wired to `ProductId.skinNestingDolls` |
 | Emotes (`Emote`) | 6 of 10 (`free: false`) | `EmoteController.unlock` — **no `ProductId` yet** |
+| Celebrations (`Celebration`) | 12 of 16 (`free: false`) | `CelebrationController.unlock` — **no `ProductId` yet** |
 
-`EmoteController.unlock(emote)` exists and persists, so the purchase route is
-a `ProductId` plus a grant call, not new plumbing. Follow §3 as written; the
-grant in Step 4 is `emoteControllerProvider.notifier.unlock(...)`.
+Both controllers already expose `unlock(...)` and persist it, so the purchase
+route is a `ProductId` plus a grant call, not new plumbing. Follow §3 as
+written; the grant in Step 4 is `emoteControllerProvider.notifier.unlock(...)`
+or `celebrationControllerProvider.notifier.unlock(...)`.
 
-**Decide before building:** whether emotes sell individually or as a pack.
-Individually means one `ProductId` per emote and a store product per emote,
-which grows badly. A pack means one product granting several ids — cheaper to
-run, and it matches how the catalogue is laid out. This is listed as undecided
-in `CLAUDE.md`.
+**Decide before building:** whether these sell individually or as packs.
+Individually means one `ProductId` and one store product per item, which
+grows badly — 12 locked celebrations would mean 12 products. A pack means one
+product granting several ids, which is cheaper to run and matches how the
+catalogues are laid out (celebrations are already grouped into blocks of 12).
+Listed as undecided in `CLAUDE.md`.
 
-Emote **art is not bundled** either (see `07-SKINS.md` §2a). Selling an emote
-whose art is still a Material icon fallback would be selling a placeholder —
-land the art first.
+**Neither has art yet** (see `07-SKINS.md` §2a). Selling a cosmetic whose art
+is still a Material icon fallback would be selling a placeholder — land the
+art first. For celebrations, also settle the playback format: a player buying
+a "celebration" that never plays has bought nothing.
 
 ---
 

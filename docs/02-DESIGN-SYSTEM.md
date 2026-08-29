@@ -227,7 +227,7 @@ Key beats:
 - Stats screen (per-mode W/L/D)
 - Settings — reset stats, SFX/music toggles, replay tutorial, language, local turn timer
 - Neutral age screen (see `03-PRODUCT.md`; gates ad initialisation)
-- Custom (cosmetic category root) → Chip skins, Emotes (see `07-SKINS.md` §2a)
+- Custom (cosmetic category root) → Chip skins, Emotes, Flexing/celebrations (see `07-SKINS.md` §2a)
 - Challenges — the achievement list (`03-PRODUCT.md` §3.1)
 - Shop
 - *(v2)* Lobby / matchmaking
@@ -247,6 +247,8 @@ widget at the call site — that's how a design drifts.
 | `CircleIconButton` / `CircleButtonCluster` | `widgets/buttons/` | Corner controls. The cluster wraps rather than overflows. |
 | `CategoryTile` | `widgets/buttons/category_tile.dart` | Square tile with caption + glyph; `available: false` renders locked and refuses taps. |
 | `AppMark` | `widgets/app_mark.dart` | The logo mark, painted rather than bundled so it inherits `ink` and stays crisp at any size. |
+| `AssetGlyph` | `widgets/asset_glyph.dart` | A bundled image that degrades to an icon when the art isn't there. Every cosmetic catalogue ships before its art, so this is the one place that behaviour lives. |
+| `RarityLegend` | `widgets/rarity_legend.dart` | The static COMMON/RARE/EPIC/LEGENDARY row. A legend, not a filter — nothing carries a rarity yet. |
 
 **Locked/unavailable is a shared idiom**: 45% opacity, a lock glyph where the
 content would be, and no tap. `CategoryTile`, `SegmentedPills`,

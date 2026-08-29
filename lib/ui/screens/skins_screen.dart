@@ -5,6 +5,7 @@ import '../../theme/tokens.dart';
 import '../widgets/app_mark.dart';
 import '../widgets/buttons/category_tile.dart';
 import '../widgets/panel_header.dart';
+import 'celebration_skins_screen.dart';
 import 'chip_skins_screen.dart';
 import 'emote_skins_screen.dart';
 
@@ -18,7 +19,7 @@ enum CustomizationCategory {
   board(available: false),
   chips(available: true),
   emote(available: true),
-  flexing(available: false);
+  flexing(available: true);
 
   const CustomizationCategory({required this.available});
 
@@ -78,8 +79,13 @@ class SkinsScreen extends StatelessWidget {
         Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => const EmoteSkinsScreen()),
         );
-      case CustomizationCategory.board:
       case CustomizationCategory.flexing:
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const CelebrationSkinsScreen(),
+          ),
+        );
+      case CustomizationCategory.board:
         // Unreachable: CategoryTile refuses taps when unavailable. Left
         // explicit so adding a system means filling this in, not hunting for
         // where navigation was supposed to go.

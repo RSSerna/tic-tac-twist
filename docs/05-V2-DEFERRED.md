@@ -88,10 +88,10 @@ Categories live in one enum, each with an `available` flag:
 ```dart
 // lib/ui/screens/skins_screen.dart
 enum CustomizationCategory {
-  board(available: false),    // no board-skin system yet
-  chips(available: true),     // -> ChipSkinsScreen
-  emote(available: true),     // -> EmoteSkinsScreen
-  flexing(available: false),  // no victory-celebration system yet
+  board(available: false),   // no board-skin system yet
+  chips(available: true),    // -> ChipSkinsScreen
+  emote(available: true),    // -> EmoteSkinsScreen
+  flexing(available: true),  // -> CelebrationSkinsScreen
 }
 ```
 
@@ -99,8 +99,8 @@ An unavailable category renders locked and refuses taps. **Adding a system
 means flipping its flag and filling in one `switch` arm** — the row's layout
 already accounts for all four, so nothing needs re-laying-out when they land.
 
-`board` and `flexing` are deliberately empty: neither has a model, a service,
-or art. They are placeholders for the design, not half-built features.
+`board` is the only one still empty: no model, no service, no art. It's a
+placeholder for the design, not a half-built feature.
 
 ### 4.2 Emotes — equipping works now, sending is v2
 
@@ -129,7 +129,41 @@ receive one. The loadout is already local, persisted, and validated.
 against `Emote.values` and drop it if it doesn't match, rather than rendering
 whatever arrived.
 
-### 4.3 The Online skins tab
+### 4.3 Celebrations ("flexing") — choosing works now, playing one doesn't
+
+A celebration is what plays when you win. Choosing one is local and works
+today; **nothing plays one yet**, because the format isn't decided.
+
+| Piece | File | State |
+|---|---|---|
+| Catalogue (16 celebrations, stable ids, `free` flag) | `lib/theme/celebration.dart` | Done |
+| Persistence (selection + purchased ids) | `lib/services/celebration_service.dart` | Done |
+| Selection state + rules | `lib/controllers/celebration_controller.dart` | Done |
+| Picker UI (preview + paged grid) | `lib/ui/screens/celebration_skins_screen.dart` | Done |
+| **Playing one on a win** | — | **Needs a format decision** |
+| **Purchase route (`ProductId`s)** | — | Needs store products |
+
+**The open decision is the format**: a still image, a sprite sequence, or a
+video. `Celebration.assetPath` currently points at a single PNG, and the
+preview frame renders the same `AssetGlyph` the grid tiles do. A sequence or
+a video changes the preview widget and the asset convention — not the
+catalogue, the persistence, or the picker.
+
+Two behaviours worth keeping if this is reworked:
+
+- **Locked celebrations can be previewed.** Tapping one shows it in the frame
+  without equipping it — that's what the lock indicator in the header is
+  reporting on. Only *equipping* is gated.
+- **A persisted id that no longer matches the catalogue falls back to the
+  default** rather than throwing (there's a test). Same hazard as the emote
+  loadout: a saved choice outlives any catalogue change.
+
+This is v1-visible, not v2-only — a player can pick a celebration today, it
+just has no moment to play in until wins get a celebration beat. It's listed
+here because it was built alongside the v2-facing cosmetics and shares their
+shape.
+
+### 4.4 The Online skins tab
 
 `ChipSkinsScreen`'s header has **LOCAL / ONLINE** source pills. `ONLINE` is
 rendered but permanently disabled — v1 has no server to fetch skins from
@@ -140,11 +174,12 @@ When v2 adds a backend, this is where a remote catalogue hangs. Note that a
 downloaded skin still has to resolve to a `ChipAppearance`, so the transport
 is art plus an id, not new render code.
 
-### 4.4 Rarity tiers — a legend, not a system
+### 4.5 Rarity tiers — a legend, not a system
 
-The bottom of `ChipSkinsScreen` shows COMMON / RARE / EPIC / LEGENDARY as a
-**static, non-interactive legend**. No skin or emote carries a rarity, and
-nothing filters on one.
+`ChipSkinsScreen` and `CelebrationSkinsScreen` both end in a **static,
+non-interactive legend** reading COMMON / RARE / EPIC / LEGENDARY (one shared
+widget, `lib/ui/widgets/rarity_legend.dart`). No skin, emote or celebration
+carries a rarity, and nothing filters on one.
 
 This is intentional: rarity tiers are still listed as undecided in
 `CLAUDE.md`, and chests (which is where rarity actually earns its keep) are
