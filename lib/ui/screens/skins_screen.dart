@@ -6,6 +6,7 @@ import '../widgets/app_mark.dart';
 import '../widgets/buttons/category_tile.dart';
 import '../widgets/panel_header.dart';
 import 'chip_skins_screen.dart';
+import 'emote_skins_screen.dart';
 
 /// The cosmetic categories a player can customise.
 ///
@@ -16,7 +17,7 @@ import 'chip_skins_screen.dart';
 enum CustomizationCategory {
   board(available: false),
   chips(available: true),
-  emote(available: false),
+  emote(available: true),
   flexing(available: false);
 
   const CustomizationCategory({required this.available});
@@ -73,8 +74,11 @@ class SkinsScreen extends StatelessWidget {
         Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => const ChipSkinsScreen()),
         );
-      case CustomizationCategory.board:
       case CustomizationCategory.emote:
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const EmoteSkinsScreen()),
+        );
+      case CustomizationCategory.board:
       case CustomizationCategory.flexing:
         // Unreachable: CategoryTile refuses taps when unavailable. Left
         // explicit so adding a system means filling this in, not hunting for

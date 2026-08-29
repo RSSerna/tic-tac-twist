@@ -98,8 +98,7 @@ class _OptionCard extends StatelessWidget {
             children: [
               Text(title, style: styles.screenTitle),
               const SizedBox(height: 4),
-              Text(description,
-                  style: styles.bodyMuted),
+              Text(description, style: styles.bodyMuted),
             ],
           ),
         ),

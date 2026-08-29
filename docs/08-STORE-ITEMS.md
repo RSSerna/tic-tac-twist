@@ -78,6 +78,33 @@ storeId string      (the store)      App Store Connect + Play Console
 
 ---
 
+## 2a. Sellable cosmetics that exist but have no product yet
+
+Two cosmetic lines are built and carry a locked state, but **neither has a
+`ProductId`** — nothing can be bought until products are registered in both
+stores (§3 Step 1).
+
+| Cosmetic | Locked entries | Where the unlock lands |
+|---|---|---|
+| Chip skins (`GameSkin`) | `nesting_dolls` | `SkinController.unlockSkin` — already wired to `ProductId.skinNestingDolls` |
+| Emotes (`Emote`) | 6 of 10 (`free: false`) | `EmoteController.unlock` — **no `ProductId` yet** |
+
+`EmoteController.unlock(emote)` exists and persists, so the purchase route is
+a `ProductId` plus a grant call, not new plumbing. Follow §3 as written; the
+grant in Step 4 is `emoteControllerProvider.notifier.unlock(...)`.
+
+**Decide before building:** whether emotes sell individually or as a pack.
+Individually means one `ProductId` per emote and a store product per emote,
+which grows badly. A pack means one product granting several ids — cheaper to
+run, and it matches how the catalogue is laid out. This is listed as undecided
+in `CLAUDE.md`.
+
+Emote **art is not bundled** either (see `07-SKINS.md` §2a). Selling an emote
+whose art is still a Material icon fallback would be selling a placeholder —
+land the art first.
+
+---
+
 ## 3. Recipe — add a directly-purchased item
 
 ### Step 1 — Create the product in BOTH stores

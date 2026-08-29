@@ -342,5 +342,40 @@
   },
   "rarityRare": "Rare",
   "rarityEpic": "Epic",
-  "rarityLegendary": "Legendary"
+  "rarityLegendary": "Legendary",
+  "emotesTitle": "Emotes",
+  "@emotesTitle": {
+    "description": "Title of the screen where a player equips emotes for matches."
+  },
+  "emotesSubtitle": "{count, plural, one{Choose up to {count} emote} other{Choose up to {count} emotes}}",
+  "@emotesSubtitle": {
+    "description": "Line under the Emotes title, stating how many can be equipped.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "emotesLoadoutHeading": "Your emotes",
+  "@emotesLoadoutHeading": {
+    "description": "Heading over the row of equipped emote slots."
+  },
+  "emotesEmptySlot": "Empty slot",
+  "@emotesEmptySlot": {
+    "description": "Accessibility label for an emote slot with nothing equipped."
+  },
+  "emotesFullHint": "Remove one to add another",
+  "@emotesFullHint": {
+    "description": "Shown when every emote slot is filled and the player taps to add more."
+  },
+  "emoteEquipped": "Equipped",
+  "@emoteEquipped": {
+    "description": "Accessibility state for an emote already in the loadout."
+  },
+  "emoteNameThumbsUp": "Nice",
+  "emoteNameClap": "Well played",
+  "emoteNameLaugh": "Laughing",
+  "emoteNameCry": "Crying",
+  "emoteNameSurprised": "Surprised",
+  "emoteNameThinking": "Thinking",
+  "emoteNameFire": "On fire",
+  "emoteNameHeart": "Heart",
+  "emoteNameParty": "Celebrate",
+  "emoteNameStar": "Star"
 }

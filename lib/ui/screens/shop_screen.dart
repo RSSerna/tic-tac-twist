@@ -69,10 +69,7 @@ class ShopScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            Text(
-              l10n.shopIntro,
-              style: styles.bodyMuted,
-            ),
+            Text(l10n.shopIntro, style: styles.bodyMuted),
             const SizedBox(height: 20),
             for (final item in items) ...[
               _ShopItemCard(item: item),
@@ -116,9 +113,7 @@ class _ShopItemCard extends ConsumerWidget {
   void _buy(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(l10n.shopPaymentsUnavailable)),
-      );
+      ..showSnackBar(SnackBar(content: Text(l10n.shopPaymentsUnavailable)));
   }
 
   @override
@@ -141,15 +136,9 @@ class _ShopItemCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    item.name,
-                    style: styles.cardTitle,
-                  ),
+                  Text(item.name, style: styles.cardTitle),
                   const SizedBox(height: 4),
-                  Text(
-                    item.description,
-                    style: styles.caption,
-                  ),
+                  Text(item.description, style: styles.caption),
                 ],
               ),
             ),

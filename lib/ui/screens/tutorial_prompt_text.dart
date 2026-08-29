@@ -19,7 +19,8 @@ String tutorialPromptText(AppLocalizations l10n, TutorialPrompt prompt) {
     TutorialPrompt.movableIntro => l10n.tutorialMovableIntro,
     TutorialPrompt.movableSpendSmall => l10n.tutorialMovableSpendSmall,
     TutorialPrompt.movableCoverMove => l10n.tutorialMovableCoverMove,
-    TutorialPrompt.movableRelocateExplain => l10n.tutorialMovableRelocateExplain,
+    TutorialPrompt.movableRelocateExplain =>
+      l10n.tutorialMovableRelocateExplain,
     TutorialPrompt.movableRelocateMove => l10n.tutorialMovableRelocateMove,
     TutorialPrompt.movableRelocateRecap => l10n.tutorialMovableRelocateRecap,
     TutorialPrompt.movableWinMove => l10n.tutorialMovableWinMove,
@@ -31,7 +32,8 @@ String tutorialPromptText(AppLocalizations l10n, TutorialPrompt prompt) {
     TutorialPrompt.ultimateBuildMove => l10n.tutorialUltimateBuildMove,
     TutorialPrompt.ultimateClaimMove => l10n.tutorialUltimateClaimMove,
     TutorialPrompt.ultimateClaimRecap => l10n.tutorialUltimateClaimRecap,
-    TutorialPrompt.ultimateFreeMoveExplain => l10n.tutorialUltimateFreeMoveExplain,
+    TutorialPrompt.ultimateFreeMoveExplain =>
+      l10n.tutorialUltimateFreeMoveExplain,
     TutorialPrompt.ultimateFreeMoveMove => l10n.tutorialUltimateFreeMoveMove,
     TutorialPrompt.ultimateComplete => l10n.tutorialUltimateComplete,
   };

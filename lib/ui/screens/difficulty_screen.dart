@@ -26,8 +26,11 @@ class DifficultyScreen extends ConsumerWidget {
       (Difficulty.easy, l10n.difficultyEasy, l10n.difficultyEasyDesc),
       (Difficulty.medium, l10n.difficultyMedium, l10n.difficultyMediumDesc),
       (Difficulty.hard, l10n.difficultyHard, l10n.difficultyHardDesc),
-      (Difficulty.impossible, l10n.difficultyImpossible,
-          l10n.difficultyImpossibleDesc),
+      (
+        Difficulty.impossible,
+        l10n.difficultyImpossible,
+        l10n.difficultyImpossibleDesc,
+      ),
     ];
 
     return Scaffold(
@@ -46,7 +49,9 @@ class DifficultyScreen extends ConsumerWidget {
                 title: title,
                 description: description,
                 onTap: () {
-                  ref.read(gameControllerProvider.notifier).startGame(
+                  ref
+                      .read(gameControllerProvider.notifier)
+                      .startGame(
                         mode,
                         opponents: SessionOpponents.vsAi(difficulty),
                       );
@@ -94,8 +99,7 @@ class _DifficultyCard extends StatelessWidget {
             children: [
               Text(title, style: styles.screenTitle),
               const SizedBox(height: 4),
-              Text(description,
-                  style: styles.bodyMuted),
+              Text(description, style: styles.bodyMuted),
             ],
           ),
         ),

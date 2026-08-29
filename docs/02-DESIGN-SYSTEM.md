@@ -24,7 +24,7 @@ The default skin must look finished on its own. If the free skin looks like a pl
 |---|---|---|
 | `ground` | `#DCDAD1` | App background — putty/limestone grey |
 | `surface` | `#F2F0EA` | Board squares, cards, sheets |
-| `ink` | `#2E2C29` | Text, outlines, grid structure |
+| `ink` | `#303032` | Text, outlines, grid structure. Also the default font colour |
 | `playerA` | `#1B4B7A` | Player 1 — deep indigo |
 | `playerB` | `#C9601F` | Player 2 — burnt amber |
 | `neutral` | `#6B6D65` | Drawn boards, disabled states, buried-stack collar |
@@ -35,11 +35,41 @@ Indigo/amber survives all three common colour-vision deficiencies, unlike red/gr
 
 **Highlighting uses the active player's own colour at ~15% opacity** — no seventh token. The highlight then tells you *whose* turn it is as well as *where* you may play.
 
+**`ink` was changed from the original `#2E2C29`** to a neutral near-black. It reads as the same value on structure (2px strokes) but removes the warm cast from body text. Contrast stays clear of WCAG AA: 9.62:1 on `surface`, 6.34:1 on `ground`.
+
+**Player colours are for players.** `playerA`/`playerB` carry "this is Player 1/2" everywhere in the app, so generic UI — a settings toggle, a checkmark — uses `ink`, not indigo. Borrowing a player colour for a control makes it say something it doesn't mean.
+
+### 2.1a Elevation
+
+Shadows come from `GameElevations` (`lib/theme/tokens.dart`), a `ThemeExtension` alongside `GameColors`:
+
+| Token | Use |
+|---|---|
+| `resting` | Cards and controls sitting on the background — settings pills, skin cards |
+| `raised` | Elements that read as floating — menu buttons, circular icon buttons, panel badges, inventory tiles |
+
+Both are tinted from `ink`, not black, so a skin that changes the palette doesn't leave black shadows under a warm one. **Widgets must not invent shadow colours**, same rule as text and fill colours.
+
 ### 2.2 Typography
 - **Display — Bricolage Grotesque.** Mode names, win banners, big numbers. Used sparingly.
 - **UI & body — Archivo.** Buttons, labels, tutorial copy, settings. Clean at small sizes; handles Spanish diacritics without substitution.
 - **Data — Archivo, tabular figures.** Stats, timers, counters — so numbers don't jitter as they update.
 - Sentence case throughout. No all-caps except very small utility labels.
+
+**As built: Bricolage Grotesque only.** Archivo is not bundled, so Bricolage carries both roles. Bricolage does ship the `tnum` feature, so the tabular-figure requirement above is satisfied for real (see `data`/`dataSmall` below). Bundling Archivo later means adding the files and pointing the body/data styles at it — the styles are already separated for exactly that.
+
+Weights bundled: **400/500/600/700**. Asking for a weight outside that set silently snaps to the nearest bundled one.
+
+#### The type scale
+
+Styles live in `GameTextStyles` (`lib/theme/typography.dart`), a `ThemeExtension` named for *what the text is* rather than for a point on Material's scale. Every style is **non-nullable and already coloured**, so call sites pass it straight to `Text` — no `copyWith(color:)` at each one.
+
+`display` · `banner` · `screenTitle` · `cardTitle` · `subtitle` · `bodyLarge` · `body` · `bodyMuted` · `label` · `labelMuted` · `caption` · `data` · `dataSmall` · `mainMenuButton`
+
+Two rules that matter:
+
+- **`toTextTheme()` feeds Material's slots from the same scale**, so stock widgets (dropdowns, dialogs, buttons) restyle with everything else rather than drifting into a second type scale.
+- **Restyling is a single edit in that file.** Don't hardcode a size or weight in a widget; if a screen needs something the scale lacks, add it to the scale.
 
 ### 2.3 Chips — the signature element
 **A chip is a set of concentric rings, flat-filled in its player colour. Level = number of rings** (L1 = one ring, L4 = four).
@@ -197,4 +227,41 @@ Key beats:
 - Stats screen (per-mode W/L/D)
 - Settings — reset stats, SFX/music toggles, replay tutorial, language, local turn timer
 - Neutral age screen (see `03-PRODUCT.md`; gates ad initialisation)
+- Custom (cosmetic category root) → Chip skins, Emotes (see `07-SKINS.md` §2a)
+- Challenges — the achievement list (`03-PRODUCT.md` §3.1)
+- Shop
 - *(v2)* Lobby / matchmaking
+
+## 11. Shared components
+
+Built once, in `lib/ui/widgets/`. Use these rather than restyling a Material
+widget at the call site — that's how a design drifts.
+
+| Component | File | Notes |
+|---|---|---|
+| `PanelHeader` | `widgets/panel_header.dart` | Badge + title + subtitle + close X, with an optional `trailing` slot. Full-screen panels use this instead of an `AppBar` — they're dismissed with the X, not a back arrow. The X is always pinned to the right edge. |
+| `MenuPillButton` | `widgets/buttons/menu_pill_button.dart` | The large stadium buttons on Home. Sized by height, not by label, so a row stays even across translations. |
+| `PillActionButton` | `widgets/buttons/pill_action_button.dart` | Small stadium button. Dims to 45% when disabled. |
+| `PillDropdown` | `widgets/buttons/pill_dropdown.dart` | Stadium-shaped dropdown. `centerLabel` and `style` for pickers that *are* the screen rather than sitting in a settings row. |
+| `SegmentedPills` | `widgets/buttons/segmented_pills.dart` | One-of-many pills; a segment can be `available: false` to render locked. |
+| `CircleIconButton` / `CircleButtonCluster` | `widgets/buttons/` | Corner controls. The cluster wraps rather than overflows. |
+| `CategoryTile` | `widgets/buttons/category_tile.dart` | Square tile with caption + glyph; `available: false` renders locked and refuses taps. |
+| `AppMark` | `widgets/app_mark.dart` | The logo mark, painted rather than bundled so it inherits `ink` and stays crisp at any size. |
+
+**Locked/unavailable is a shared idiom**: 45% opacity, a lock glyph where the
+content would be, and no tap. `CategoryTile`, `SegmentedPills`,
+`PillActionButton` and the emote catalogue all use it, so "not yet" looks the
+same everywhere.
+
+### Layout rules that keep biting
+
+Learned the hard way; each of these was a real bug:
+
+- **Test at size, in both languages.** Spanish runs longer and wraps, and most
+  overflows only appear on a short landscape phone or an SE-class portrait.
+- **A fixed-height widget inside a bounded parent gets squashed, not shrunk.**
+  Derive the size from the available space instead.
+- **`Expanded` absorbs slack; `Flexible` doesn't.** A trailing control only
+  stays pinned if something before it is `Expanded`.
+- **A widget scrolled out of view still has coordinates.** A tap on it lands
+  wherever those coordinates are — possibly on another control.

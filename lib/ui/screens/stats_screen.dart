@@ -10,12 +10,13 @@ import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 
 String _modeName(AppLocalizations l10n, GameMode mode) => switch (mode) {
-      GameMode.stackStatic => l10n.modeStackStatic,
-      GameMode.stackMovable => l10n.modeStackMovable,
-      GameMode.ultimate => l10n.modeUltimate,
-    };
+  GameMode.stackStatic => l10n.modeStackStatic,
+  GameMode.stackMovable => l10n.modeStackMovable,
+  GameMode.ultimate => l10n.modeUltimate,
+};
 
-String _difficultyName(AppLocalizations l10n, Difficulty difficulty) => switch (difficulty) {
+String _difficultyName(AppLocalizations l10n, Difficulty difficulty) =>
+    switch (difficulty) {
       Difficulty.easy => l10n.difficultyEasy,
       Difficulty.medium => l10n.difficultyMedium,
       Difficulty.hard => l10n.difficultyHard,
@@ -43,7 +44,9 @@ class StatsScreen extends ConsumerWidget {
       body: SafeArea(
         child: FutureBuilder<List<ModeStats>>(
           future: Future.wait(
-            GameMode.values.map((mode) => ref.read(statsServiceProvider).statsFor(mode)),
+            GameMode.values.map(
+              (mode) => ref.read(statsServiceProvider).statsFor(mode),
+            ),
           ),
           builder: (context, snapshot) {
             final stats = snapshot.data;
@@ -86,16 +89,13 @@ class _ModeStatsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_modeName(l10n, mode),
-                style: styles.screenTitle),
+            Text(_modeName(l10n, mode), style: styles.screenTitle),
             const SizedBox(height: 12),
             if (!hasAnyGames)
-              Text(l10n.statsNoGamesYet,
-                  style: styles.bodyMuted)
+              Text(l10n.statsNoGamesYet, style: styles.bodyMuted)
             else ...[
               if (stats.local.total > 0) ...[
-                Text(l10n.statsLocalHeading,
-                    style: styles.labelMuted),
+                Text(l10n.statsLocalHeading, style: styles.labelMuted),
                 const SizedBox(height: 4),
                 Text(
                   '${l10n.statsPlayerWins(1, stats.local.p1Wins)}   '
@@ -106,8 +106,7 @@ class _ModeStatsCard extends StatelessWidget {
                 const SizedBox(height: 12),
               ],
               if (stats.vsAi.values.any((c) => c.total > 0)) ...[
-                Text(l10n.statsVsAiHeading,
-                    style: styles.labelMuted),
+                Text(l10n.statsVsAiHeading, style: styles.labelMuted),
                 const SizedBox(height: 4),
                 for (final difficulty in Difficulty.values)
                   if (stats.vsAi[difficulty]!.total > 0)
@@ -115,11 +114,7 @@ class _ModeStatsCard extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         '${_difficultyName(l10n, difficulty)} — '
-                        '${l10n.statsRecord(
-                          stats.vsAi[difficulty]!.wins,
-                          stats.vsAi[difficulty]!.losses,
-                          stats.vsAi[difficulty]!.draws,
-                        )}',
+                        '${l10n.statsRecord(stats.vsAi[difficulty]!.wins, stats.vsAi[difficulty]!.losses, stats.vsAi[difficulty]!.draws)}',
                         style: styles.data,
                       ),
                     ),

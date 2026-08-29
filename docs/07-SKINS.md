@@ -73,9 +73,57 @@ If a change would alter any of those, it's not a skin.
 | Painted Ultimate marks (X/O) | `lib/ui/widgets/ultimate_board.dart` (`_MarkPainter`, `_UltimateMark`) |
 | Selection + unlock state (Riverpod) | `lib/controllers/skin_controller.dart` |
 | Persistence (SharedPreferences) | `lib/services/skin_service.dart` |
-| Picker UI + names/descriptions + purchase route | `lib/ui/screens/skins_screen.dart` |
+| **Category root** ("Custom": which kind of cosmetic) | `lib/ui/screens/skins_screen.dart` |
+| **Chip picker** + names/descriptions + purchase route | `lib/ui/screens/chip_skins_screen.dart` |
 | Unlock triggers (achievement / purchase) | `lib/controllers/game_controller.dart`, `lib/controllers/ads_controller.dart` |
 | Display strings | `lib/l10n/app_en.arb`, `lib/l10n/app_es.arb` |
+
+---
+
+## 2a. Cosmetics are no longer just chip skins
+
+`SkinsScreen` is the **category root**, not the chip picker. It lists
+`CustomizationCategory` — board, chips, emote, flexing — and routes to a
+screen per category. Two are live:
+
+| Category | Screen | Model |
+|---|---|---|
+| `chips` | `ChipSkinsScreen` | `GameSkin` (`lib/theme/skin.dart`) |
+| `emote` | `EmoteSkinsScreen` | `Emote` (`lib/theme/emote.dart`) |
+| `board`, `flexing` | — (locked) | none yet |
+
+**Emotes are a separate model, deliberately.** A skin decides how one thing is
+*drawn*; an emote is a thing a player *equips and sends*. They share nothing
+but the "cosmetic, unlockable, purchasable" shape, so they get parallel —
+not shared — model/service/controller trios:
+
+```
+Emote (theme/emote.dart)
+  -> EmoteService (services/emote_service.dart)      persists loadout + unlocks
+  -> EmoteController (controllers/emote_controller.dart)  enforces the rules
+  -> EmoteView (ui/widgets/emote_view.dart)          asset, icon fallback
+```
+
+See `05-V2-DEFERRED.md` §4 for what's built vs. what waits for multiplayer.
+
+### Adding an emote
+
+Three steps, no code beyond them:
+
+1. Add an entry to the `Emote` enum with a **stable `id`** (it is persisted —
+   renaming one orphans a player's saved loadout), a `fallbackIcon`, and
+   `free: true` if it should need no unlock.
+2. Add `emoteName<Name>` to both ARBs and a case to `emoteName()` in
+   `emote_skins_screen.dart`. The switch is exhaustive, so the analyzer will
+   point at it.
+3. Optionally drop art at `assets/emotes/<id>.png`.
+
+**Emote art is not bundled yet.** `assets/emotes/` isn't declared in
+`pubspec.yaml` — declaring a directory with no files fails the build. Every
+emote currently renders its `fallbackIcon` through `EmoteView`'s
+`errorBuilder`, the same degrade-to-something convention `ChipView` uses for
+asset skins. When real art arrives, add the files *and* the pubspec entry
+together.
 
 ---
 
@@ -254,7 +302,7 @@ with a per-achievement mapping — this is exactly the "chests/rarity" seam
 1. Add a `ProductId` in `lib/services/purchase_service.dart` and create the
    matching product in App Store Connect + Play Console (IAP has no universal
    test ID; see the Phase 9 note in `CLAUDE.md`).
-2. Map the skin → product in `skins_screen.dart`'s `_productFor` (returns
+2. Map the skin → product in `chip_skins_screen.dart`'s `_productFor` (returns
    `null` on web — `in_app_purchase` is mobile-only):
 
 ```dart

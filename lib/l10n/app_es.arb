@@ -176,5 +176,21 @@
   "rarityCommon": "Común",
   "rarityRare": "Raro",
   "rarityEpic": "Épico",
-  "rarityLegendary": "Legendario"
+  "rarityLegendary": "Legendario",
+  "emotesTitle": "Emotes",
+  "emotesSubtitle": "{count, plural, one{Elige hasta {count} emote} other{Elige hasta {count} emotes}}",
+  "emotesLoadoutHeading": "Tus emotes",
+  "emotesEmptySlot": "Espacio vacío",
+  "emotesFullHint": "Quita uno para añadir otro",
+  "emoteEquipped": "Equipado",
+  "emoteNameThumbsUp": "Bien",
+  "emoteNameClap": "Bien jugado",
+  "emoteNameLaugh": "Risas",
+  "emoteNameCry": "Llanto",
+  "emoteNameSurprised": "Sorpresa",
+  "emoteNameThinking": "Pensando",
+  "emoteNameFire": "En racha",
+  "emoteNameHeart": "Corazón",
+  "emoteNameParty": "Fiesta",
+  "emoteNameStar": "Estrella"
 }
