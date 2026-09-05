@@ -24,9 +24,10 @@ class StackingBoard extends ConsumerWidget {
     final controller = ref.read(gameControllerProvider.notifier);
     final engine = session.engine as StackingEngine;
     final colors = context.gameColors;
-    final appearance =
-        ref.watch(skinControllerProvider).value?.selectedSkin.appearance ??
-        const PaintedAppearance(ChipForm.rings);
+    // The pair, not one appearance: which skin draws a chip depends on whose
+    // chip it is, and that's only known at the individual cell.
+    final skins = ref.watch(skinControllerProvider).value?.pair ??
+        SkinPair.fallback;
 
     final highlights = controller.stackingHighlightTargets();
     final staged = session.stagedMove;
@@ -69,7 +70,7 @@ class StackingBoard extends ConsumerWidget {
               currentPersonIsFirst: currentPerson == 1,
               currentColor: currentColor,
               personFor: session.personFor,
-              appearance: appearance,
+              skins: skins,
               onTap: () => controller.onStackingCellTapped(cell),
             ),
         ],
@@ -92,7 +93,7 @@ class _StackingCell extends StatelessWidget {
     required this.currentPersonIsFirst,
     required this.currentColor,
     required this.personFor,
-    required this.appearance,
+    required this.skins,
     required this.onTap,
   });
 
@@ -115,7 +116,7 @@ class _StackingCell extends StatelessWidget {
   final bool currentPersonIsFirst;
   final Color currentColor;
   final int Function(Player) personFor;
-  final ChipAppearance appearance;
+  final SkinPair skins;
   final VoidCallback onTap;
 
   @override
@@ -182,7 +183,9 @@ class _StackingCell extends StatelessWidget {
                         ringColor: colors.surface,
                         level: top.level,
                         isFirstPerson: personFor(top.owner) == 1,
-                        appearance: appearance,
+                        appearance: skins.appearanceFor(
+                          isFirstPerson: personFor(top.owner) == 1,
+                        ),
                       ),
                     ),
                   ),
@@ -194,7 +197,9 @@ class _StackingCell extends StatelessWidget {
                     ringColor: colors.surface,
                     level: stagedLevel!,
                     isFirstPerson: currentPersonIsFirst,
-                    appearance: appearance,
+                    appearance: skins.appearanceFor(
+                      isFirstPerson: currentPersonIsFirst,
+                    ),
                     ghost: true,
                   ),
                 ),

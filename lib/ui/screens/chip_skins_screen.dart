@@ -58,9 +58,10 @@ class _ChipSkinsScreenState extends ConsumerState<ChipSkinsScreen> {
   /// player presses Select.
   int _focused = 0;
 
-  /// Which player's rendering the previews use. Presentation state too: a
-  /// skin can draw differently for player 1 and player 2, and this decides
-  /// which you're looking at — not who you play as.
+  /// Which mark you're dressing. The two are chosen — and sold — separately,
+  /// so this decides both what the previews render *and* which mark a Select
+  /// applies to. Presentation state: the choice itself lives in
+  /// `SkinController`.
   bool _previewFirstPerson = true;
 
   String _source = 'local';
@@ -96,7 +97,12 @@ class _ChipSkinsScreenState extends ConsumerState<ChipSkinsScreen> {
     final unlocked =
         skinState?.isUnlocked(focusedSkin) ??
         focusedSkin.id == GameSkin.turnedWood.id;
-    final selected = skinState?.selectedId == focusedSkin.id;
+    final selected =
+        skinState?.isSelected(
+          focusedSkin,
+          forFirstPerson: _previewFirstPerson,
+        ) ??
+        false;
 
     final sourcePills = SegmentedPills(
       selected: _source,
@@ -185,7 +191,12 @@ class _ChipSkinsScreenState extends ConsumerState<ChipSkinsScreen> {
                     isUnlocked: (skin) =>
                         skinState?.isUnlocked(skin) ??
                         skin.id == GameSkin.turnedWood.id,
-                    selectedId: skinState?.selectedId,
+                    isSelected: (skin) =>
+                        skinState?.isSelected(
+                          skin,
+                          forFirstPerson: _previewFirstPerson,
+                        ) ??
+                        false,
                     onFocusChanged: (index) => setState(() => _focused = index),
                     onTapTile: _focus,
                   ),
@@ -194,6 +205,7 @@ class _ChipSkinsScreenState extends ConsumerState<ChipSkinsScreen> {
                   skin: focusedSkin,
                   unlocked: unlocked,
                   selected: selected,
+                  forFirstPerson: _previewFirstPerson,
                   compact: short,
                 ),
                 const RarityLegend(),
@@ -213,7 +225,7 @@ class _SkinCarousel extends StatelessWidget {
     required this.skins,
     required this.previewFirstPerson,
     required this.isUnlocked,
-    required this.selectedId,
+    required this.isSelected,
     required this.onFocusChanged,
     required this.onTapTile,
   });
@@ -222,7 +234,7 @@ class _SkinCarousel extends StatelessWidget {
   final List<GameSkin> skins;
   final bool previewFirstPerson;
   final bool Function(GameSkin) isUnlocked;
-  final String? selectedId;
+  final bool Function(GameSkin) isSelected;
   final ValueChanged<int> onFocusChanged;
   final ValueChanged<int> onTapTile;
 
@@ -263,7 +275,7 @@ class _SkinCarousel extends StatelessWidget {
                       child: _SkinTile(
                         skin: skin,
                         unlocked: isUnlocked(skin),
-                        selected: selectedId == skin.id,
+                        selected: isSelected(skin),
                         previewFirstPerson: previewFirstPerson,
                         onTap: () => onTapTile(index),
                       ),
@@ -479,8 +491,12 @@ class _FocusedSkinActions extends ConsumerWidget {
     required this.skin,
     required this.unlocked,
     required this.selected,
+    required this.forFirstPerson,
     required this.compact,
   });
+
+  /// Which mark a Select applies to — the X/O toggle above the carousel.
+  final bool forFirstPerson;
 
   final GameSkin skin;
   final bool unlocked;
@@ -526,8 +542,9 @@ class _FocusedSkinActions extends ConsumerWidget {
             PillActionButton(
               key: Key('select-skin-${skin.id}'),
               label: l10n.skinSelect,
-              onPressed: () =>
-                  ref.read(skinControllerProvider.notifier).selectSkin(skin),
+              onPressed: () => ref
+                  .read(skinControllerProvider.notifier)
+                  .selectSkin(skin, forFirstPerson: forFirstPerson),
             ),
         ],
       ),

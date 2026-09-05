@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../ai/ai_runner.dart';
 import '../ai/difficulty.dart';
+import 'daily_challenge_controller.dart';
 import '../engines/common/game_engine.dart';
 import '../engines/common/game_mode.dart';
 import '../engines/common/game_status.dart';
@@ -225,6 +226,7 @@ class GameController extends Notifier<GameSession?> {
   void _recordResult(GameSession session) {
     final status = session.status;
     final service = ref.read(statsServiceProvider);
+    unawaited(_recordDailyProgress(session));
     if (session.opponents.personTwoIsAi) {
       const humanPerson = 1; // always true vs-AI (rules doc §5)
       final result = switch (status.outcome) {
@@ -252,6 +254,35 @@ class GameController extends Notifier<GameSession?> {
         service.recordLocalResult(session.mode, winnerPerson: winnerPerson),
       );
     }
+  }
+
+  /// Feeds the daily challenges behind the shop's claim meter. Fire-and-
+  /// forget like stats and achievements — a finished game must never wait on
+  /// storage.
+  Future<void> _recordDailyProgress(GameSession session) async {
+    final status = session.status;
+    if (status.outcome == GameOutcome.ongoing) return;
+
+    final vsAi = session.opponents.personTwoIsAi;
+    // Vs AI the human is always person 1 (rules doc §5); pass-and-play has no
+    // "you", so any decisive result counts as the day's win.
+    final humanWon =
+        status.outcome == GameOutcome.won &&
+        (!vsAi || session.personFor(status.winner!) == 1);
+    final difficulty = session.opponents.difficulty;
+    final tough =
+        vsAi &&
+        humanWon &&
+        difficulty != null &&
+        difficulty.index >= Difficulty.hard.index;
+
+    await ref
+        .read(dailyChallengeControllerProvider.notifier)
+        .recordGameFinished(
+          mode: session.mode,
+          won: humanWon,
+          beatToughAi: tough,
+        );
   }
 
   // ---------------------------------------------------------- analytics

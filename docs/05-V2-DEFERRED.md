@@ -174,7 +174,21 @@ When v2 adds a backend, this is where a remote catalogue hangs. Note that a
 downloaded skin still has to resolve to a `ChipAppearance`, so the transport
 is art plus an id, not new render code.
 
-### 4.5 Rarity tiers — a legend, not a system
+### 4.5 Per-mark skins
+
+`GameSkin` no longer dresses both players at once. `SkinPair` carries one
+skin per mark, `SkinState` persists them separately, and the boards resolve
+which to draw at the individual chip or mark — the first point that knows
+whose it is.
+
+This exists because the shop sells an **X pack** and an **O pack** as
+separate items, which is meaningless if one skin dresses both.
+
+For v2: a remote player's mark is drawn with *their* chosen skin, so the
+pair has to come from the match, not from local storage. `SkinPair` is
+already the unit to send.
+
+### 4.6 Rarity tiers — a legend, not a system
 
 `ChipSkinsScreen` and `CelebrationSkinsScreen` both end in a **static,
 non-interactive legend** reading COMMON / RARE / EPIC / LEGENDARY (one shared

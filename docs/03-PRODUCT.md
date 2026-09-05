@@ -56,11 +56,34 @@ Chests contain **cosmetics only**. No chest content ever affects gameplay.
 
 ### 3.1 Chest sources
 
+### As built (2026-08)
+
+The no-ad earner exists and is the **daily challenge set**: four goals that
+reset each day (`DailyChallenge`), shown on the Challenges screen and drawn as
+the meter under the Shop's Claim button. Finishing all four enables one claim,
+which opens one chest.
+
+- **Four goals:** play 2 games · win a game · play all three modes · beat the
+  AI on Hard or above.
+- **Deliberately non-coercive**, given §1's mixed and possibly child-directed
+  audience: no streaks, no timers, nothing lost by not playing. A stale day is
+  simply a new empty day — you cannot fall behind.
+- **One claim per day**, enforced in the service, so a double tap can't grant
+  twice.
+- **Chest contents are uniformly random** across every cosmetic the player
+  doesn't already own (skins, emotes, celebrations). Uniform *on purpose*:
+  rarity tiers and drop weights are still undecided, and inventing weights now
+  would have to be unpicked later. Owning everything makes a claim a no-op
+  that says so rather than granting nothing silently.
+- Still **unpurchasable**, per this section's whole point.
+
+Rewarded-ad chests and achievement chests remain unbuilt.
+
 **A gap to avoid:** if every chest requires watching an ad, there's no ad-free progression at all. That reads as aggressive, and under a child-directed configuration rewarded ads may be restricted — which would leave the whole cosmetic economy unreachable. **At least one chest source must require no ad.**
 
 | Source | Ad required | Notes |
 |---|---|---|
-| **Progress meter** | No | Every completed game fills a bar; full bar = chest (~5–8 games). **The core earner — build this first.** Self-limiting, scales with engagement, no timers, works offline. |
+| **Progress meter** | No | Every completed game fills a bar; full bar = chest (~5–8 games). **The core earner — build this first.** Self-limiting, scales with engagement, no timers, works offline. **As built:** the meter is filled by *daily challenges* rather than a raw game count (see below) — same shape, but the goals say what to do rather than just counting. |
 | **Daily first game** | No | First completed game each day awards a chest. Retention hook without an ad wall. |
 | **Rewarded ad chest** | Yes | Optional, offered post-game. **Cap at 2–3/day** or the economy is farmable. |
 | **Achievement chests** | No | One-time: beat Impossible in each mode, win with an L4 chip on the final move, claim all 9 boards in Ultimate. Drives mode exploration, makes skins feel earned. |

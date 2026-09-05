@@ -108,9 +108,15 @@ void main() {
     await tester.tap(find.byKey(const Key('open-challenges')));
     await tester.pumpAndSettle();
 
-    // Every achievement is listed, and starts locked on a fresh install.
+    // Today's challenges sit above the achievements now, and start empty.
+    expect(find.byKey(const Key('daily-playTwoGames')), findsOne);
+    expect(find.text('0 of 4 done today'), findsOne);
+
+    // The achievements are below them, and start locked on a fresh install.
+    // Counting locks would depend on how many rows fit the viewport, so
+    // check the summary line instead.
+    expect(find.text('0 of 5 completed'), findsOne);
     expect(find.byKey(const Key('challenge-beatImpossibleStatic')), findsOne);
-    expect(find.byIcon(Icons.lock_outline), findsNWidgets(5));
   });
 
   testWidgets('the music button reflects and flips the persisted setting', (

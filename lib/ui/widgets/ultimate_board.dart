@@ -67,9 +67,9 @@ class _UltimateBoardState extends ConsumerState<UltimateBoard> {
     final currentColor = currentPerson == 1 ? colors.playerA : colors.playerB;
     final staged = session.stagedMove as UltimateMove?;
     final lastMove = session.lastMove as UltimateMove?;
-    final appearance =
-        ref.watch(skinControllerProvider).value?.selectedSkin.appearance ??
-        const PaintedAppearance(ChipForm.rings);
+    // The pair, not one appearance — see StackingBoard.
+    final skins = ref.watch(skinControllerProvider).value?.pair ??
+        SkinPair.fallback;
 
     Widget smallBoard(int board, {required bool interactive}) => _SmallBoard(
       engine: engine,
@@ -80,7 +80,7 @@ class _UltimateBoardState extends ConsumerState<UltimateBoard> {
       lastMoveCell: lastMove?.board == board ? lastMove!.cell : null,
       currentPerson: currentPerson,
       currentColor: currentColor,
-      appearance: appearance,
+      skins: skins,
       personFor: session.personFor,
       onCellTap: interactive
           ? (cell) => controller.onUltimateCellTapped(board, cell)
@@ -199,7 +199,7 @@ class _SmallBoard extends StatelessWidget {
     required this.lastMoveCell,
     required this.currentPerson,
     required this.currentColor,
-    required this.appearance,
+    required this.skins,
     required this.personFor,
     required this.onCellTap,
     required this.onZoomTap,
@@ -220,7 +220,7 @@ class _SmallBoard extends StatelessWidget {
 
   /// How this skin draws move marks (painted vs. asset). Threaded down from
   /// the board so every cell shares one lookup.
-  final ChipAppearance appearance;
+  final SkinPair skins;
   final int Function(Player) personFor;
 
   /// Null when unzoomed — cells don't respond to individual taps at that
@@ -258,7 +258,7 @@ class _SmallBoard extends StatelessWidget {
               isLastMove: lastMoveCell == cell,
               currentPerson: currentPerson,
               currentColor: currentColor,
-              appearance: appearance,
+              skins: skins,
               personFor: personFor,
               onTap: onCellTap == null ? null : () => onCellTap!(cell),
             ),
@@ -356,7 +356,7 @@ class _UltimateCell extends StatelessWidget {
     required this.isLastMove,
     required this.currentPerson,
     required this.currentColor,
-    required this.appearance,
+    required this.skins,
     required this.personFor,
     required this.onTap,
   });
@@ -374,7 +374,7 @@ class _UltimateCell extends StatelessWidget {
   final Color currentColor;
 
   /// How this skin draws the move mark (painted X/O vs. a bundled asset).
-  final ChipAppearance appearance;
+  final SkinPair skins;
   final int Function(Player) personFor;
   final VoidCallback? onTap;
 
@@ -393,7 +393,7 @@ class _UltimateCell extends StatelessWidget {
             child: Opacity(
               opacity: stagedHere ? 0.45 : 1,
               child: _UltimateMark(
-                appearance: appearance,
+                skins: skins,
                 isFirstPerson: markPerson == 1,
                 color: stagedHere
                     ? currentColor
@@ -464,12 +464,12 @@ class _UltimateCell extends StatelessWidget {
 /// zero-size dot in the cell centre.
 class _UltimateMark extends StatelessWidget {
   const _UltimateMark({
-    required this.appearance,
+    required this.skins,
     required this.isFirstPerson,
     required this.color,
   });
 
-  final ChipAppearance appearance;
+  final SkinPair skins;
   final bool isFirstPerson;
   final Color color;
 
@@ -478,7 +478,11 @@ class _UltimateMark extends StatelessWidget {
     final painted = CustomPaint(
       painter: _MarkPainter(color: color, isX: isFirstPerson),
     );
-    final Widget content = switch (appearance) {
+    // Resolved here, at the mark, because this is the first point that knows
+    // whose mark it is.
+    final Widget content = switch (skins.appearanceFor(
+      isFirstPerson: isFirstPerson,
+    )) {
       PaintedAppearance() => painted,
       AssetAppearance(:final resolve) => Image.asset(
         resolve(ChipAssetRequest(isFirstPerson: isFirstPerson)),

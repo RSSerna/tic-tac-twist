@@ -228,8 +228,8 @@ Key beats:
 - Settings — reset stats, SFX/music toggles, replay tutorial, language, local turn timer
 - Neutral age screen (see `03-PRODUCT.md`; gates ad initialisation)
 - Custom (cosmetic category root) → Chip skins, Emotes, Flexing/celebrations (see `07-SKINS.md` §2a)
-- Challenges — the achievement list (`03-PRODUCT.md` §3.1)
-- Shop
+- Challenges — today's daily goals (which fill the Shop's claim meter) above the permanent achievement list (`03-PRODUCT.md` §3)
+- Shop — cosmetic packs, plus the Claim button and daily meter
 - *(v2)* Lobby / matchmaking
 
 ## 11. Shared components

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nested_game/main.dart';
 import 'package:nested_game/ui/screens/shop_screen.dart';
+import 'package:nested_game/ui/widgets/buttons/pill_action_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../test_helpers.dart';
@@ -24,27 +25,59 @@ void main() {
     await markAgeGateAnswered();
   });
 
-  testWidgets('Shop icon on Home opens the Shop with the test item',
-      (tester) async {
+  testWidgets('Shop icon on Home opens the Shop and lists its packs', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await pumpNestedApp(tester);
     await tapKey(tester, 'open-shop');
 
     expect(find.byType(ShopScreen), findsOneWidget);
-    expect(find.byKey(const Key('shop-item-test_item')), findsOneWidget);
-    expect(find.byKey(const Key('shop-buy-test_item')), findsOneWidget);
+    for (final id in [
+      'fire',
+      'apple',
+      'elements',
+      'sakura',
+      'troll',
+      'loser',
+    ]) {
+      expect(find.byKey(Key('shop-item-$id')), findsOneWidget);
+    }
   });
 
-  testWidgets(
-      'buying the placeholder item shows the payments-not-set-up notice, '
-      'not a real purchase', (tester) async {
+  testWidgets('tapping a pack reports that payments are not set up', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await pumpNestedApp(tester);
     await tapKey(tester, 'open-shop');
 
-    await tester.tap(find.byKey(const Key('shop-buy-test_item')));
+    await tester.tap(find.byKey(const Key('shop-item-apple')));
     await tester.pump(); // let the SnackBar appear (don't settle it away)
 
-    // The buy button is a placeholder until payments are wired — it must
-    // surface the "not set up" notice rather than silently pretending to buy.
+    // Nothing is buyable until real store products exist — a card must say
+    // so rather than pretending to sell.
     expect(find.byType(SnackBar), findsOneWidget);
+  });
+
+  testWidgets('the claim meter is empty and Claim is disabled on a fresh day', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await pumpNestedApp(tester);
+    await tapKey(tester, 'open-shop');
+
+    final meter = tester.widget<LinearProgressIndicator>(
+      find.byKey(const Key('shop-claim-meter')),
+    );
+    expect(meter.value, 0);
+
+    final claim = tester.widget<PillActionButton>(
+      find.byKey(const Key('shop-claim')),
+    );
+    expect(claim.onPressed, isNull);
   });
 }

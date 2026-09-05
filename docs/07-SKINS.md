@@ -12,7 +12,14 @@ rules, or the controller's move path.
 ## 1. Mental model
 
 A skin is a small value object. It decides **how a player's chip (Stacking) or
-mark (Ultimate) is drawn** — nothing else. Board colours, backgrounds, and
+mark (Ultimate) is drawn** — nothing else.
+
+**Two are in play at once.** Each mark carries its own skin (`SkinPair`), so
+player 1's chips and player 2's chips can differ; the shop sells them as
+separate packs. Board widgets take the pair and call
+`appearanceFor(isFirstPerson:)` at the chip or mark, because that's the first
+point in the tree that knows whose it is. Never resolve a skin higher up —
+you'd draw both players with one. Board colours, backgrounds, and
 palette are *not* skinned today (they come from the fixed `GameColors.baseSkin`
 theme extension; the design doc allows skinning them later, but the model here
 doesn't wire them yet).

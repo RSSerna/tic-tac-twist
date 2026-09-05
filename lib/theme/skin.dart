@@ -98,3 +98,31 @@ class GameSkin {
 
   static const values = [turnedWood, nestingDolls];
 }
+
+/// The two skins in play at once: a player dresses their own chips
+/// independently of their opponent's (the shop sells the X mark and the O
+/// mark as separate items).
+///
+/// Passed down through the board widgets instead of a single
+/// [ChipAppearance], because the choice of skin can only be made where the
+/// *person* being drawn is known — at the individual chip or mark.
+@immutable
+class SkinPair {
+  const SkinPair({required this.firstPerson, required this.secondPerson});
+
+  final GameSkin firstPerson;
+  final GameSkin secondPerson;
+
+  GameSkin skinFor({required bool isFirstPerson}) =>
+      isFirstPerson ? firstPerson : secondPerson;
+
+  ChipAppearance appearanceFor({required bool isFirstPerson}) =>
+      skinFor(isFirstPerson: isFirstPerson).appearance;
+
+  /// Used while the controller is still loading, so a board never waits on
+  /// storage to draw itself.
+  static const fallback = SkinPair(
+    firstPerson: GameSkin.turnedWood,
+    secondPerson: GameSkin.turnedWood,
+  );
+}

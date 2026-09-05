@@ -138,7 +138,10 @@ void main() {
       tester,
       screen: ChipSkinsScreen,
     ).read(skinControllerProvider.future);
-    expect(skinState.selectedId, GameSkin.nestingDolls.id);
+    // The X/O toggle starts on player 1, so that's the mark this dressed.
+    expect(skinState.firstPersonId, GameSkin.nestingDolls.id);
+    // Player 2 is a separate purchase and a separate choice — untouched.
+    expect(skinState.secondPersonId, GameSkin.turnedWood.id);
     expect(find.text('Selected'), findsOneWidget);
   });
 }

@@ -67,9 +67,21 @@ ProductId           (billing)        lib/services/purchase_service.dart
 storeId string      (the store)      App Store Connect + Play Console
 ```
 
-- **`ShopItem`** — what the player sees: icon, localized name/description, and a
-  price *label*. Today it's UI-only; a real item also carries the `ProductId`
-  it sells.
+- **`ShopItem`** — what the player sees: a pack with a `ShopItemKind` badge
+  (X mark, O mark, both, board, emote, flexing), a display name, and a
+  pointer to whatever cosmetic owning it grants. **No price label**: a
+  hardcoded price is wrong per-region, and the store owns that string. Today
+  no item carries a `ProductId`, so tapping one reports that payments aren't
+  set up rather than pretending to sell.
+
+  Packs that point at a real cosmetic (`fire` → the Nesting Dolls skin,
+  `troll` → an emote, `loser` → a celebration) show a truthful owned state.
+  `apple`, `elements` and `sakura` have nothing behind them yet — board skins
+  don't exist at all — so they can never read as owned.
+
+  **The X and O packs are separate items on purpose**: skins are chosen and
+  persisted per mark (`SkinPair`, see `07-SKINS.md` §1), so selling one mark's
+  look without the other is meaningful.
 - **`ProductId`** — the app's internal enum of billable products, each with a
   `storeId` (the reverse-DNS identifier registered in both stores).
 - **`storeId`** — the actual product you create in each store's console. This is

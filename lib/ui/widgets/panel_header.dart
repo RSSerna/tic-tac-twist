@@ -29,7 +29,11 @@ class PanelHeader extends StatelessWidget {
   final Widget icon;
 
   final String title;
-  final String subtitle;
+
+  /// Optional: a long translated subtitle wraps on a narrow screen and can
+  /// make the header taller than the screen it's heading. A panel that's
+  /// tight for height omits it.
+  final String? subtitle;
 
   /// Key for the close button, so tests can dismiss the panel.
   final Key? closeKey;
@@ -73,7 +77,8 @@ class PanelHeader extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(title, style: styles.display),
-                      Text(subtitle, style: styles.subtitle),
+                      if (subtitle case final subtitle?)
+                        Text(subtitle, style: styles.subtitle),
                     ],
                   ),
                 ),

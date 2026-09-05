@@ -231,7 +231,11 @@ class _TurnBanner extends ConsumerWidget {
     final person = session.currentPerson;
     final color = person == 1 ? colors.playerA : colors.playerB;
     final appearance =
-        ref.watch(skinControllerProvider).value?.selectedSkin.appearance ??
+        ref
+            .watch(skinControllerProvider)
+            .value
+            ?.pair
+            .appearanceFor(isFirstPerson: person == 1) ??
         const PaintedAppearance(ChipForm.rings);
 
     return Padding(

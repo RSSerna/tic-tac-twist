@@ -423,5 +423,57 @@
   "@celebrationEquippedIs": {
     "description": "Shown under the preview when the player is previewing a celebration other than the equipped one, so the equipped one is still identifiable.",
     "placeholders": { "name": { "type": "String" } }
-  }
+  },
+  "dailyChallengesHeading": "Today's challenges",
+  "@dailyChallengesHeading": {
+    "description": "Heading over the daily challenge list, which resets each day."
+  },
+  "dailyChallengesProgress": "{completed} of {total} done today",
+  "@dailyChallengesProgress": {
+    "description": "Summary of how many of today's challenges are finished.",
+    "placeholders": { "completed": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "dailyChallengeReady": "Reward ready in the Shop",
+  "@dailyChallengeReady": {
+    "description": "Shown when every daily challenge is done and the reward can be claimed."
+  },
+  "dailyChallengeClaimed": "Reward claimed today",
+  "@dailyChallengeClaimed": {
+    "description": "Shown once the day's reward has been taken."
+  },
+  "dailyPlayTwoGames": "Play 2 games",
+  "dailyWinOneGame": "Win a game",
+  "dailyPlayEachMode": "Play all three modes",
+  "dailyBeatToughAi": "Beat the AI on Hard or above",
+  "shopClaim": "Claim",
+  "@shopClaim": {
+    "description": "Button that takes the reward for finishing the day's challenges."
+  },
+  "shopClaimHint": "Finish today's challenges to claim",
+  "@shopClaimHint": {
+    "description": "Explains why the Claim button is disabled."
+  },
+  "shopClaimedToday": "Claimed — back tomorrow",
+  "@shopClaimedToday": {
+    "description": "Shown in place of the Claim button once today's reward is taken."
+  },
+  "shopClaimGranted": "Unlocked: {name}",
+  "@shopClaimGranted": {
+    "description": "Confirmation naming the cosmetic a claim just unlocked.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "shopClaimNothingLeft": "Everything is already unlocked",
+  "@shopClaimNothingLeft": {
+    "description": "Shown when a claim has nothing left to grant because the player owns every cosmetic."
+  },
+  "shopOwned": "Owned",
+  "@shopOwned": {
+    "description": "State label on a shop card the player already owns."
+  },
+  "shopItemMarkX": "X mark",
+  "shopItemMarkO": "O mark",
+  "shopItemCombo": "Both marks",
+  "shopItemBoard": "Board",
+  "shopItemEmote": "Emote",
+  "shopItemFlexing": "Flexing"
 }

@@ -9,9 +9,13 @@ import '../../theme/tokens.dart';
 /// stays crisp at any size. Swap in a PNG via `AppImages` if a designer
 /// produces one; nothing else needs to change.
 class AppMark extends StatelessWidget {
-  const AppMark({super.key, this.size = 96});
+  const AppMark({super.key, this.size = 96, this.color});
 
   final double size;
+
+  /// Overrides the mark's colour. Defaults to `ink`; the shop draws it on a
+  /// dark bar, where `ink` on `ink` would be invisible.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +23,7 @@ class AppMark extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(painter: _AppMarkPainter(ink: colors.ink)),
+      child: CustomPaint(painter: _AppMarkPainter(ink: color ?? colors.ink)),
     );
   }
 }
