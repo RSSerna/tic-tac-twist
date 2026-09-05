@@ -13,6 +13,7 @@ import 'package:nested_game/ui/screens/game_screen.dart';
 import 'package:nested_game/ui/screens/home_screen.dart';
 import 'package:nested_game/ui/screens/settings_screen.dart';
 import 'package:nested_game/ui/screens/stats_screen.dart';
+import 'package:nested_game/ui/screens/sub_mode_screen.dart';
 import 'package:nested_game/ui/screens/tutorial_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -157,6 +158,23 @@ void main() {
 
       expect(find.byType(TutorialScreen), findsOneWidget);
       expect(find.byKey(const Key('skip-tutorial')), findsOneWidget);
+    });
+
+    testWidgets('finishing a replayed tutorial returns to Settings', (
+      tester,
+    ) async {
+      await pumpNestedApp(tester);
+
+      await tapKey(tester, 'open-settings');
+      await tapKey(tester, 'replay-tutorial-ultimate');
+      await tapKey(tester, 'skip-tutorial');
+
+      // Replaying is an errand you come back from. Dropping the player into
+      // mode select instead is the flow the tutorial uses when it's on the
+      // *way* somewhere — not when they asked to rewatch it.
+      expect(find.byType(SettingsScreen), findsOneWidget);
+      expect(find.byType(SubModeScreen), findsNothing);
+      expect(find.byType(TutorialScreen), findsNothing);
     });
 
     testWidgets('switching language changes the app locale', (tester) async {

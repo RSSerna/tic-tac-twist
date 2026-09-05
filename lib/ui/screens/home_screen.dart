@@ -292,8 +292,11 @@ class _ModeCard extends ConsumerWidget {
     if (!context.mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) =>
-            completed ? SubModeScreen(mode: mode) : TutorialScreen(mode: mode),
+        builder: (_) => completed
+            ? SubModeScreen(mode: mode)
+            // First time in this mode: the tutorial is on the way to mode
+            // select, so it continues there rather than back to Home.
+            : TutorialScreen(mode: mode, exit: TutorialExit.toModeSelect),
       ),
     );
   }

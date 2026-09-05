@@ -89,7 +89,13 @@ class SettingsScreen extends ConsumerWidget {
                         label: l10n.settingsReplayAction,
                         onPressed: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => TutorialScreen(mode: mode),
+                            builder: (_) => TutorialScreen(
+                              mode: mode,
+                              // Replaying is an errand: finishing returns
+                              // to Settings rather than dropping the
+                              // player into mode select.
+                              exit: TutorialExit.back,
+                            ),
                           ),
                         ),
                       ),

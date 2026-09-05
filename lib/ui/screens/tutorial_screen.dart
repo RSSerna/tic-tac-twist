@@ -20,15 +20,32 @@ String _modeName(AppLocalizations l10n, GameMode mode) => switch (mode) {
   GameMode.ultimate => l10n.modeUltimate,
 };
 
+/// Where the tutorial hands the player back to when it ends.
+///
+/// The tutorial has two entry points and they want opposite endings: opening
+/// a mode for the first time is a detour *on the way* to mode select, while
+/// replaying one from Settings is an errand you return from.
+enum TutorialExit {
+  /// Continue into mode select — the player was opening this mode.
+  toModeSelect,
+
+  /// Pop back to whatever pushed the tutorial (Settings' replay buttons).
+  back,
+}
+
 /// The guided-first-game tutorial (design doc §7): the real engine, a
 /// scripted opponent, and an instruction panel driven by step count. Reuses
 /// [BoardArea]/[StagingBar] from [GameScreen] unmodified — the tutorial
 /// restricts which moves the controller accepts, not how the board renders
 /// or how a move gets staged and confirmed.
 class TutorialScreen extends ConsumerStatefulWidget {
-  const TutorialScreen({super.key, required this.mode});
+  const TutorialScreen({super.key, required this.mode, required this.exit});
 
   final GameMode mode;
+
+  /// How finishing or skipping ends. Required rather than defaulted: a wrong
+  /// default here is invisible until someone plays the flow.
+  final TutorialExit exit;
 
   @override
   ConsumerState<TutorialScreen> createState() => _TutorialScreenState();
@@ -48,12 +65,24 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
     });
   }
 
-  Future<void> _exitToSubMode() async {
+  /// Ends the tutorial — from the Skip button, or Continue on the completion
+  /// overlay. Both mark it done; only the destination differs.
+  Future<void> _finish() async {
     await ref.read(gameControllerProvider.notifier).finishTutorial();
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => SubModeScreen(mode: widget.mode)),
-    );
+
+    switch (widget.exit) {
+      case TutorialExit.toModeSelect:
+        // pushReplacement, not push: the tutorial shouldn't sit in the back
+        // stack for the player to return to.
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => SubModeScreen(mode: widget.mode),
+          ),
+        );
+      case TutorialExit.back:
+        Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -91,12 +120,12 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
                               ? _LandscapeLayout(
                                   session: session,
                                   step: tutorial.currentStep,
-                                  onSkip: _exitToSubMode,
+                                  onSkip: _finish,
                                 )
                               : _PortraitLayout(
                                   session: session,
                                   step: tutorial.currentStep,
-                                  onSkip: _exitToSubMode,
+                                  onSkip: _finish,
                                 );
                         },
                       ),
@@ -108,7 +137,7 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
             if (tutorial.isComplete)
               _TutorialCompleteOverlay(
                 step: tutorial.currentStep as TutorialComplete,
-                onContinue: _exitToSubMode,
+                onContinue: _finish,
               ),
           ],
         ),
