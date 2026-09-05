@@ -5,12 +5,19 @@ import 'package:nested_game/controllers/celebration_controller.dart';
 import 'package:nested_game/main.dart';
 import 'package:nested_game/theme/celebration.dart';
 import 'package:nested_game/ui/screens/celebration_skins_screen.dart';
+import 'package:nested_game/ui/widgets/buttons/pill_action_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../test_helpers.dart';
 
 Future<void> tapKey(WidgetTester tester, String key) async {
-  await tester.tap(find.byKey(Key(key)));
+  // The body scrolls on a short screen, so a control can be built but off
+  // the fold — and a tap on those coordinates would land on whatever is
+  // there instead.
+  final finder = find.byKey(Key(key));
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
   await tester.pumpAndSettle();
 }
 
@@ -49,23 +56,23 @@ void main() {
     );
   });
 
-  testWidgets('tapping an unlocked celebration equips and previews it', (
+  testWidgets('tapping only previews — the button is what equips', (
     tester,
   ) async {
     await openFlexing(tester);
 
     final free = Celebration.values.where((c) => c.free).toList();
-    await tapKey(tester, 'celebration-${free[1].id}');
+    final before = stateOf(tester).selectedId;
 
+    await tapKey(tester, 'celebration-${free[1].id}');
+    // Look before you commit: the tap moved the preview, not the choice.
+    expect(stateOf(tester).selectedId, before);
+    expect(find.byKey(const Key('celebration-select')), findsOneWidget);
+
+    await tapKey(tester, 'celebration-select');
     expect(stateOf(tester).selectedId, free[1].id);
-    // The preview follows the tap: its name bar shows the new choice.
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('celebration-preview')),
-        matching: find.textContaining(RegExp('.')),
-      ),
-      findsWidgets,
-    );
+    // Once equipped, there's nothing left to commit.
+    expect(find.byKey(const Key('celebration-select')), findsNothing);
   });
 
   testWidgets('a locked celebration previews but never equips', (tester) async {
@@ -78,6 +85,16 @@ void main() {
     expect(stateOf(tester).selectedId, before);
     // Previewing a locked one is the whole point of the lock indicator.
     expect(find.byKey(const Key('celebration-lock-status')), findsOneWidget);
+
+    // The commit button is present but disabled, so the lock is visibly the
+    // thing in the way rather than the action having silently vanished.
+    final button = tester.widget<PillActionButton>(
+      find.byKey(const Key('celebration-select')),
+    );
+    expect(button.onPressed, isNull);
+
+    await tapKey(tester, 'celebration-select');
+    expect(stateOf(tester).selectedId, before);
   });
 
   testWidgets('blocks page forward and back', (tester) async {
@@ -110,10 +127,61 @@ void main() {
     );
   });
 
+  testWidgets('the equipped celebration is identifiable at all times', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await openFlexing(tester);
+
+    // A tick sits on the equipped tile — one, not several.
+    expect(find.byIcon(Icons.check), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(Key('celebration-${Celebration.defaultChoice.id}')),
+        matching: find.byIcon(Icons.check),
+      ),
+      findsOneWidget,
+    );
+
+    // The tick follows the selection rather than being decorative.
+    final free = Celebration.values.where((c) => c.free).toList();
+    await tapKey(tester, 'celebration-${free[1].id}');
+    await tapKey(tester, 'celebration-select');
+    expect(
+      find.descendant(
+        of: find.byKey(Key('celebration-${free[1].id}')),
+        matching: find.byIcon(Icons.check),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.check), findsOneWidget);
+
+    // Previewing a locked one must not make the equipped one unknowable —
+    // the status line names it even though the preview shows something else.
+    final locked = Celebration.values.firstWhere((c) => !c.free);
+    await tapKey(tester, 'celebration-${locked.id}');
+    final status = find.byKey(const Key('celebration-equipped-status'));
+    expect(status, findsOneWidget);
+    expect(
+      find.descendant(of: status, matching: find.textContaining('Equipped:')),
+      findsOneWidget,
+    );
+
+    // Same on a block that doesn't contain the equipped celebration.
+    await tapKey(tester, 'celebration-next-block');
+    expect(find.byIcon(Icons.check), findsNothing);
+    expect(
+      find.descendant(of: status, matching: find.textContaining('Equipped:')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('the choice survives a relaunch', (tester) async {
     await openFlexing(tester);
     final free = Celebration.values.where((c) => c.free).toList();
     await tapKey(tester, 'celebration-${free[2].id}');
+    await tapKey(tester, 'celebration-select');
 
     final container = ProviderContainer();
     addTearDown(container.dispose);

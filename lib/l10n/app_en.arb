@@ -414,5 +414,14 @@
   "celebrationNameCrown": "Crown",
   "celebrationNameTrophy": "Trophy",
   "celebrationNameSparkle": "Sparkle",
-  "celebrationNameRocket": "Rocket"
+  "celebrationNameRocket": "Rocket",
+  "celebrationEquipped": "Equipped",
+  "@celebrationEquipped": {
+    "description": "Shown under the preview when the previewed celebration is the one currently equipped."
+  },
+  "celebrationEquippedIs": "Equipped: {name}",
+  "@celebrationEquippedIs": {
+    "description": "Shown under the preview when the player is previewing a celebration other than the equipped one, so the equipped one is still identifiable.",
+    "placeholders": { "name": { "type": "String" } }
+  }
 }

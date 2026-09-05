@@ -59,6 +59,7 @@ class EmoteSkinsScreen extends ConsumerWidget {
             // rather than the catalogue being pushed off the bottom — it's
             // the half of the screen the player actually picks from.
             final compact = constraints.maxHeight < 620;
+            final tileSize = compact ? 64.0 : 110.0;
 
             // Height sets the ambition; width sets the ceiling. All four
             // slots must be on screen at once — a loadout you have to scroll
@@ -74,16 +75,8 @@ class EmoteSkinsScreen extends ConsumerWidget {
               widthPerSlot,
             ].reduce((a, b) => a < b ? a : b).clamp(48.0, 160.0);
 
-            // Always smaller than a slot. The equipped row is the subject of
-            // the screen and the catalogue is where you shop from — if a
-            // narrow screen shrinks the slots, the tiles have to follow, or
-            // the hierarchy inverts.
-            final tileSize = [
-              compact ? 64.0 : 110.0,
-              slotSize * 0.8,
-            ].reduce((a, b) => a < b ? a : b);
-
             return Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 PanelHeader(
                   closeKey: const Key('close-emotes'),
@@ -110,7 +103,7 @@ class EmoteSkinsScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const Spacer(),
+                // const Spacer(),
                 _EmoteCatalogue(
                   tileSize: tileSize,
                   isUnlocked: (emote) => state?.isUnlocked(emote) ?? emote.free,

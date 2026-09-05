@@ -213,5 +213,7 @@
   "celebrationNameCrown": "Corona",
   "celebrationNameTrophy": "Trofeo",
   "celebrationNameSparkle": "Destello",
-  "celebrationNameRocket": "Cohete"
+  "celebrationNameRocket": "Cohete",
+  "celebrationEquipped": "Equipado",
+  "celebrationEquippedIs": "Equipado: {name}"
 }

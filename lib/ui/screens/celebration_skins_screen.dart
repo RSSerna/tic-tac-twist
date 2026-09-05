@@ -7,6 +7,7 @@ import '../../theme/celebration.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../widgets/asset_glyph.dart';
+import '../widgets/buttons/pill_action_button.dart';
 import '../widgets/panel_header.dart';
 import '../widgets/rarity_legend.dart';
 
@@ -61,14 +62,10 @@ class _CelebrationSkinsScreenState
     return Celebration.values.skip(start).take(Celebration.perBlock).toList();
   }
 
-  void _onTap(Celebration celebration, CelebrationState state) {
-    setState(() => _previewed = celebration);
-    // Previewing is always allowed; equipping isn't. The controller refuses
-    // a locked one anyway — this just avoids a pointless round trip.
-    if (state.isUnlocked(celebration)) {
-      ref.read(celebrationControllerProvider.notifier).select(celebration);
-    }
-  }
+  /// Tapping a tile only *previews* it. Equipping is a separate, deliberate
+  /// act via the button under the preview — you look before you commit.
+  void _preview(Celebration celebration) =>
+      setState(() => _previewed = celebration);
 
   @override
   Widget build(BuildContext context) {
@@ -143,6 +140,14 @@ class _CelebrationSkinsScreenState
 
                         final preview = _PreviewFrame(
                           celebration: previewed,
+                          action: _PreviewAction(
+                            previewed: previewed,
+                            equipped: state?.selected,
+                            locked: previewLocked,
+                            onSelect: () => ref
+                                .read(celebrationControllerProvider.notifier)
+                                .select(previewed),
+                          ),
                           // Roughly a phone's aspect, so the frame reads as a
                           // screen at any size.
                           width: previewWidth,
@@ -155,7 +160,7 @@ class _CelebrationSkinsScreenState
                           tileSize: tile,
                           isUnlocked: (c) => state?.isUnlocked(c) ?? c.free,
                           isSelected: (c) => state?.selectedId == c.id,
-                          onTap: state == null ? null : (c) => _onTap(c, state),
+                          onTap: _preview,
                           hasPrevious: _block > 0,
                           hasNext: _block < _blockCount - 1,
                           onPrevious: () => setState(() => _block--),
@@ -251,10 +256,15 @@ class _LockStatus extends StatelessWidget {
 class _PreviewFrame extends StatelessWidget {
   const _PreviewFrame({
     required this.celebration,
+    required this.action,
     required this.width,
     required this.height,
     this.locked,
   });
+
+  /// Whatever commits (or reports) the choice, rendered under the frame. Built
+  /// by the screen, which is the layer holding the controller.
+  final Widget action;
 
   final Celebration celebration;
   final double width;
@@ -335,6 +345,82 @@ class _PreviewFrame extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 8),
+        SizedBox(width: width, child: action),
+      ],
+    );
+  }
+}
+
+/// What sits under the preview: the button that commits the choice, or — when
+/// you're already looking at the equipped one — a statement that you are.
+///
+/// Separate from [_PreviewFrame] because it needs the controller, and the
+/// frame is a plain presentational widget.
+class _PreviewAction extends StatelessWidget {
+  const _PreviewAction({
+    required this.previewed,
+    required this.equipped,
+    required this.locked,
+    required this.onSelect,
+  });
+
+  final Celebration previewed;
+  final Celebration? equipped;
+  final bool locked;
+  final VoidCallback onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = context.gameColors;
+    final styles = context.gameTextStyles;
+
+    // Still loading: no claim about what's equipped rather than a wrong one.
+    if (equipped == null) return const SizedBox.shrink();
+
+    if (previewed == equipped) {
+      return Row(
+        key: const Key('celebration-equipped-status'),
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.check_circle, size: 16, color: colors.ink),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              l10n.celebrationEquipped,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: styles.label,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      // Keyed on the wrapper, matching the equipped branch above, so a test
+      // can look *inside* the status for either state.
+      key: const Key('celebration-equipped-status'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Disabled rather than hidden on a locked celebration: the player can
+        // see the action exists and that it's the lock standing in the way.
+        PillActionButton(
+          key: const Key('celebration-select'),
+          label: locked ? l10n.skinLocked : l10n.skinSelect,
+          onPressed: locked ? null : onSelect,
+        ),
+        const SizedBox(height: 4),
+        // Previewing something else must not make the equipped one
+        // unknowable — including from a block that doesn't contain it.
+        Text(
+          l10n.celebrationEquippedIs(celebrationName(l10n, equipped!)),
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          style: styles.labelMuted,
+        ),
       ],
     );
   }
@@ -373,7 +459,7 @@ class _CelebrationGrid extends StatelessWidget {
   final double tileSize;
   final bool Function(Celebration) isUnlocked;
   final bool Function(Celebration) isSelected;
-  final void Function(Celebration)? onTap;
+  final void Function(Celebration) onTap;
   final bool hasPrevious;
   final bool hasNext;
   final VoidCallback onPrevious;
@@ -436,7 +522,7 @@ class _CelebrationGrid extends StatelessWidget {
                         size: tileSize,
                         unlocked: isUnlocked(celebration),
                         selected: isSelected(celebration),
-                        onTap: onTap == null ? null : () => onTap!(celebration),
+                        onTap: () => onTap(celebration),
                       ),
                   ],
                 ),
@@ -503,26 +589,49 @@ class _CelebrationTile extends StatelessWidget {
               // the lock prevents.
               borderRadius: radius,
               onTap: onTap,
-              child: Padding(
-                padding: EdgeInsets.all(size * 0.18),
-                child: unlocked
-                    ? AssetGlyph(
-                        assetPath: celebration.assetPath,
-                        fallbackIcon: celebration.fallbackIcon,
-                        color: colors.neutral,
-                      )
-                    : Center(
-                        child: CircleAvatar(
-                          radius: size * 0.22,
-                          backgroundColor: colors.ink,
-                          child: Icon(
-                            Icons.lock,
-                            size: size * 0.24,
-                            color: colors.surface,
-                            semanticLabel: l10n.skinLocked,
-                          ),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Padding(
+                      padding: EdgeInsets.all(size * 0.18),
+                      child: unlocked
+                          ? AssetGlyph(
+                              assetPath: celebration.assetPath,
+                              fallbackIcon: celebration.fallbackIcon,
+                              color: colors.neutral,
+                            )
+                          : Center(
+                              child: CircleAvatar(
+                                radius: size * 0.22,
+                                backgroundColor: colors.ink,
+                                child: Icon(
+                                  Icons.lock,
+                                  size: size * 0.24,
+                                  color: colors.surface,
+                                  semanticLabel: l10n.skinLocked,
+                                ),
+                              ),
+                            ),
+                    ),
+                  ),
+                  // A tick, not just the outline: a 3pt border on a pale tile
+                  // is easy to miss, and easier still to confuse with the
+                  // hover/press state.
+                  if (selected)
+                    Positioned(
+                      top: size * 0.06,
+                      right: size * 0.06,
+                      child: CircleAvatar(
+                        radius: size * 0.14,
+                        backgroundColor: colors.ink,
+                        child: Icon(
+                          Icons.check,
+                          size: size * 0.18,
+                          color: colors.surface,
                         ),
                       ),
+                    ),
+                ],
               ),
             ),
           ),
