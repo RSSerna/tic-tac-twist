@@ -142,31 +142,41 @@ class _ChipSkinsScreenState extends ConsumerState<ChipSkinsScreen> {
                   icon: Icon(Icons.palette, size: 34, color: colors.neutral),
                   title: l10n.skinsTitle,
                   subtitle: l10n.categoryChips,
-                  trailing: wide ? sourcePills : null,
                 ),
                 if (!wide)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: sourcePills,
                   ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    children: [
-                      // Mirrors the toggle's width so the prompt centres on
-                      // the screen. Dropped when narrow, where that much
-                      // reserved space would squeeze the prompt itself.
-                      if (wide) const SizedBox(width: 104),
-                      Expanded(
-                        child: Column(
+                // Source pills, prompt and X/O toggle share one line.
+                //
+                // A Stack, not a Row: the prompt has to sit at the *screen's*
+                // centre so the carousel's focused tile can line up directly
+                // under it. In a Row it would centre in whatever the pills and
+                // toggle left over, which is off-centre and different in each
+                // language.
+                //
+                // The infinite width is load-bearing: a Stack sizes itself to
+                // its largest *non-positioned* child, which here is the narrow
+                // prompt — so `left: 0` and `right: 0` would pin the pills and
+                // toggle to the prompt's edges, clustering all three in the
+                // middle. Filling the width makes those the screen's edges.
+                SizedBox(
+                  width: double.infinity,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Column(
                           children: [
                             Text(
                               l10n.skinsSelectPrompt,
                               textAlign: TextAlign.center,
                               style: styles.subtitle,
                             ),
-                            // Purely decorative — the first thing to drop
-                            // when vertical space is scarce.
+                            // Purely decorative — the first thing to drop when
+                            // vertical space is scarce.
                             if (!short)
                               Icon(
                                 Icons.keyboard_double_arrow_down,
@@ -174,19 +184,26 @@ class _ChipSkinsScreenState extends ConsumerState<ChipSkinsScreen> {
                               ),
                           ],
                         ),
-                      ),
-                      _PreviewPersonToggle(
-                        firstPerson: _previewFirstPerson,
-                        onChanged: (value) =>
-                            setState(() => _previewFirstPerson = value),
-                      ),
-                    ],
+                        // Below this width the three would overlap, so the
+                        // pills move to their own line above.
+                        if (wide) Positioned(left: 0, child: sourcePills),
+                        Positioned(
+                          right: 0,
+                          child: _PreviewPersonToggle(
+                            firstPerson: _previewFirstPerson,
+                            onChanged: (value) =>
+                                setState(() => _previewFirstPerson = value),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(
                   child: _SkinCarousel(
                     controller: _pages,
                     skins: skins,
+                    compact: short,
                     previewFirstPerson: _previewFirstPerson,
                     isUnlocked: (skin) =>
                         skinState?.isUnlocked(skin) ??
@@ -218,11 +235,17 @@ class _ChipSkinsScreenState extends ConsumerState<ChipSkinsScreen> {
   }
 }
 
+/// Width reserved for the carousel's forward arrow — and mirrored on the
+/// other side, so the focused tile stays centred on the screen rather than on
+/// the space the arrow leaves.
+const double _arrowSlot = 56;
+
 /// The centre-focused row of skin tiles.
 class _SkinCarousel extends StatelessWidget {
   const _SkinCarousel({
     required this.controller,
     required this.skins,
+    required this.compact,
     required this.previewFirstPerson,
     required this.isUnlocked,
     required this.isSelected,
@@ -232,6 +255,11 @@ class _SkinCarousel extends StatelessWidget {
 
   final PageController controller;
   final List<GameSkin> skins;
+
+  /// Slims the progress bar on screens with no height to spare — at full
+  /// size it costs 10pt that a 480pt-tall phone doesn't have.
+  final bool compact;
+
   final bool previewFirstPerson;
   final bool Function(GameSkin) isUnlocked;
   final bool Function(GameSkin) isSelected;
@@ -247,6 +275,10 @@ class _SkinCarousel extends StatelessWidget {
         Expanded(
           child: Row(
             children: [
+              // Mirrors the forward arrow's slot. Without it the PageView is
+              // 56pt narrower on the right, so its centred tile sits 28pt
+              // left of the prompt it's supposed to line up under.
+              const SizedBox(width: _arrowSlot),
               Expanded(
                 child: PageView.builder(
                   controller: controller,
@@ -287,13 +319,25 @@ class _SkinCarousel extends StatelessWidget {
             ],
           ),
         ),
+        // Narrower and taller than full-bleed: at full width the bar read as
+        // a hairline stretched across the screen. Centred on the same axis as
+        // the carousel above it.
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
-          child: _CarouselProgress(
-            controller: controller,
-            itemCount: skins.length,
-            track: colors.ink,
-            thumb: colors.surface,
+          padding: EdgeInsets.fromLTRB(
+            24,
+            compact ? 2 : 8,
+            24,
+            compact ? 4 : 10,
+          ),
+          child: FractionallySizedBox(
+            widthFactor: 0.45,
+            child: _CarouselProgress(
+              controller: controller,
+              itemCount: skins.length,
+              compact: compact,
+              track: colors.ink,
+              thumb: colors.surface,
+            ),
           ),
         ),
       ],
@@ -400,7 +444,7 @@ class _CarouselArrowState extends State<_CarouselArrow> {
         final canAdvance = page < widget.itemCount - 1.05;
 
         return SizedBox(
-          width: 56,
+          width: _arrowSlot,
           child: canAdvance
               ? IconButton(
                   key: const Key('skins-scroll-forward'),
@@ -425,12 +469,14 @@ class _CarouselProgress extends StatelessWidget {
   const _CarouselProgress({
     required this.controller,
     required this.itemCount,
+    required this.compact,
     required this.track,
     required this.thumb,
   });
 
   final PageController controller;
   final int itemCount;
+  final bool compact;
   final Color track;
   final Color thumb;
 
@@ -451,15 +497,15 @@ class _CarouselProgress extends StatelessWidget {
               constraints.maxWidth,
             );
             return SizedBox(
-              height: 18,
+              height: compact ? 18 : 28,
               child: Stack(
                 children: [
                   Center(
                     child: Container(
-                      height: 14,
+                      height: compact ? 14 : 24,
                       decoration: BoxDecoration(
                         color: track,
-                        borderRadius: BorderRadius.circular(7),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
@@ -467,10 +513,10 @@ class _CarouselProgress extends StatelessWidget {
                     alignment: Alignment(progress * 2 - 1, 0),
                     child: Container(
                       width: thumbWidth,
-                      height: 12,
+                      height: compact ? 12 : 20,
                       decoration: BoxDecoration(
                         color: thumb,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),

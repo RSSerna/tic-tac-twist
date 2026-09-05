@@ -116,6 +116,33 @@ void main() {
     },
   );
 
+  testWidgets('the focused skin sits directly under the Select skin prompt', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await pumpNestedApp(tester);
+    await tapKey(tester, 'open-skins');
+    await tapKey(tester, 'category-chips');
+
+    // The prompt sits at the screen's centre, not centred in whatever the
+    // pills and X/O toggle leave over — and the carousel's focused tile
+    // lines up under it. Both depend on the arrow slot being mirrored; drop
+    // that and the tile drifts left by half the arrow's width.
+    final prompt = tester.getRect(find.text('Select skin'));
+    final focused = tester.getRect(
+      find.byKey(Key('skin-card-${GameSkin.turnedWood.id}')),
+    );
+    expect(prompt.center.dx, closeTo(1200 / 2, 0.5));
+    expect(focused.center.dx, closeTo(prompt.center.dx, 0.5));
+
+    // All three controls share the prompt's line on a wide screen.
+    final pills = tester.getRect(find.byKey(const Key('skins-source-local')));
+    final toggle = tester.getRect(find.byKey(const Key('skin-preview-person')));
+    expect(pills.center.dy, closeTo(prompt.center.dy, 40));
+    expect(toggle.center.dy, closeTo(prompt.center.dy, 40));
+  });
+
   testWidgets('selecting an unlocked premium skin persists the choice', (
     tester,
   ) async {
