@@ -205,6 +205,12 @@ four chips, and the player says which.
 - Persisted under `nested_game.skin.ultimate_level[.p2]`; anything outside
   1–4 reads back as unset, so a level retired by a future change to the chip
   ladder degrades to the default rather than crashing.
+- **A claimed small board is stamped with the winner's own mark**, not a bare
+  X/O — the same `_UltimateMark` their moves use, at 0.7 of the board. Whoever
+  claimed it owns it, and the stamp is the loudest place on the board to say
+  whose it is. A **drawn** board keeps the neutral filled disc: it belongs to
+  nobody, so it wears nobody's skin, and that's also what keeps claimed and
+  drawn distinguishable by symbol rather than colour (design system §6).
 - Rendering: `_UltimateMark` draws the chosen chip through `ChipView` with
   `fillsCell: true` — Ultimate has no size ladder to sit in, so the chip
   fills its cell instead of shrinking to L1's share of one. **`fillsCell` is

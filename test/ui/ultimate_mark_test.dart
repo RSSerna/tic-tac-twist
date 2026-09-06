@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nested_game/controllers/game_controller.dart';
+import 'package:nested_game/controllers/game_session.dart';
 import 'package:nested_game/controllers/skin_controller.dart';
+import 'package:nested_game/engines/common/game_mode.dart';
+import 'package:nested_game/engines/ultimate/ultimate_engine.dart';
 import 'package:nested_game/main.dart';
 import 'package:nested_game/services/skin_service.dart';
 import 'package:nested_game/theme/skin.dart';
@@ -213,5 +217,88 @@ void main() {
     ).read(skinControllerProvider.future);
     expect(state.firstPersonUltimateLevel, 2);
     expect(state.pair.ultimateLevelFor(isFirstPerson: true), 2);
+  });
+
+  testWidgets('a claimed board is stamped with the winner\'s own mark', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await startUltimate(tester);
+
+    // Player 1 has taken the top row of board 0, so that board is theirs and
+    // carries a claim stamp. Built as a position rather than played out: the
+    // send rule makes reaching one through nine real moves a long detour
+    // from what's being tested.
+    final controller = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+      listen: false,
+    ).read(gameControllerProvider.notifier);
+    controller.resumeSession(
+      GameSession(
+        mode: GameMode.ultimate,
+        engine: UltimateEngine.fromJson({
+          'cells': [
+            for (var i = 0; i < 81; i++)
+              if (i == 0 || i == 1 || i == 2) 1 else 0,
+          ],
+          'currentPlayer': 2,
+          'targetBoard': null,
+        }),
+        starterPerson: 1,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final stamp = find.byKey(const ValueKey('claim-one'));
+    expect(stamp, findsOneWidget);
+
+    // The stamp wears the skin, at the default level — not a bare painted X.
+    final stampChip = find.descendant(
+      of: stamp,
+      matching: find.byType(ChipView),
+    );
+    expect(stampChip, findsOneWidget);
+    expect(
+      tester.widget<ChipView>(stampChip).level,
+      kDefaultUltimateMarkLevel,
+    );
+    expect(
+      tester.getSize(stampChip).width,
+      greaterThan(10),
+      reason: 'the stamp must fill the small board, not collapse',
+    );
+  });
+
+  testWidgets('a drawn board keeps the neutral disc — it belongs to nobody', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await startUltimate(tester);
+
+    // Board 0 filled with no line: X X O / O O X / X O X.
+    const drawn = [1, 1, 2, 2, 2, 1, 1, 2, 1];
+    final controller = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+      listen: false,
+    ).read(gameControllerProvider.notifier);
+    controller.resumeSession(
+      GameSession(
+        mode: GameMode.ultimate,
+        engine: UltimateEngine.fromJson({
+          'cells': [for (var i = 0; i < 81; i++) i < 9 ? drawn[i] : 0],
+          'currentPlayer': 1,
+          'targetBoard': null,
+        }),
+        starterPerson: 1,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final stamp = find.byKey(const ValueKey('drawn'));
+    expect(stamp, findsOneWidget);
+    expect(
+      find.descendant(of: stamp, matching: find.byType(ChipView)),
+      findsNothing,
+    );
   });
 }

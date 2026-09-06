@@ -273,8 +273,10 @@ class _SmallBoard extends StatelessWidget {
         ? grid
         : DecoratedBox(
             // Finished boards are out of play: dim them and stamp the
-            // outcome. Claimed vs drawn differ by symbol, not colour alone
-            // (design doc §6). The mark paints over a solid `surface`
+            // outcome. A claimed board is stamped with the winner's own
+            // mark — the skin they're playing, same as their moves. A drawn
+            // one is nobody's, so it keeps the neutral filled disc: claimed
+            // vs drawn differ by symbol, not colour alone (design doc §6). The mark paints over a solid `surface`
             // backdrop (not straight over the dimmed grid) so its contrast
             // against whatever's behind it is the same tested-safe pairing
             // everywhere, not a translucency blend.
@@ -319,13 +321,16 @@ class _SmallBoard extends StatelessWidget {
                             key: ValueKey('claim-${claimant.name}'),
                             widthFactor: 0.7,
                             heightFactor: 0.7,
-                            child: CustomPaint(
-                              painter: _MarkPainter(
-                                color: personFor(claimant) == 1
-                                    ? colors.playerA
-                                    : colors.playerB,
-                                isX: personFor(claimant) == 1,
-                              ),
+                            // The same mark the winner has been playing all
+                            // game, not a bare X/O: whoever claimed this
+                            // board owns it, and the stamp is the loudest
+                            // place to say whose it is.
+                            child: _UltimateMark(
+                              skins: skins,
+                              isFirstPerson: personFor(claimant) == 1,
+                              color: personFor(claimant) == 1
+                                  ? colors.playerA
+                                  : colors.playerB,
                             ),
                           ),
                   ),

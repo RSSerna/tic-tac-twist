@@ -179,7 +179,7 @@ Target: **colorblind-safe by construction**, not as a toggle.
 - **Never rely on colour alone to distinguish players.** Each player has a distinct colour *and* a distinct shape/symbol on every chip. This matters more here than in plain tic-tac-toe because players scan a board of overlapping pieces at a glance.
 - **Chip level is distinguishable without colour** — size is primary and inherently non-colour, and ring count (§2.3) is the secondary marker, since size differences compress on small screens.
 - Palette survives deuteranopia, protanopia, and tritanopia. No red/green as the player pair.
-- In Ultimate, claimed boards must differ from each other and from drawn boards by **pattern or symbol**, not colour alone.
+- In Ultimate, claimed boards must differ from each other and from drawn boards by **pattern or symbol**, not colour alone. **As built:** a claimed board is stamped with the winner's own mark (`07-SKINS.md` §2b), so the two players differ by the chip's centre marker — a dot for player 1, a small cross for player 2 — as well as by colour; a drawn board is a neutral *filled* disc, which no chip form resembles. The centre marker is proportionally small, so this rule is carried mostly by the zoomed-in view — worth revisiting if the unzoomed board ever has to stand alone for a colour-blind player.
 - WCAG AA contrast: 4.5:1 text and UI, 3:1 for meaningful graphics.
 - **Minimum 44×44pt tap targets** — a real constraint at Ultimate's 81 cells, and the main argument for tap-to-zoom.
 - Respect OS text scaling and reduced-motion.
