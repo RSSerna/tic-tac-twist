@@ -5,10 +5,18 @@ import 'package:meta/meta.dart';
 /// never changes between skins — only its geometry does (design doc §2.6:
 /// "chip form (rings → dolls, stones, tiles)"). Only meaningful for a
 /// [PaintedAppearance]; an [AssetAppearance] ships art instead of geometry.
-enum ChipForm { rings, dolls }
+enum ChipForm { rings, dolls, marks }
 
-/// Everything a skin's asset resolver keys its art on. [level] is null for
-/// Ultimate marks (X/O have no stacking level) and 1–4 for stacking chips;
+/// The chip a levelled skin wears on the Ultimate board until the player
+/// says otherwise. The largest chip: Ultimate's cells are small (81 of them
+/// on the unzoomed board), and L4 is the boldest silhouette the skin has —
+/// the one that survives that scale.
+const kDefaultUltimateMarkLevel = 4;
+
+/// Everything a skin's asset resolver keys its art on. [level] is 1–4 for
+/// stacking chips, and null for an Ultimate mark left as the classic X/O —
+/// a player who picks a chip variant for their mark (see
+/// [SkinPair.ultimateLevelFor]) gets that level here instead.
 /// [isFirstPerson] picks the per-seat variant (person 1 vs 2 / X vs O).
 @immutable
 class ChipAssetRequest {
@@ -34,8 +42,9 @@ sealed class ChipAppearance {
 }
 
 /// Drawn procedurally — the rings/dolls chip silhouettes and the X/O marks.
-/// [form] is ignored for Ultimate marks (those are always X/O, never
-/// rings/dolls) and drives only the stacking-chip silhouette.
+/// [form] drives the stacking-chip silhouette. On the Ultimate board it
+/// applies only once the player has picked a chip variant for their mark
+/// ([SkinPair.ultimateLevelFor]); until then the mark is the classic X/O.
 @immutable
 class PaintedAppearance extends ChipAppearance {
   const PaintedAppearance(this.form);
@@ -71,7 +80,11 @@ class AssetAppearance extends ChipAppearance {
 /// those too, nor from shipping image art via an [AssetAppearance].
 @immutable
 class GameSkin {
-  const GameSkin({required this.id, required this.appearance});
+  const GameSkin({
+    required this.id,
+    required this.appearance,
+    this.free = false,
+  });
 
   /// Stable identity, persisted in [SkinService] — never shown to players.
   final String id;
@@ -79,11 +92,41 @@ class GameSkin {
   /// How this skin's chips and marks are drawn (painted vs. asset).
   final ChipAppearance appearance;
 
+  /// Available without unlocking. Replaces the old "is it turnedWood?"
+  /// check, which stopped being the right question the moment a second free
+  /// skin existed.
+  final bool free;
+
+  /// Whether this skin looks different at each of the four chip levels.
+  ///
+  /// Ultimate has no levels, so a skin that varies by one has to be told
+  /// *which* variant to use as a mark. A glyph skin ([ChipForm.marks]) draws
+  /// the same thing at every level, so there is nothing to choose.
+  bool get variesByLevel => switch (appearance) {
+    PaintedAppearance(:final form) => form != ChipForm.marks,
+    // An asset resolver is handed the level, so it may well vary by it.
+    AssetAppearance() => true,
+  };
+
   /// Free default (design doc §2: "turned wood" direction). Always
   /// unlocked — never stored in [SkinService.unlockedSkinIds].
   static const turnedWood = GameSkin(
     id: 'turned_wood',
     appearance: PaintedAppearance(ChipForm.rings),
+    free: true,
+  );
+
+  /// The classic tic-tac-toe glyphs: an X for player 1, an O for player 2.
+  ///
+  /// **This is the one form that carries no band count.** A glyph has no
+  /// rings to count, so level is legible from the size ladder and the level
+  /// numeral (`ChipView.showLevel`, design system §2.3) rather than from
+  /// bands — which is why the numeral exists. Free, because it's the shape
+  /// everyone already expects from the game and shouldn't be behind a wall.
+  static const classicMarks = GameSkin(
+    id: 'classic_marks',
+    appearance: PaintedAppearance(ChipForm.marks),
+    free: true,
   );
 
   /// The one premium set this phase ships (roadmap Phase 8: "base free set
@@ -96,7 +139,7 @@ class GameSkin {
     appearance: PaintedAppearance(ChipForm.dolls),
   );
 
-  static const values = [turnedWood, nestingDolls];
+  static const values = [turnedWood, classicMarks, nestingDolls];
 }
 
 /// The two skins in play at once: a player dresses their own chips
@@ -108,10 +151,37 @@ class GameSkin {
 /// *person* being drawn is known — at the individual chip or mark.
 @immutable
 class SkinPair {
-  const SkinPair({required this.firstPerson, required this.secondPerson});
+  const SkinPair({
+    required this.firstPerson,
+    required this.secondPerson,
+    this.firstPersonUltimateLevel,
+    this.secondPersonUltimateLevel,
+  });
 
   final GameSkin firstPerson;
   final GameSkin secondPerson;
+
+  /// The chip level the player picked for this mark in Ultimate, or null if
+  /// they never picked one. Read [ultimateLevelFor] rather than these —
+  /// null means "the default", not "no chip".
+  final int? firstPersonUltimateLevel;
+  final int? secondPersonUltimateLevel;
+
+  /// Which chip level dresses this mark on the Ultimate board, or null if
+  /// this skin has no chip to wear there and paints the classic X/O instead.
+  ///
+  /// A skin whose art varies by level ([GameSkin.variesByLevel]) always shows
+  /// one of its chips — Ultimate has no levels of its own, so it wears
+  /// [kDefaultUltimateMarkLevel] until the player picks another. A glyph skin
+  /// ([ChipForm.marks]) has no variants to choose between and is already the
+  /// classic mark, so it returns null and the X/O painter draws it.
+  int? ultimateLevelFor({required bool isFirstPerson}) {
+    if (!skinFor(isFirstPerson: isFirstPerson).variesByLevel) return null;
+    return (isFirstPerson
+            ? firstPersonUltimateLevel
+            : secondPersonUltimateLevel) ??
+        kDefaultUltimateMarkLevel;
+  }
 
   GameSkin skinFor({required bool isFirstPerson}) =>
       isFirstPerson ? firstPerson : secondPerson;

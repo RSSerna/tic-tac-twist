@@ -29,18 +29,24 @@ Two independent axes:
 | Axis | Type | Values |
 |---|---|---|
 | **Render source** | `ChipAppearance` (sealed) | `PaintedAppearance` (a `CustomPainter`) or `AssetAppearance` (a bundled image) |
-| **Painted form** | `ChipForm` (enum) | `rings`, `dolls`, … — only meaningful for `PaintedAppearance` |
+| **Painted form** | `ChipForm` (enum) | `rings`, `dolls`, `marks`, … — only meaningful for `PaintedAppearance` |
 
 A `GameSkin` bundles a stable `id` and one `ChipAppearance`. That's it.
 
 ```dart
 // lib/theme/skin.dart
 class GameSkin {
-  const GameSkin({required this.id, required this.appearance});
+  const GameSkin({required this.id, required this.appearance, this.free = false});
   final String id;              // persisted; never shown to players
   final ChipAppearance appearance;
+  final bool free;              // available without unlocking
 }
 ```
+
+**`free` decides availability, not identity.** It used to be a hardcoded
+"is this `turnedWood`?" check in three places; that stopped being the right
+question the moment a second free skin existed. `SkinState.isUnlocked` reads
+the flag, and `ChestController` never puts a free skin in the reward pool.
 
 ### The painted-vs-asset flag
 
@@ -62,8 +68,15 @@ A skin may change *appearance only*. It must never change:
   *outside* the appearance switch, so an asset chip is sized identically to a
   painted one. Do not resize art to "look bigger"; the L1…L4 size ladder is
   gameplay-critical.
-- **Level legibility** — level must stay countable at a glance (bands for
-  painted; your art must keep four visually distinct levels).
+- **Level legibility** — level must stay readable at a glance, and it must
+  come from **at least two** of: the size ladder, a band/element count, and
+  the level numeral (`ChipView.showLevel`, design system §2.3).
+
+  Bands are the usual answer, but they are not the only one. `ChipForm.marks`
+  — the classic X and O — has no bands at all: it leans on size plus the
+  numeral. That's the exception that made the numeral necessary, and it's why
+  the numeral is not optional decoration. If you add a glyph-style form, say
+  so in its doc comment, as `GameSkin.classicMarks` does.
 - **The buried-collar rule** — never reveal what's under a chip. Skins don't
   touch the collar; don't add art that implies buried contents.
 
@@ -78,6 +91,7 @@ If a change would alter any of those, it's not a skin.
 | The model (`GameSkin`, `ChipAppearance`, `ChipForm`, `ChipAssetRequest`) | `lib/theme/skin.dart` |
 | Painted chip silhouettes | `lib/ui/widgets/chip_view.dart` (`_ChipPainter`) |
 | Painted Ultimate marks (X/O) | `lib/ui/widgets/ultimate_board.dart` (`_MarkPainter`, `_UltimateMark`) |
+| Which chip variant dresses an Ultimate mark | `GameSkin.variesByLevel`, `SkinPair.ultimateLevelFor`, `SkinController.setUltimateMarkLevel` |
 | Selection + unlock state (Riverpod) | `lib/controllers/skin_controller.dart` |
 | Persistence (SharedPreferences) | `lib/services/skin_service.dart` |
 | **Category root** ("Custom": which kind of cosmetic) | `lib/ui/screens/skins_screen.dart` |
@@ -163,6 +177,41 @@ the pubspec entry together.
 
 ---
 
+## 2b. Ultimate marks: which chip does a levelled skin wear?
+
+Ultimate has no chip levels — every mark is the same rank — so a skin whose
+art changes per level has no natural mark to draw there. It wears one of its
+four chips, and the player says which.
+
+- **The default is the L4 chip** (`kDefaultUltimateMarkLevel`). Ultimate's
+  cells are small — 81 of them on the unzoomed board — and L4 is the boldest
+  silhouette a skin has, so it's the one that survives that scale.
+- **The picker offers the four chips and nothing else.** There is deliberately
+  no "classic X/O" entry: the classic mark is what a *glyph* skin gives you,
+  and it's reachable by wearing one (Classic is free). Listing it here too
+  would offer the same thing by two routes, and let a player select a skin
+  that then never appears on the Ultimate board.
+- A glyph skin (`ChipForm.marks`) has no variants to choose between, so
+  `SkinPair.ultimateLevelFor` returns null for it and `_MarkPainter` draws the
+  X/O. Its picker is absent for the same reason — there's nothing to pick.
+- The choice is **per mark** (`firstPersonUltimateLevel` /
+  `secondPersonUltimateLevel`), like the skin itself — the X mark and the O
+  mark are separate items. It **carries across a skin change untouched**:
+  every levelled skin has all four chips, so a choice made on one is
+  meaningful on the next, and a glyph skin in between simply ignores it.
+- Offered on `ChipSkinsScreen`, under the Select/Selected action, only when
+  the focused skin is **the one currently worn for that mark** and
+  `GameSkin.variesByLevel` is true.
+- Persisted under `nested_game.skin.ultimate_level[.p2]`; anything outside
+  1–4 reads back as unset, so a level retired by a future change to the chip
+  ladder degrades to the default rather than crashing.
+- Rendering: `_UltimateMark` draws the chosen chip through `ChipView` with
+  `fillsCell: true` — Ultimate has no size ladder to sit in, so the chip
+  fills its cell instead of shrinking to L1's share of one. **`fillsCell` is
+  for Ultimate only**; the ladder is gameplay-critical anywhere levels
+  coexist (CLAUDE.md). No level numeral is drawn either — it would state a
+  level this board doesn't have.
+
 ## 3. Recipe A — a painted skin (fastest)
 
 Use this when the new look can be drawn procedurally.
@@ -183,8 +232,10 @@ Path _silhouetteAt(Offset center, double radius) => switch (form) {
     };
 ```
 
-Ultimate marks are always X/O and ignore `form`, so `_MarkPainter` needs no
-change. If your form reuses `rings`/`dolls`, skip this step entirely.
+Your form shows up on the Ultimate board too — a levelled skin wears one of
+its own chips as its mark (default L4, see **§2b**), so `_MarkPainter` needs
+no change; only a glyph form reaches it. If your form reuses `rings`/`dolls`,
+skip this step entirely.
 
 ### A2. Declare the skin
 
@@ -240,9 +291,12 @@ A trailing-slash entry bundles every file in the folder. Run
 
 ### B3. Write the `resolve` function and declare the skin
 
-`resolve` maps a `ChipAssetRequest` to an asset path. `level` is **null for
-Ultimate marks** and **1–4 for Stacking chips**; `isFirstPerson` picks the
-per-seat art.
+`resolve` maps a `ChipAssetRequest` to an asset path. `level` is **always
+1–4** in practice: Stacking chips carry their own, and an Ultimate mark
+carries whichever chip the player picked (§2b — an asset skin always counts
+as varying by level). The nullable `level` remains for a future skin that
+declares itself levelless; a skin that wants one dedicated mark image can
+return the same path for every level.
 
 `GameSkin` is `const`, so `resolve` **must be a `static` or top-level function**
 (a tear-off is a constant expression) — not a closure, which would force the
@@ -261,7 +315,7 @@ static const stoneStack = GameSkin(
 static String _stoneStackAsset(ChipAssetRequest r) {
   final person = r.isFirstPerson ? 'p1' : 'p2';
   return r.level == null
-      ? 'assets/skins/stone_stack/mark_$person.png'          // Ultimate mark
+      ? 'assets/skins/stone_stack/mark_$person.png'          // levelless mark
       : 'assets/skins/stone_stack/chip_${person}_l${r.level}.png'; // chip
 }
 ```

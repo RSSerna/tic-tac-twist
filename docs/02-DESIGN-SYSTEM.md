@@ -76,6 +76,14 @@ Two rules that matter:
 
 This is the most important decision in the visual system: level becomes legible three ways at once — size, ring count, and colour — so accessibility is satisfied *by the design* rather than bolted on. It also stays readable when Ultimate's cells shrink.
 
+**A fourth signal: the level numeral.** Stacking chips carry their level as a small badge on the lower-right (`ChipView.showLevel`) — filled with the ring colour and outlined in the player's, because the badge straddles the chip's edge and has to read against both the chip and the cell behind it. Shown on board chips, the staged preview, and the inventory tiles.
+
+Two rules it must obey:
+
+- **Only ever on a chip that is already visible.** Level is public for a chip you can see and emphatically private for a buried one (§2.5) — and a numeral leaks it far more plainly than colour or band count would. `showLevel` therefore defaults to *off*, so a chip rendered somewhere new can't leak by accident. The board only draws `topChipAt`, which is what makes it safe there.
+- **It is redundancy for banded forms, and load-bearing for glyph ones.** On `rings` and `dolls` the bands already carry the level and the numeral just confirms it. On `ChipForm.marks` — the classic X and O — there are no bands, so level rests on the size ladder plus the numeral. That's the reason the numeral exists, and the reason a glyph skin can't ship without it. It's excluded from semantics either way, since the cell's own label already announces the level.
+- **Ultimate draws no numeral at all.** That board has no levels, so a numeral there would state a rank that doesn't exist. A levelled skin's Ultimate mark is one of its chips (L4 by default — `07-SKINS.md` §2b), drawn with `fillsCell: true` and no badge: full cell size, since there's no ladder to sit in either. `fillsCell` is Ultimate's alone — everywhere levels coexist, relative size is how a player reads them, and that's gameplay-critical.
+
 ### 2.4 Board
 - Grid drawn as **negative space** — gaps between `surface` squares against `ground` — not drawn lines. Cleaner at Ultimate's density, where 81 cells of gridlines is noise.
 - Squares: 4px corner radius. Chips: fully round. Soft-square board against perfect-circle chips is the visual rhythm.
@@ -227,7 +235,7 @@ Key beats:
 - Stats screen (per-mode W/L/D)
 - Settings — reset stats, SFX/music toggles, replay tutorial, language, local turn timer
 - Neutral age screen (see `03-PRODUCT.md`; gates ad initialisation)
-- Custom (cosmetic category root) → Chip skins, Emotes, Flexing/celebrations (see `07-SKINS.md` §2a)
+- Custom (cosmetic category root) → Chip skins, Emotes, Flexing/celebrations (see `07-SKINS.md` §2a). The Chip skins screen also carries the **Ultimate mark** picker for the worn skin (`07-SKINS.md` §2b).
 - Challenges — today's daily goals (which fill the Shop's claim meter) above the permanent achievement list (`03-PRODUCT.md` §3)
 - Shop — cosmetic packs, plus the Claim button and daily meter
 - *(v2)* Lobby / matchmaking

@@ -9,6 +9,7 @@ import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../widgets/buttons/pill_action_button.dart';
+import '../widgets/buttons/pill_dropdown.dart';
 import '../widgets/buttons/segmented_pills.dart';
 import '../widgets/chip_view.dart';
 import '../widgets/panel_header.dart';
@@ -16,12 +17,14 @@ import '../widgets/rarity_legend.dart';
 
 String _skinName(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
   'turned_wood' => l10n.skinTurnedWoodName,
+  'classic_marks' => l10n.skinClassicMarksName,
   'nesting_dolls' => l10n.skinNestingDollsName,
   _ => skin.id,
 };
 
 String _skinDesc(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
   'turned_wood' => l10n.skinTurnedWoodDesc,
+  'classic_marks' => l10n.skinClassicMarksDesc,
   'nesting_dolls' => l10n.skinNestingDollsDesc,
   _ => '',
 };
@@ -94,9 +97,7 @@ class _ChipSkinsScreenState extends ConsumerState<ChipSkinsScreen> {
 
     final skins = GameSkin.values;
     final focusedSkin = skins[_focused.clamp(0, skins.length - 1)];
-    final unlocked =
-        skinState?.isUnlocked(focusedSkin) ??
-        focusedSkin.id == GameSkin.turnedWood.id;
+    final unlocked = skinState?.isUnlocked(focusedSkin) ?? focusedSkin.free;
     final selected =
         skinState?.isSelected(
           focusedSkin,
@@ -206,8 +207,7 @@ class _ChipSkinsScreenState extends ConsumerState<ChipSkinsScreen> {
                     compact: short,
                     previewFirstPerson: _previewFirstPerson,
                     isUnlocked: (skin) =>
-                        skinState?.isUnlocked(skin) ??
-                        skin.id == GameSkin.turnedWood.id,
+                        skinState?.isUnlocked(skin) ?? skin.free,
                     isSelected: (skin) =>
                         skinState?.isSelected(
                           skin,
@@ -592,8 +592,78 @@ class _FocusedSkinActions extends ConsumerWidget {
                   .read(skinControllerProvider.notifier)
                   .selectSkin(skin, forFirstPerson: forFirstPerson),
             ),
+          // Only meaningful once this skin is actually the one worn, and
+          // only if it has variants to choose between — a glyph skin draws
+          // the same thing at every level, so there'd be nothing to pick.
+          if (selected && unlocked && skin.variesByLevel) ...[
+            SizedBox(height: compact ? 6 : 10),
+            // Kept even on a short screen — it's the only place the choice
+            // can be made, so dropping it would put it out of reach on a
+            // phone in landscape. Only its label goes.
+            _UltimateMarkPicker(
+              forFirstPerson: forFirstPerson,
+              showLabel: !compact,
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+/// Chooses which chip variant stands in for this mark on the Ultimate board.
+///
+/// Ultimate has no chip levels, so a levelled skin has no natural mark to
+/// wear there — this is where the player says which one. Only the skin's own
+/// four chips are offered: the classic X/O is what a *glyph* skin gives you,
+/// and it's reachable by wearing one, so listing it here as well would offer
+/// the same thing twice and let a skin be selected yet never appear.
+class _UltimateMarkPicker extends ConsumerWidget {
+  const _UltimateMarkPicker({
+    required this.forFirstPerson,
+    required this.showLabel,
+  });
+
+  final bool forFirstPerson;
+  final bool showLabel;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final styles = context.gameTextStyles;
+    // The resolved level, not the stored one: a player who has never touched
+    // this still has a chip on the board, and the pill has to name it.
+    final level =
+        ref
+            .watch(skinControllerProvider)
+            .value
+            ?.pair
+            .ultimateLevelFor(isFirstPerson: forFirstPerson) ??
+        kDefaultUltimateMarkLevel;
+
+    return Column(
+      children: [
+        if (showLabel) ...[
+          Text(l10n.skinUltimateMarkLabel, style: styles.labelMuted),
+          const SizedBox(height: 4),
+        ],
+        PillDropdown<int>(
+          key: const Key('ultimate-mark-level'),
+          value: level,
+          centerLabel: true,
+          maxWidth: 220,
+          items: [
+            for (var chipLevel = 1; chipLevel <= 4; chipLevel++)
+              DropdownMenuItem(
+                value: chipLevel,
+                child: Text(l10n.skinUltimateMarkLevel(chipLevel)),
+              ),
+          ],
+          onChanged: (value) => ref
+              .read(skinControllerProvider.notifier)
+              .setUltimateMarkLevel(value, forFirstPerson: forFirstPerson),
+        ),
+      ],
     );
   }
 }

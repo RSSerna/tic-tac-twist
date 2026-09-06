@@ -26,8 +26,8 @@ class StackingBoard extends ConsumerWidget {
     final colors = context.gameColors;
     // The pair, not one appearance: which skin draws a chip depends on whose
     // chip it is, and that's only known at the individual cell.
-    final skins = ref.watch(skinControllerProvider).value?.pair ??
-        SkinPair.fallback;
+    final skins =
+        ref.watch(skinControllerProvider).value?.pair ?? SkinPair.fallback;
 
     final highlights = controller.stackingHighlightTargets();
     final staged = session.stagedMove;
@@ -186,6 +186,10 @@ class _StackingCell extends StatelessWidget {
                         appearance: skins.appearanceFor(
                           isFirstPerson: personFor(top.owner) == 1,
                         ),
+                        // Safe: this is `topChipAt`, the chip you can
+                        // already see. Anything under it is drawn only as
+                        // the collar, which carries no level.
+                        showLevel: true,
                       ),
                     ),
                   ),
@@ -201,6 +205,9 @@ class _StackingCell extends StatelessWidget {
                       isFirstPerson: currentPersonIsFirst,
                     ),
                     ghost: true,
+                    // The staged chip is the player's own, mid-placement —
+                    // public by definition.
+                    showLevel: true,
                   ),
                 ),
               // Buried collar: shows THAT chips are buried and how many —

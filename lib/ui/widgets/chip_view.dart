@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/skin.dart';
+import '../../theme/typography.dart';
 
 /// Renders a chip: a flat shape in the owner's colour with `level`
 /// concentric bands — level legible by size, band count, and colour at once
@@ -25,6 +26,8 @@ class ChipView extends StatelessWidget {
     required this.isFirstPerson,
     required this.appearance,
     this.ghost = false,
+    this.showLevel = false,
+    this.fillsCell = false,
   });
 
   final Color color;
@@ -36,6 +39,27 @@ class ChipView extends StatelessWidget {
   /// Translucent staged-preview rendering.
   final bool ghost;
 
+  /// Draws the level as a numeral in the bottom-right corner — a fourth
+  /// signal alongside size, band count and colour (design system §2.3).
+  ///
+  /// **Only ever set this where the chip is already visible.** Level is
+  /// public information for a chip you can see; it is emphatically not
+  /// public for a buried one, and a numeral would leak it far more plainly
+  /// than any of the other three signals. The board only draws
+  /// `topChipAt`, which is why this is safe there.
+  final bool showLevel;
+
+  /// Draws at the full size of whatever box this is given, ignoring
+  /// [sizeFactor].
+  ///
+  /// **Only for surfaces that have no chip levels at all** — today just the
+  /// Ultimate board, where a skin's chip art stands in for the X/O mark and
+  /// every mark is equal. The size ladder is gameplay-critical wherever
+  /// levels coexist (CLAUDE.md), so this must never be set on a stacking
+  /// board or the inventory, where relative size is how a player reads
+  /// level.
+  final bool fillsCell;
+
   /// Diameter relative to the cell, by level: L1 smallest … L4 largest.
   static double sizeFactor(int level) => 0.38 + 0.14 * level;
 
@@ -44,9 +68,28 @@ class ChipView extends StatelessWidget {
     return Opacity(
       opacity: ghost ? 0.45 : 1,
       child: FractionallySizedBox(
-        widthFactor: sizeFactor(level),
-        heightFactor: sizeFactor(level),
-        child: _forAppearance(appearance),
+        widthFactor: fillsCell ? 1 : sizeFactor(level),
+        heightFactor: fillsCell ? 1 : sizeFactor(level),
+        child: showLevel
+            ? Stack(
+                fit: StackFit.expand,
+                children: [
+                  _forAppearance(appearance),
+                  // Sized as a fraction of the chip, so the badge grows with
+                  // the level rather than fighting the size ladder.
+                  FractionallySizedBox(
+                    alignment: Alignment.bottomRight,
+                    widthFactor: 0.42,
+                    heightFactor: 0.42,
+                    child: _LevelBadge(
+                      level: level,
+                      fill: ringColor,
+                      accent: color,
+                    ),
+                  ),
+                ],
+              )
+            : _forAppearance(appearance),
       ),
     );
   }
@@ -117,12 +160,49 @@ class _ChipPainter extends CustomPainter {
   Path _silhouetteAt(Offset center, double radius) => switch (form) {
     ChipForm.rings => _ringSilhouette(center, radius),
     ChipForm.dolls => _dollSilhouette(center, radius),
+    // Never reached: `marks` is drawn as a stroked glyph by [_paintMark],
+    // not as a filled silhouette with bands. Kept exhaustive so adding a
+    // form is a compile error rather than a blank chip.
+    ChipForm.marks => _ringSilhouette(center, radius),
   };
+
+  /// The classic tic-tac-toe glyphs — a stroked X or O in the player's
+  /// colour, with none of the fill, bands or centre marker the other forms
+  /// use. Level comes from the size ladder and the numeral badge instead
+  /// (design system §2.3).
+  void _paintMark(Canvas canvas, Offset center, double radius) {
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = radius * 0.28
+      ..strokeCap = StrokeCap.round;
+
+    if (isFirstPerson) {
+      final arm = radius * 0.58;
+      canvas.drawLine(
+        center - Offset(arm, arm),
+        center + Offset(arm, arm),
+        stroke,
+      );
+      canvas.drawLine(
+        center - Offset(arm, -arm),
+        center + Offset(arm, -arm),
+        stroke,
+      );
+    } else {
+      canvas.drawCircle(center, radius * 0.64, stroke);
+    }
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
     final radius = size.shortestSide / 2;
+
+    if (form == ChipForm.marks) {
+      _paintMark(canvas, center, radius);
+      return;
+    }
 
     canvas.drawPath(_silhouetteAt(center, radius), Paint()..color = color);
 
@@ -165,4 +245,50 @@ class _ChipPainter extends CustomPainter {
       old.level != level ||
       old.isFirstPerson != isFirstPerson ||
       old.form != form;
+}
+
+/// The level numeral, as a small badge on the chip's lower-right.
+///
+/// Filled with the chip's ring colour and outlined in the player's colour:
+/// the badge straddles the chip's edge, so it has to read against both the
+/// chip's fill and the cell behind it. A solid player-coloured badge would
+/// vanish into the chip; a plain numeral would vanish into the cell.
+class _LevelBadge extends StatelessWidget {
+  const _LevelBadge({
+    required this.level,
+    required this.fill,
+    required this.accent,
+  });
+
+  final int level;
+  final Color fill;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    // Excluded from semantics: the numeral repeats what the cell's own label
+    // already says ("…, level 1"), and letting it merge in appends a bare
+    // "1" to that label — noise for a screen reader, and it silently broke
+    // the label assertions.
+    return ExcludeSemantics(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: fill,
+          shape: BoxShape.circle,
+          border: Border.all(color: accent, width: 1.5),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(2),
+          child: FittedBox(
+            child: Text(
+              '$level',
+              // Tabular figures, per design system §2.2 — and the numeral is
+              // the same width at every level, so the badge doesn't jump.
+              style: context.gameTextStyles.data.copyWith(color: accent),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

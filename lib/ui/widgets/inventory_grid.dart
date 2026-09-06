@@ -129,6 +129,7 @@ class _InventoryChip extends StatelessWidget {
                         level: level,
                         isFirstPerson: isFirstPerson,
                         appearance: appearance,
+                        showLevel: true,
                       ),
                     ),
                   ),

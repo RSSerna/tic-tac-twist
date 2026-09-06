@@ -143,6 +143,42 @@ void main() {
     expect(toggle.center.dy, closeTo(prompt.center.dy, 40));
   });
 
+  testWidgets('Classic is free — selectable without any unlock', (
+    tester,
+  ) async {
+    // No unlockSkin call: nothing has been earned or bought.
+    await pumpNestedApp(tester);
+    await tapKey(tester, 'open-skins');
+    await tapKey(tester, 'category-chips');
+
+    final select = find.byKey(Key('select-skin-${GameSkin.classicMarks.id}'));
+    for (
+      var i = 0;
+      i < GameSkin.values.length && select.evaluate().isEmpty;
+      i++
+    ) {
+      await tapKey(tester, 'skins-scroll-forward');
+    }
+
+    // A free skin shows Select, not a lock — `free` on the skin itself is
+    // what decides this now, rather than "is it the one default skin?".
+    expect(select, findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(Key('skin-card-${GameSkin.classicMarks.id}')),
+        matching: find.byIcon(Icons.lock),
+      ),
+      findsNothing,
+    );
+
+    await tapKey(tester, 'select-skin-${GameSkin.classicMarks.id}');
+    final state = await containerOf(
+      tester,
+      screen: ChipSkinsScreen,
+    ).read(skinControllerProvider.future);
+    expect(state.firstPersonId, GameSkin.classicMarks.id);
+  });
+
   testWidgets('selecting an unlocked premium skin persists the choice', (
     tester,
   ) async {
@@ -154,11 +190,21 @@ void main() {
     await tapKey(tester, 'category-chips');
 
     // Actions belong to the centred skin, so it has to be brought to the
-    // centre before it can be selected — tapping its tile does that.
-    expect(find.byKey(const Key('select-skin-nesting_dolls')), findsNothing);
-    await tapKey(tester, 'skin-card-nesting_dolls');
+    // centre before it can be selected. Advance with the carousel's own
+    // arrow rather than tapping the tile: a tile several skins along isn't
+    // on screen to tap, and how many sit in between changes as skins are
+    // added.
+    final select = find.byKey(const Key('select-skin-nesting_dolls'));
+    expect(select, findsNothing);
+    for (
+      var i = 0;
+      i < GameSkin.values.length && select.evaluate().isEmpty;
+      i++
+    ) {
+      await tapKey(tester, 'skins-scroll-forward');
+    }
 
-    expect(find.byKey(const Key('select-skin-nesting_dolls')), findsOneWidget);
+    expect(select, findsOneWidget);
     await tapKey(tester, 'select-skin-nesting_dolls');
 
     final skinState = await containerOf(

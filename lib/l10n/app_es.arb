@@ -235,5 +235,9 @@
   "shopItemCombo": "Ambas marcas",
   "shopItemBoard": "Tablero",
   "shopItemEmote": "Emote",
-  "shopItemFlexing": "Celebración"
+  "shopItemFlexing": "Celebración",
+  "skinClassicMarksName": "Clásico",
+  "skinClassicMarksDesc": "La X y la O de siempre. El nivel aparece como número.",
+  "skinUltimateMarkLabel": "Marca de Ultimate",
+  "skinUltimateMarkLevel": "Ficha de nivel {level}"
 }

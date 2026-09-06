@@ -475,5 +475,24 @@
   "shopItemCombo": "Both marks",
   "shopItemBoard": "Board",
   "shopItemEmote": "Emote",
-  "shopItemFlexing": "Flexing"
+  "shopItemFlexing": "Flexing",
+  "skinClassicMarksName": "Classic",
+  "@skinClassicMarksName": {
+    "description": "Name of the chip skin that draws the traditional tic-tac-toe X and O."
+  },
+  "skinClassicMarksDesc": "The familiar X and O. Level shows as a number.",
+  "@skinClassicMarksDesc": {
+    "description": "One-line description of the Classic chip skin, noting that its level comes from the numeral rather than rings."
+  },
+  "skinUltimateMarkLabel": "Ultimate mark",
+  "@skinUltimateMarkLabel": {
+    "description": "Label for the picker choosing which chip variant is used as this player's mark on the Ultimate board."
+  },
+  "skinUltimateMarkLevel": "Level {level} chip",
+  "@skinUltimateMarkLevel": {
+    "description": "Option in the Ultimate mark picker: use this skin's level-N chip as the mark.",
+    "placeholders": {
+      "level": {"type": "int"}
+    }
+  }
 }

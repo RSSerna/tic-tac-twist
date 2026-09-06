@@ -10,6 +10,8 @@ class SkinState {
     required this.firstPersonId,
     required this.secondPersonId,
     required this.unlockedIds,
+    this.firstPersonUltimateLevel,
+    this.secondPersonUltimateLevel,
   });
 
   /// The skin dressing each mark. Chosen and sold separately — the shop
@@ -20,6 +22,13 @@ class SkinState {
   /// Premium skins unlocked so far — [GameSkin.turnedWood] is implicitly
   /// unlocked and never appears here (see [isUnlocked]).
   final Set<String> unlockedIds;
+
+  /// The chip level the player picked for each mark in Ultimate, or null if
+  /// they never picked one. What actually renders comes from
+  /// [SkinPair.ultimateLevelFor], which resolves a null to the default and a
+  /// glyph skin to the classic X/O — read that, not these.
+  final int? firstPersonUltimateLevel;
+  final int? secondPersonUltimateLevel;
 
   /// Falls back to the free skin rather than throwing: a persisted id
   /// outlives any catalogue change that retires one.
@@ -34,22 +43,31 @@ class SkinState {
   SkinPair get pair => SkinPair(
     firstPerson: _byId(firstPersonId),
     secondPerson: _byId(secondPersonId),
+    firstPersonUltimateLevel: firstPersonUltimateLevel,
+    secondPersonUltimateLevel: secondPersonUltimateLevel,
   );
 
   bool isSelected(GameSkin skin, {required bool forFirstPerson}) =>
       skin.id == (forFirstPerson ? firstPersonId : secondPersonId);
 
   bool isUnlocked(GameSkin skin) =>
-      skin.id == GameSkin.turnedWood.id || unlockedIds.contains(skin.id);
+      skin.free || unlockedIds.contains(skin.id);
 
+  /// The Ultimate levels are copied wholesale rather than via `??`: null is
+  /// a real value there ("classic X/O"), so the usual omitted-means-unchanged
+  /// idiom can't express clearing one. Callers that change one pass both.
   SkinState _copyWith({
     String? firstPersonId,
     String? secondPersonId,
     Set<String>? unlockedIds,
+    int? firstPersonUltimateLevel,
+    int? secondPersonUltimateLevel,
   }) => SkinState(
     firstPersonId: firstPersonId ?? this.firstPersonId,
     secondPersonId: secondPersonId ?? this.secondPersonId,
     unlockedIds: unlockedIds ?? this.unlockedIds,
+    firstPersonUltimateLevel: firstPersonUltimateLevel,
+    secondPersonUltimateLevel: secondPersonUltimateLevel,
   );
 }
 
@@ -63,6 +81,36 @@ class SkinController extends AsyncNotifier<SkinState> {
       firstPersonId: await service.selectedSkinId(firstPerson: true),
       secondPersonId: await service.selectedSkinId(firstPerson: false),
       unlockedIds: await service.unlockedSkinIds(),
+      firstPersonUltimateLevel: await service.ultimateMarkLevel(
+        firstPerson: true,
+      ),
+      secondPersonUltimateLevel: await service.ultimateMarkLevel(
+        firstPerson: false,
+      ),
+    );
+  }
+
+  /// Picks which chip variant stands in for this mark on the Ultimate board.
+  /// Ultimate has no levels of its own, so a skin whose art changes per level
+  /// ([GameSkin.variesByLevel]) has to be told which one to wear there;
+  /// passing null restores [kDefaultUltimateMarkLevel].
+  Future<void> setUltimateMarkLevel(
+    int? level, {
+    required bool forFirstPerson,
+  }) async {
+    final current = await future;
+    await ref
+        .read(skinServiceProvider)
+        .setUltimateMarkLevel(level, firstPerson: forFirstPerson);
+    state = AsyncData(
+      current._copyWith(
+        firstPersonUltimateLevel: forFirstPerson
+            ? level
+            : current.firstPersonUltimateLevel,
+        secondPersonUltimateLevel: forFirstPerson
+            ? current.secondPersonUltimateLevel
+            : level,
+      ),
     );
   }
 
@@ -81,9 +129,20 @@ class SkinController extends AsyncNotifier<SkinState> {
         .read(skinServiceProvider)
         .setSelectedSkinId(skin.id, firstPerson: forFirstPerson);
     state = AsyncData(
+      // The chosen level carries across a skin change untouched: every
+      // levelled skin has all four, so a choice made on one is meaningful on
+      // the next, and a glyph skin simply ignores it.
       forFirstPerson
-          ? current._copyWith(firstPersonId: skin.id)
-          : current._copyWith(secondPersonId: skin.id),
+          ? current._copyWith(
+              firstPersonId: skin.id,
+              firstPersonUltimateLevel: current.firstPersonUltimateLevel,
+              secondPersonUltimateLevel: current.secondPersonUltimateLevel,
+            )
+          : current._copyWith(
+              secondPersonId: skin.id,
+              firstPersonUltimateLevel: current.firstPersonUltimateLevel,
+              secondPersonUltimateLevel: current.secondPersonUltimateLevel,
+            ),
     );
   }
 
@@ -95,7 +154,11 @@ class SkinController extends AsyncNotifier<SkinState> {
     if (current.isUnlocked(skin)) return false;
     await ref.read(skinServiceProvider).unlockSkin(skin.id);
     state = AsyncData(
-      current._copyWith(unlockedIds: {...current.unlockedIds, skin.id}),
+      current._copyWith(
+        unlockedIds: {...current.unlockedIds, skin.id},
+        firstPersonUltimateLevel: current.firstPersonUltimateLevel,
+        secondPersonUltimateLevel: current.secondPersonUltimateLevel,
+      ),
     );
     return true;
   }

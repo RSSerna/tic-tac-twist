@@ -12,6 +12,7 @@ import 'package:nested_game/engines/stacking/stacking_move.dart';
 import 'package:nested_game/engines/ultimate/ultimate_engine.dart';
 import 'package:nested_game/main.dart';
 import 'package:nested_game/ui/screens/game_screen.dart';
+import 'package:nested_game/ui/widgets/chip_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../test_helpers.dart';
@@ -139,10 +140,16 @@ void main() {
     // collapse to a zero-size dot inside _AnimatedMark's AnimatedSwitcher
     // (childless CustomPaint under loose constraints). Re-zoom into board 4
     // to view it and assert its painted size is real.
+    //
+    // Either renderer counts: the default skin's chips vary by level, so its
+    // mark is a ChipView of the default level, and only a glyph skin reaches
+    // _MarkPainter (see ultimate_mark_test.dart). This assertion is about
+    // size, not which of the two drew it.
     await tapKey(tester, 'ult-4-1', warnIfMissed: false);
     final markFinder = find.byWidgetPredicate((w) =>
-        w is CustomPaint &&
-        w.painter.runtimeType.toString() == '_MarkPainter');
+        w is ChipView ||
+        (w is CustomPaint &&
+            w.painter.runtimeType.toString() == '_MarkPainter'));
     expect(markFinder, findsWidgets);
     expect(tester.getSize(markFinder.first).width, greaterThan(20));
     await tapKey(tester, 'zoom-out');

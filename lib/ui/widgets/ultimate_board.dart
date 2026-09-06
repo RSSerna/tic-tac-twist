@@ -9,6 +9,7 @@ import '../../engines/ultimate/ultimate_move.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
+import 'chip_view.dart';
 
 /// The Ultimate board: 3×3 grid of 3×3 small boards, with tap-to-zoom
 /// (design doc §3.4).
@@ -452,11 +453,15 @@ class _UltimateCell extends StatelessWidget {
   }
 }
 
-/// One player's move mark, drawn per the active skin's [ChipAppearance]:
-/// procedurally (the X/O painter) for a [PaintedAppearance], or from a
-/// bundled image for an [AssetAppearance] — the same painted-vs-asset flag
-/// [ChipView] uses for stacking chips, so a future skin can supply art here
-/// too. An asset that can't load falls back to the painter.
+/// One player's move mark.
+///
+/// Ultimate has no chip levels, so a skin whose chips vary by level has to be
+/// told which of them to wear here — [SkinPair.ultimateLevelFor] answers,
+/// defaulting to [kDefaultUltimateMarkLevel]. That chip is drawn at full cell
+/// size (`fillsCell`), since there's no size ladder to sit in.
+///
+/// A glyph skin ([ChipForm.marks]) has no variants and returns null instead:
+/// it's already the classic mark, so the X/O painter draws it.
 ///
 /// The outer [SizedBox.expand] is what keeps the mark full-size under the
 /// loose constraints inside [_AnimatedMark]'s `AnimatedSwitcher`: a childless
@@ -475,21 +480,26 @@ class _UltimateMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final painted = CustomPaint(
-      painter: _MarkPainter(color: color, isX: isFirstPerson),
-    );
     // Resolved here, at the mark, because this is the first point that knows
     // whose mark it is.
-    final Widget content = switch (skins.appearanceFor(
-      isFirstPerson: isFirstPerson,
-    )) {
-      PaintedAppearance() => painted,
-      AssetAppearance(:final resolve) => Image.asset(
-        resolve(ChipAssetRequest(isFirstPerson: isFirstPerson)),
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => painted,
-      ),
-    };
+    final skin = skins.skinFor(isFirstPerson: isFirstPerson);
+    final level = skins.ultimateLevelFor(isFirstPerson: isFirstPerson);
+
+    final Widget content = level != null
+        ? ChipView(
+            key: Key('ultimate-chip-mark-\$level'),
+            color: color,
+            ringColor: context.gameColors.surface,
+            level: level,
+            isFirstPerson: isFirstPerson,
+            appearance: skin.appearance,
+            // No level ladder in Ultimate — every mark is the same rank, so
+            // the chip fills its cell rather than shrinking to L1's share of
+            // one. Deliberately no level numeral either: it would state a
+            // level this board doesn't have.
+            fillsCell: true,
+          )
+        : CustomPaint(painter: _MarkPainter(color: color, isX: isFirstPerson));
     return SizedBox.expand(child: content);
   }
 }
