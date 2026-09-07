@@ -98,6 +98,7 @@ If a change would alter any of those, it's not a skin.
 | **Chip picker** + names/descriptions + purchase route | `lib/ui/screens/chip_skins_screen.dart` |
 | Unlock triggers (achievement / purchase) | `lib/controllers/game_controller.dart`, `lib/controllers/ads_controller.dart` |
 | Display strings | `lib/l10n/app_en.arb`, `lib/l10n/app_es.arb` |
+| **Sending an emote in a match** (tray + seat bubbles) | `lib/ui/widgets/match_emotes.dart`, `lib/controllers/match_emote_controller.dart` |
 
 ---
 

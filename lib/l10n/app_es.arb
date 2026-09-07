@@ -239,5 +239,11 @@
   "skinClassicMarksName": "Clásico",
   "skinClassicMarksDesc": "La X y la O de siempre. El nivel aparece como número.",
   "skinUltimateMarkLabel": "Marca de Ultimate",
-  "skinUltimateMarkLevel": "Ficha de nivel {level}"
+  "skinUltimateMarkLevel": "Ficha de nivel {level}",
+  "matchEmoteTrayToggle": "Emotes",
+  "matchEmoteSend": "Enviar {name}",
+  "matchEmoteNoneEquipped": "Equipa emotes en Personalizar → Emotes",
+  "matchEmoteFromPlayer": "Jugador {number} envió {name}",
+  "matchEmoteEmptySeat": "Los emotes del jugador {number} aparecen aquí",
+  "playerShort": "J{number}"
 }

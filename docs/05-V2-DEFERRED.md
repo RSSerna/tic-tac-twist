@@ -102,10 +102,7 @@ already accounts for all four, so nothing needs re-laying-out when they land.
 `board` is the only one still empty: no model, no service, no art. It's a
 placeholder for the design, not a half-built feature.
 
-### 4.2 Emotes — equipping works now, sending is v2
-
-Emotes are for sending during a match, which needs an opponent, which is v2.
-What exists today:
+### 4.2 Emotes — sending works locally; the network path is v2
 
 | Piece | File | State |
 |---|---|---|
@@ -114,7 +111,9 @@ What exists today:
 | Loadout state + rules | `lib/controllers/emote_controller.dart` | Done |
 | Picker UI (4 slots + catalogue) | `lib/ui/screens/emote_skins_screen.dart` | Done |
 | Rendering (asset with icon fallback) | `lib/ui/widgets/emote_view.dart` | Done |
-| **Sending one in a match** | — | **v2** |
+| **In-match send tray + seat bubbles** | `lib/ui/widgets/match_emotes.dart` | Done |
+| **In-match state (display, cooldown)** | `lib/controllers/match_emote_controller.dart` | Done |
+| **Sending to a remote opponent** | — | **v2** |
 | **Purchase route (`ProductId`s)** | — | Needs store products |
 
 `Emote.loadoutSize` is 4 — the number a player takes into a match. The
@@ -122,8 +121,20 @@ controller enforces it, refuses locked emotes, and drops saved ids that no
 longer match a catalogue entry (a saved loadout outlives any emote you
 retire; there's a test for this).
 
-**What v2 must add:** an in-match emote UI, and the network path to send and
-receive one. The loadout is already local, persisted, and validated.
+**What's built, precisely.** In all three modes, a toggle in the staging bar
+opens the player's equipped emotes; tapping one shows it in that seat's
+bubble above the board for 3s, with a 2s cooldown. The tray belongs to
+whoever is to move. **In pass-and-play this is the finished feature** — the
+opponent is sitting at the same device and sees it.
+
+**What is a placeholder.** Each seat's bubble is drawn empty when nothing is
+showing, in every mode. That empty frame is the reserved place a *received*
+emote will appear once there's a network to receive one. Vs the AI, the AI's
+bubble never fills: nothing sends to it, and nothing pretends to.
+
+**What v2 must add:** the network path only. A received emote is pushed into
+`MatchEmoteController.send` exactly as the local tray does — it's
+presentation state, never engine state, so no engine change is involved.
 
 **Never trust a received emote id.** Same rule as moves (§1.1.3): resolve it
 against `Emote.values` and drop it if it doesn't match, rather than rendering

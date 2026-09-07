@@ -494,5 +494,42 @@
     "placeholders": {
       "level": {"type": "int"}
     }
+  },
+  "matchEmoteTrayToggle": "Emotes",
+  "@matchEmoteTrayToggle": {
+    "description": "Button on the game screen that opens the tray of equipped emotes."
+  },
+  "matchEmoteSend": "Send {name}",
+  "@matchEmoteSend": {
+    "description": "Accessibility label for one emote button in the in-match tray.",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "matchEmoteNoneEquipped": "Equip emotes in Custom → Emotes",
+  "@matchEmoteNoneEquipped": {
+    "description": "Shown in the in-match emote tray when the player has equipped none."
+  },
+  "matchEmoteFromPlayer": "Player {number} sent {name}",
+  "@matchEmoteFromPlayer": {
+    "description": "Accessibility label for a seat bubble currently showing an emote.",
+    "placeholders": {
+      "number": {"type": "int"},
+      "name": {"type": "String"}
+    }
+  },
+  "matchEmoteEmptySeat": "Player {number} emotes appear here",
+  "@matchEmoteEmptySeat": {
+    "description": "Accessibility label for an empty seat bubble — the reserved place a received emote will appear.",
+    "placeholders": {
+      "number": {"type": "int"}
+    }
+  },
+  "playerShort": "P{number}",
+  "@playerShort": {
+    "description": "Very short player label used beside the in-match emote bubbles.",
+    "placeholders": {
+      "number": {"type": "int"}
+    }
   }
 }

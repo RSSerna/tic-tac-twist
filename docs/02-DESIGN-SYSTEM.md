@@ -230,7 +230,7 @@ Key beats:
 
 - Home / mode select (three modes)
 - Sub-mode select (Local / AI) + AI difficulty picker
-- Game board screen — shared skeleton, mode-specific board widget
+- Game board screen — shared skeleton, mode-specific board widget, emote seat bubbles above the board and a send tray in the staging bar (`05-V2-DEFERRED.md` §4.2)
 - Win / draw result screen (with one-tap Rematch)
 - Stats screen (per-mode W/L/D)
 - Settings — reset stats, SFX/music toggles, replay tutorial, language, local turn timer
@@ -255,6 +255,7 @@ widget at the call site — that's how a design drifts.
 | `CircleIconButton` / `CircleButtonCluster` | `widgets/buttons/` | Corner controls. The cluster wraps rather than overflows. |
 | `CategoryTile` | `widgets/buttons/category_tile.dart` | Square tile with caption + glyph; `available: false` renders locked and refuses taps. |
 | `AppMark` | `widgets/app_mark.dart` | The logo mark, painted rather than bundled so it inherits `ink` and stays crisp at any size. |
+| `MatchEmoteBubbles` / `MatchEmoteTray` | `widgets/match_emotes.dart` | Two always-drawn seat bubbles above the board (an empty one is the reserved place a v2 received emote lands), plus a toggle in the staging bar that opens the four equipped emotes as a floating overlay, so opening it moves nothing. The tray hangs off the button — centred on it, below where there's room and above where there isn't, clamped back on screen near an edge. Closes on any change to the game, since its position is fixed at open time. Sending is presentation state only — never a move. |
 | `AssetGlyph` | `widgets/asset_glyph.dart` | A bundled image that degrades to an icon when the art isn't there. Every cosmetic catalogue ships before its art, so this is the one place that behaviour lives. |
 | `RarityLegend` | `widgets/rarity_legend.dart` | The static COMMON/RARE/EPIC/LEGENDARY row. A legend, not a filter — nothing carries a rarity yet. |
 

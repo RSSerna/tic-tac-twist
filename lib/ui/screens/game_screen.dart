@@ -16,6 +16,7 @@ import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../widgets/chip_view.dart';
 import '../widgets/inventory_grid.dart';
+import '../widgets/match_emotes.dart';
 import '../widgets/stacking_board.dart';
 import '../widgets/ultimate_board.dart';
 import '../widgets/winning_line_overlay.dart';
@@ -78,16 +79,38 @@ class GameScreen extends ConsumerWidget {
                     if (session.mode.isStacking && session.status.isOngoing)
                       IgnorePointer(
                         ignoring: session.isAiTurn,
-                        child: const InventoryGrid(),
+                        // Full-size chips need ~230pt, which a landscape
+                        // phone's side column doesn't have: without this the
+                        // column overflows and the staging bar — Confirm
+                        // included — sits below the fold, reachable only by
+                        // scrolling. `compact` was built for this and the
+                        // game screen simply never asked for it.
+                        child: InventoryGrid(
+                          compact: constraints.maxHeight < 640,
+                        ),
                       ),
                     StagingBar(session: session),
                   ];
                   final board = BoardArea(session: session);
 
+                  // The emote bubbles ride directly above the board in both
+                  // orientations, and deliberately *not* in the landscape
+                  // side column: that column scrolls, and anything added to
+                  // it pushes the staging bar (and the emote tray inside it)
+                  // below the fold on a landscape phone.
+                  final bubbles = MatchEmoteBubbles(
+                    compact: constraints.maxHeight < 640,
+                  );
+
                   if (landscape) {
                     return Row(
                       children: [
-                        Expanded(flex: 2, child: board),
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            children: [bubbles, Expanded(child: board)],
+                          ),
+                        ),
                         Expanded(
                           flex: 1,
                           child: SingleChildScrollView(
@@ -103,6 +126,7 @@ class GameScreen extends ConsumerWidget {
                   return Column(
                     children: [
                       ...sideControls.take(1),
+                      bubbles,
                       Expanded(child: board),
                       ...sideControls.skip(1),
                     ],
@@ -328,13 +352,25 @@ class _TurnTimerCountdownState extends State<_TurnTimerCountdown> {
   }
 }
 
-class StagingBar extends ConsumerWidget {
+class StagingBar extends ConsumerStatefulWidget {
   const StagingBar({super.key, required this.session});
 
   final GameSession session;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StagingBar> createState() => _StagingBarState();
+}
+
+class _StagingBarState extends ConsumerState<StagingBar> {
+  /// Handed to the emote tray so that, when the tray has to open upwards, it
+  /// clears this whole bar rather than just the button inside it. The bar
+  /// wraps onto two runs once Confirm appears, and a tray anchored to the
+  /// button alone lands squarely on top of Confirm.
+  final _barKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    final session = widget.session;
     final l10n = AppLocalizations.of(context);
     final styles = context.gameTextStyles;
     final controller = ref.read(gameControllerProvider.notifier);
@@ -344,19 +380,37 @@ class StagingBar extends ConsumerWidget {
     final mustPass = controller.mustPass;
     final stagedPass = session.stagedMove is PassMove;
 
+    // The emote tray rides in this bar's own reserved band, which is empty
+    // most of the time anyway — a row of its own would cost ~48pt of the
+    // game screen permanently. Not in the tutorial: that's a scripted
+    // lesson with no one to emote at.
+    final tray = session.isTutorial
+        ? null
+        : Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: MatchEmoteTray(
+              person: session.currentPerson,
+              barKey: _barKey,
+            ),
+          );
+
     return Container(
+      key: _barKey,
       constraints: const BoxConstraints(minHeight: 64),
       padding: const EdgeInsets.symmetric(vertical: 8),
       alignment: Alignment.center,
       // Wrap, not Row: this bar sits either at full screen width (portrait)
       // or squeezed into a narrow side panel (landscape) — it must reflow
-      // rather than overflow either way.
+      // rather than overflow either way. The tray joins it as one more
+      // wrappable item rather than a fixed leading column, so a narrow
+      // landscape panel drops it onto its own line instead of overflowing.
       child: Wrap(
         alignment: WrapAlignment.center,
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: 12,
         runSpacing: 8,
         children: [
+          ?tray,
           if (mustPass && !stagedPass) ...[
             Text(l10n.mustPassBanner, style: styles.body),
             FilledButton(
