@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nested_game/main.dart';
+import 'package:nested_game/theme/app_assets.dart';
+import 'package:nested_game/controllers/settings_controller.dart';
+import 'package:nested_game/services/settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../test_helpers.dart';
@@ -128,12 +131,71 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: NestedApp()));
     await tester.pumpAndSettle();
 
-    // Music defaults to on (design doc §5), so the icon starts unmuted.
-    expect(find.byIcon(Icons.music_note), findsOneWidget);
+    // One glyph for both states — there's no drawn "off" variant, so off is
+    // the same icon dimmed (the app's unavailable idiom). Assert the opacity
+    // rather than the icon's identity, which no longer changes.
+    double musicOpacity() => tester
+        .widget<Opacity>(
+          find
+              .ancestor(
+                of: findGlyph(AppIcons.music),
+                matching: find.byType(Opacity),
+              )
+              .first,
+        )
+        .opacity;
+
+    // Music defaults to on (design doc §5), so it starts undimmed.
+    expect(musicOpacity(), 1);
 
     await tester.tap(find.byKey(const Key('home-music-toggle')));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.music_off), findsOneWidget);
+    expect(musicOpacity(), lessThan(1));
+  });
+
+  testWidgets('the rotate button flips the game between portrait and landscape',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    await markAllTutorialsCompleted();
+    await markAgeGateAnswered();
+    // A portrait surface, so the first tap has a known direction to flip to.
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(const ProviderScope(child: NestedApp()));
+    await tester.pumpAndSettle();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+      listen: false,
+    );
+
+    // Nothing stored to begin with: the device decides, which is how the app
+    // behaved before this button existed.
+    expect(
+      (await container.read(settingsControllerProvider.future)).orientation,
+      isNull,
+    );
+
+    await tester.tap(find.byKey(const Key('home-rotate')));
+    await tester.pumpAndSettle();
+    expect(
+      (await container.read(settingsControllerProvider.future)).orientation,
+      ScreenOrientationPreference.landscape,
+    );
+
+    // And back again.
+    await tester.tap(find.byKey(const Key('home-rotate')));
+    await tester.pumpAndSettle();
+    expect(
+      (await container.read(settingsControllerProvider.future)).orientation,
+      ScreenOrientationPreference.portrait,
+    );
+
+    // Persisted, not just held in memory.
+    expect(
+      await SharedPreferencesSettingsService().orientation(),
+      ScreenOrientationPreference.portrait,
+    );
   });
 }

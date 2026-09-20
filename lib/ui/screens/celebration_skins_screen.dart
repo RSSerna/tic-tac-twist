@@ -10,6 +10,8 @@ import '../widgets/asset_glyph.dart';
 import '../widgets/buttons/pill_action_button.dart';
 import '../widgets/panel_header.dart';
 import '../widgets/rarity_legend.dart';
+import '../widgets/app_glyph.dart';
+import '../../theme/app_assets.dart';
 
 String celebrationName(AppLocalizations l10n, Celebration c) => switch (c) {
   Celebration.happy => l10n.celebrationNameHappy,
@@ -99,8 +101,8 @@ class _CelebrationSkinsScreenState
               children: [
                 PanelHeader(
                   closeKey: const Key('close-flexing'),
-                  icon: Icon(
-                    Icons.accessibility_new,
+                  icon: AppGlyph(
+                    AppIcons.flex,
                     size: 34,
                     color: colors.neutral,
                   ),
@@ -239,8 +241,12 @@ class _LockStatus extends StatelessWidget {
             child: CircleAvatar(
               radius: 16,
               backgroundColor: locked ? colors.ink : colors.neutral,
-              child: Icon(
-                locked ? Icons.lock : Icons.lock_open,
+              // Always the lock, never a tick: this pill *is* the lock
+              // status, and the dimming plus the neutral avatar above
+              // already say which way round it is. A tick here would put a
+              // second one on screen competing with the equipped marker.
+              child: AppGlyph(
+                AppIcons.locked,
                 size: 18,
                 color: colors.surface,
               ),
@@ -384,7 +390,7 @@ class _PreviewAction extends StatelessWidget {
         key: const Key('celebration-equipped-status'),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_circle, size: 16, color: colors.ink),
+          AppGlyph(AppIcons.check, size: 16, color: colors.ink),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
@@ -473,15 +479,22 @@ class _CelebrationGrid extends StatelessWidget {
 
     Widget arrow({
       required bool shown,
-      required IconData icon,
       required VoidCallback onPressed,
       required Key key,
+      bool flipped = false,
     }) => SizedBox(
       width: _arrowSlot,
       child: shown
           ? IconButton(
               key: key,
-              icon: Icon(icon),
+              // One chevron file, mirrored for the backwards direction, so
+              // the pair can't drift apart.
+              icon: AppGlyph(
+                AppIcons.chevronRight,
+                size: 32,
+                color: colors.ink,
+                flipped: flipped,
+              ),
               iconSize: 32,
               padding: EdgeInsets.zero,
               color: colors.ink,
@@ -503,7 +516,7 @@ class _CelebrationGrid extends StatelessWidget {
             // a way back — otherwise the last block is a dead end.
             arrow(
               shown: hasPrevious,
-              icon: Icons.chevron_left,
+              flipped: true,
               onPressed: onPrevious,
               key: const Key('celebration-previous-block'),
             ),
@@ -530,7 +543,6 @@ class _CelebrationGrid extends StatelessWidget {
             ),
             arrow(
               shown: hasNext,
-              icon: Icons.chevron_right,
               onPressed: onNext,
               key: const Key('celebration-next-block'),
             ),
@@ -604,8 +616,8 @@ class _CelebrationTile extends StatelessWidget {
                               child: CircleAvatar(
                                 radius: size * 0.22,
                                 backgroundColor: colors.ink,
-                                child: Icon(
-                                  Icons.lock,
+                                child: AppGlyph(
+                                  AppIcons.locked,
                                   size: size * 0.24,
                                   color: colors.surface,
                                   semanticLabel: l10n.skinLocked,
@@ -624,8 +636,8 @@ class _CelebrationTile extends StatelessWidget {
                       child: CircleAvatar(
                         radius: size * 0.14,
                         backgroundColor: colors.ink,
-                        child: Icon(
-                          Icons.check,
+                        child: AppGlyph(
+                          AppIcons.check,
                           size: size * 0.18,
                           color: colors.surface,
                         ),

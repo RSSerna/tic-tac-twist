@@ -14,6 +14,8 @@ import '../widgets/buttons/segmented_pills.dart';
 import '../widgets/chip_view.dart';
 import '../widgets/panel_header.dart';
 import '../widgets/rarity_legend.dart';
+import '../widgets/app_glyph.dart';
+import '../../theme/app_assets.dart';
 
 String _skinName(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
   'turned_wood' => l10n.skinTurnedWoodName,
@@ -140,7 +142,7 @@ class _ChipSkinsScreenState extends ConsumerState<ChipSkinsScreen> {
               children: [
                 PanelHeader(
                   closeKey: const Key('close-chip-skins'),
-                  icon: Icon(Icons.palette, size: 34, color: colors.neutral),
+                  icon: AppGlyph(AppIcons.chips, size: 34, color: colors.neutral),
                   title: l10n.skinsTitle,
                   subtitle: l10n.categoryChips,
                 ),
@@ -179,8 +181,8 @@ class _ChipSkinsScreenState extends ConsumerState<ChipSkinsScreen> {
                             // Purely decorative — the first thing to drop when
                             // vertical space is scarce.
                             if (!short)
-                              Icon(
-                                Icons.keyboard_double_arrow_down,
+                              AppGlyph(
+                                AppIcons.doubleChevronDown,
                                 color: colors.ink,
                               ),
                           ],
@@ -401,8 +403,8 @@ class _SkinTile extends StatelessWidget {
                   // A locked skin shows a lock rather than a dimmed preview:
                   // the art is the thing being sold, so don't give it away.
                   : Center(
-                      child: Icon(
-                        Icons.lock,
+                      child: AppGlyph(
+                        AppIcons.locked,
                         size: 40,
                         color: colors.neutral,
                         semanticLabel: l10n.skinLocked,
@@ -448,7 +450,7 @@ class _CarouselArrowState extends State<_CarouselArrow> {
           child: canAdvance
               ? IconButton(
                   key: const Key('skins-scroll-forward'),
-                  icon: const Icon(Icons.chevron_right),
+                  icon: const AppGlyph(AppIcons.chevronRight, size: 20),
                   iconSize: 44,
                   color: colors.ink,
                   tooltip: l10n.categoryNext,

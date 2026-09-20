@@ -8,6 +8,8 @@ import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../widgets/emote_view.dart';
 import '../widgets/panel_header.dart';
+import '../widgets/app_glyph.dart';
+import '../../theme/app_assets.dart';
 
 /// Gutter either side of the loadout row, and the gap between its slots.
 ///
@@ -80,8 +82,8 @@ class EmoteSkinsScreen extends ConsumerWidget {
               children: [
                 PanelHeader(
                   closeKey: const Key('close-emotes'),
-                  icon: Icon(
-                    Icons.emoji_emotions,
+                  icon: AppGlyph(
+                    AppIcons.emoji,
                     size: 34,
                     color: colors.neutral,
                   ),
@@ -94,7 +96,7 @@ class EmoteSkinsScreen extends ConsumerWidget {
                 Column(
                   children: [
                     Text(l10n.emotesLoadoutHeading, style: styles.subtitle),
-                    Icon(Icons.keyboard_double_arrow_down, color: colors.ink),
+                    AppGlyph(AppIcons.doubleChevronDown, size: 22, color: colors.ink),
                     const SizedBox(height: 8),
                     _LoadoutRow(
                       loadout: loadout,
@@ -313,7 +315,7 @@ class _EmoteCatalogueState extends State<_EmoteCatalogue> {
             child: _canScrollForward
                 ? IconButton(
                     key: const Key('emote-scroll-forward'),
-                    icon: const Icon(Icons.chevron_right),
+                    icon: const AppGlyph(AppIcons.chevronRight, size: 20),
                     iconSize: 40,
                     color: colors.ink,
                     tooltip: l10n.categoryNext,
@@ -387,8 +389,8 @@ class _CatalogueTile extends StatelessWidget {
                   padding: EdgeInsets.all(size * 0.18),
                   child: unlocked
                       ? EmoteView(emote: emote)
-                      : Icon(
-                          Icons.lock,
+                      : AppGlyph(
+                          AppIcons.locked,
                           size: size * 0.4,
                           color: colors.neutral,
                         ),

@@ -7,6 +7,8 @@ import '../../services/achievement_service.dart';
 import '../../services/daily_challenge_service.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
+import '../widgets/app_glyph.dart';
+import '../../theme/app_assets.dart';
 
 /// Lists the achievements from `03-PRODUCT.md` §3.1 and whether each is done.
 ///
@@ -166,9 +168,15 @@ class _DailyRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Icon(
-            done ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: done ? colors.ink : colors.neutral,
+          // There's no drawn "not yet" glyph, so an unfinished goal is the
+          // same check dimmed — the app's unavailable idiom (design system
+          // §11). The counter beside it says the state exactly anyway.
+          Opacity(
+            opacity: done ? 1 : 0.45,
+            child: AppGlyph(
+              AppIcons.check,
+              color: done ? colors.ink : colors.neutral,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -207,8 +215,8 @@ class _ChallengeCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            Icon(
-              completed ? Icons.check_circle : Icons.lock_outline,
+            AppGlyph(
+              completed ? AppIcons.check : AppIcons.locked,
               // `ink`, not `playerA`: indigo means "Player 1" everywhere else
               // in the app, and a completed achievement has nothing to do
               // with a player (design system §2.1).

@@ -16,6 +16,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^3.3.2
+  flutter_svg: ^2.3.0
   google_mobile_ads: ^9.0.0
   in_app_purchase: ^3.3.0
   intl: any
@@ -36,6 +37,7 @@ flutter:
   # — only a matching constant in lib/theme/app_assets.dart.
   assets:
     - assets/images/
+    - assets/svgs/
 
   # Bricolage Grotesque (design system §2.2), bundled rather than fetched at
   # runtime. Static instances from the upstream project, SIL OFL 1.1 —

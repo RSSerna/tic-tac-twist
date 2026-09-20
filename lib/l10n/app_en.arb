@@ -531,5 +531,9 @@
     "placeholders": {
       "number": {"type": "int"}
     }
+  },
+  "settingsOrientationLabel": "Rotate the screen",
+  "@settingsOrientationLabel": {
+    "description": "Button that flips the game between portrait and landscape."
   }
 }

@@ -8,6 +8,8 @@ import '../widgets/panel_header.dart';
 import 'celebration_skins_screen.dart';
 import 'chip_skins_screen.dart';
 import 'emote_skins_screen.dart';
+import '../widgets/app_glyph.dart';
+import '../../theme/app_assets.dart';
 
 /// The cosmetic categories a player can customise.
 ///
@@ -51,18 +53,18 @@ class SkinsScreen extends StatelessWidget {
       // `ink`, not `neutral`: these are the tile's subject, not a disabled
       // or secondary state, and they carry the same weight as `AppMark`
       // beside them (which paints in `ink` too).
-      CustomizationCategory.chips => Icon(
-        Icons.palette,
+      CustomizationCategory.chips => AppGlyph(
+        AppIcons.chips,
         size: size,
         color: colors.ink,
       ),
-      CustomizationCategory.emote => Icon(
-        Icons.emoji_emotions,
+      CustomizationCategory.emote => AppGlyph(
+        AppIcons.emoji,
         size: size,
         color: colors.ink,
       ),
-      CustomizationCategory.flexing => Icon(
-        Icons.accessibility_new,
+      CustomizationCategory.flexing => AppGlyph(
+        AppIcons.flex,
         size: size,
         color: colors.ink,
       ),
@@ -259,7 +261,7 @@ class _CategoryRowState extends State<_CategoryRow> {
           child: _canScrollForward
               ? IconButton(
                   key: const Key('category-scroll-forward'),
-                  icon: const Icon(Icons.chevron_right),
+                  icon: const AppGlyph(AppIcons.chevronRight, size: 20),
                   iconSize: 44,
                   color: colors.ink,
                   tooltip: l10n.categoryNext,

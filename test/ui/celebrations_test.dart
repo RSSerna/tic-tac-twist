@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nested_game/controllers/celebration_controller.dart';
 import 'package:nested_game/main.dart';
+import 'package:nested_game/theme/app_assets.dart';
 import 'package:nested_game/theme/celebration.dart';
 import 'package:nested_game/ui/screens/celebration_skins_screen.dart';
 import 'package:nested_game/ui/widgets/buttons/pill_action_button.dart';
@@ -134,12 +135,26 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await openFlexing(tester);
 
+    // The equipped-status line carries a tick of its own now — it used to be
+    // a different Material icon from the tile's, and both are the drawn one
+    // today — so count only the ticks in the grid.
+    int gridTicks() =>
+        tester.widgetList(findGlyph(AppIcons.check)).length -
+        tester
+            .widgetList(
+              find.descendant(
+                of: find.byKey(const Key('celebration-equipped-status')),
+                matching: findGlyph(AppIcons.check),
+              ),
+            )
+            .length;
+
     // A tick sits on the equipped tile — one, not several.
-    expect(find.byIcon(Icons.check), findsOneWidget);
+    expect(gridTicks(), 1);
     expect(
       find.descendant(
         of: find.byKey(Key('celebration-${Celebration.defaultChoice.id}')),
-        matching: find.byIcon(Icons.check),
+        matching: findGlyph(AppIcons.check),
       ),
       findsOneWidget,
     );
@@ -151,11 +166,11 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(Key('celebration-${free[1].id}')),
-        matching: find.byIcon(Icons.check),
+        matching: findGlyph(AppIcons.check),
       ),
       findsOneWidget,
     );
-    expect(find.byIcon(Icons.check), findsOneWidget);
+    expect(gridTicks(), 1);
 
     // Previewing a locked one must not make the equipped one unknowable —
     // the status line names it even though the preview shows something else.
@@ -170,7 +185,7 @@ void main() {
 
     // Same on a block that doesn't contain the equipped celebration.
     await tapKey(tester, 'celebration-next-block');
-    expect(find.byIcon(Icons.check), findsNothing);
+    expect(gridTicks(), 0);
     expect(
       find.descendant(of: status, matching: find.textContaining('Equipped:')),
       findsOneWidget,

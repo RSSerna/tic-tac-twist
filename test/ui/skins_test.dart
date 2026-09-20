@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nested_game/controllers/skin_controller.dart';
 import 'package:nested_game/main.dart';
 import 'package:nested_game/services/skin_service.dart';
+import 'package:nested_game/theme/app_assets.dart';
 import 'package:nested_game/theme/skin.dart';
 import 'package:nested_game/ui/screens/chip_skins_screen.dart';
 import 'package:nested_game/ui/screens/skins_screen.dart';
@@ -108,7 +109,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('skin-card-nesting_dolls')),
-          matching: find.byIcon(Icons.lock),
+          matching: findGlyph(AppIcons.locked),
         ),
         findsOneWidget,
       );
@@ -166,7 +167,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(Key('skin-card-${GameSkin.classicMarks.id}')),
-        matching: find.byIcon(Icons.lock),
+        matching: findGlyph(AppIcons.locked),
       ),
       findsNothing,
     );

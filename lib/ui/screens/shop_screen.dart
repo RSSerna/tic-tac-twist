@@ -16,6 +16,8 @@ import '../../theme/typography.dart';
 import '../widgets/app_mark.dart';
 import '../widgets/buttons/pill_action_button.dart';
 import '../widgets/panel_header.dart';
+import '../widgets/app_glyph.dart';
+import '../../theme/app_assets.dart';
 
 /// What kind of cosmetic a shop card sells. The badge across the top of a
 /// card; also decides which catalogue its "owned" state is read from.
@@ -116,7 +118,7 @@ class ShopScreen extends ConsumerWidget {
             children: [
               PanelHeader(
                 closeKey: const Key('close-shop'),
-                icon: Icon(Icons.inventory_2, size: 34, color: colors.neutral),
+                icon: AppGlyph(AppIcons.chest, size: 34, color: colors.neutral),
                 title: l10n.shopTitle,
                 // The blurb wraps to three lines in Spanish on a 320pt screen,
                 // and the header then doesn't fit the screen it heads.
@@ -200,9 +202,9 @@ class _ShopCard extends StatelessWidget {
       ShopItemKind.markO => Icon(Icons.circle_outlined, size: 20, color: color),
       ShopItemKind.combo => Text('COMBO', style: style),
       ShopItemKind.board => AppMark(size: 20, color: color),
-      ShopItemKind.emote => Icon(Icons.emoji_emotions, size: 20, color: color),
-      ShopItemKind.flexing => Icon(
-        Icons.accessibility_new,
+      ShopItemKind.emote => AppGlyph(AppIcons.emoji, size: 20, color: color),
+      ShopItemKind.flexing => AppGlyph(
+        AppIcons.flex,
         size: 20,
         color: color,
       ),
@@ -276,13 +278,13 @@ class _ShopCard extends StatelessWidget {
                     color: colors.surface,
                     alignment: Alignment.center,
                     child: owned
-                        ? Icon(
-                            Icons.check_circle,
+                        ? AppGlyph(
+                            AppIcons.check,
                             size: width * 0.28,
                             color: colors.ink,
                           )
-                        : Icon(
-                            Icons.lock,
+                        : AppGlyph(
+                            AppIcons.locked,
                             size: width * 0.24,
                             color: colors.neutral,
                           ),
@@ -383,11 +385,15 @@ class _ClaimBar extends ConsumerWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(
-                progress.isFull
-                    ? Icons.check_circle
-                    : Icons.check_circle_outline,
-                color: progress.isFull ? colors.ink : colors.neutral,
+              // Dimmed until the meter fills — the same unavailable idiom
+              // used for a locked pack, since there's no drawn "empty check".
+              Opacity(
+                opacity: progress.isFull ? 1 : 0.45,
+                child: AppGlyph(
+                  AppIcons.check,
+                  size: 24,
+                  color: progress.isFull ? colors.ink : colors.neutral,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

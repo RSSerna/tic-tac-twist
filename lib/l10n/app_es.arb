@@ -245,5 +245,6 @@
   "matchEmoteNoneEquipped": "Equipa emotes en Personalizar → Emotes",
   "matchEmoteFromPlayer": "Jugador {number} envió {name}",
   "matchEmoteEmptySeat": "Los emotes del jugador {number} aparecen aquí",
-  "playerShort": "J{number}"
+  "playerShort": "J{number}",
+  "settingsOrientationLabel": "Girar la pantalla"
 }

@@ -17,7 +17,10 @@ class CircleIconButton extends StatelessWidget {
     this.diameter = 48,
   });
 
-  final IconData icon;
+  /// The glyph. A widget rather than an `IconData` so the project's own SVG
+  /// set (`AppGlyph`) can sit here alongside a Material icon — several of
+  /// these buttons have a drawn glyph and several don't.
+  final Widget icon;
 
   /// Doubles as the accessibility label, so it must be a translated string —
   /// never a literal.
@@ -49,7 +52,18 @@ class CircleIconButton extends StatelessWidget {
             child: InkWell(
               onTap: onPressed,
               child: Center(
-                child: Icon(icon, size: diameter * 0.5, color: colors.ink),
+                child: SizedBox.square(
+                  dimension: diameter * 0.5,
+                  child: IconTheme(
+                    // So a Material icon passed here still gets the button's
+                    // sizing and colour without every call site repeating it.
+                    data: IconThemeData(
+                      size: diameter * 0.5,
+                      color: colors.ink,
+                    ),
+                    child: icon,
+                  ),
+                ),
               ),
             ),
           ),

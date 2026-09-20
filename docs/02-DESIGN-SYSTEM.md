@@ -71,6 +71,34 @@ Two rules that matter:
 - **`toTextTheme()` feeds Material's slots from the same scale**, so stock widgets (dropdowns, dialogs, buttons) restyle with everything else rather than drifting into a second type scale.
 - **Restyling is a single edit in that file.** Don't hardcode a size or weight in a widget; if a screen needs something the scale lacks, add it to the scale.
 
+### 2.2a Icons
+
+Two sets, deliberately:
+
+- **The project's own SVGs** (`assets/svgs/`, listed in `AppIcons`), drawn for
+  this game and always rendered through `AppGlyph`. Uniform 101×101 viewBox,
+  authored **white**, so the theme decides the colour at every call site.
+- **Material icons**, still used wherever there is no drawn glyph — Settings,
+  Shop, the age gate, the Ultimate zoom-out arrow, the dropdown chevron, and
+  the X/O mark icons (chip art is coming separately). Substituting a
+  near-enough drawn glyph would be worse than an honest mismatch.
+
+Three rules the set has already needed:
+
+- **No CSS in the files.** The originals declared their fill in a `<style>`
+  block (`.cls-1 { fill: #fff }`); flutter_svg doesn't parse stylesheets and
+  logs `unhandled element <style/>`, leaving the paths to SVG's default black
+  and the rendering dependent on that accident. Every file was rewritten to
+  presentation attributes (`fill="#fff"` on the element). A new icon must
+  arrive the same way — export without CSS classes, or convert on the way in.
+- **A glyph must resolve a size.** `AppGlyph` falls back to `IconTheme`, then
+  24. It must never fall through to the file's intrinsics: a 101pt glyph in a
+  row where a 24pt icon used to be pushes everything below it off the screen.
+- **Two states from one glyph.** Where the set has no "off"/"empty" variant —
+  music off, an unfinished daily goal, an unfilled claim meter — the same
+  glyph is drawn at 45% opacity rather than mixing in a Material icon for the
+  other half of the pair. That's the existing locked/unavailable idiom (§11).
+
 ### 2.3 Chips — the signature element
 **A chip is a set of concentric rings, flat-filled in its player colour. Level = number of rings** (L1 = one ring, L4 = four).
 
@@ -234,6 +262,7 @@ Key beats:
 - Win / draw result screen (with one-tap Rematch)
 - Stats screen (per-mode W/L/D)
 - Settings — reset stats, SFX/music toggles, replay tutorial, language, local turn timer
+- Home also carries a **rotate** control that locks the game to portrait or landscape (`ScreenOrientationPreference`, persisted). Hidden on web, where `SystemChrome.setPreferredOrientations` does nothing.
 - Neutral age screen (see `03-PRODUCT.md`; gates ad initialisation)
 - Custom (cosmetic category root) → Chip skins, Emotes, Flexing/celebrations (see `07-SKINS.md` §2a). The Chip skins screen also carries the **Ultimate mark** picker for the worn skin (`07-SKINS.md` §2b).
 - Challenges — today's daily goals (which fill the Shop's claim meter) above the permanent achievement list (`03-PRODUCT.md` §3)
@@ -256,6 +285,7 @@ widget at the call site — that's how a design drifts.
 | `CategoryTile` | `widgets/buttons/category_tile.dart` | Square tile with caption + glyph; `available: false` renders locked and refuses taps. |
 | `AppMark` | `widgets/app_mark.dart` | The logo mark, painted rather than bundled so it inherits `ink` and stays crisp at any size. |
 | `MatchEmoteBubbles` / `MatchEmoteTray` | `widgets/match_emotes.dart` | Two always-drawn seat bubbles above the board (an empty one is the reserved place a v2 received emote lands), plus a toggle in the staging bar that opens the four equipped emotes as a floating overlay, so opening it moves nothing. The tray hangs off the button — centred on it, below where there's room and above where there isn't, clamped back on screen near an edge. Closes on any change to the game, since its position is fixed at open time. Sending is presentation state only — never a move. |
+| `AppGlyph` | `widgets/app_glyph.dart` | One of the project's own SVG icons (`AppIcons`), tinted from the theme. **The tint is not optional**: every file is authored white, so an untinted glyph is invisible on `surface` and `ground` alike. Size falls back to the ambient `IconTheme` (24 by default), never to the file's own 101×101. |
 | `AssetGlyph` | `widgets/asset_glyph.dart` | A bundled image that degrades to an icon when the art isn't there. Every cosmetic catalogue ships before its art, so this is the one place that behaviour lives. |
 | `RarityLegend` | `widgets/rarity_legend.dart` | The static COMMON/RARE/EPIC/LEGENDARY row. A legend, not a filter — nothing carries a rarity yet. |
 

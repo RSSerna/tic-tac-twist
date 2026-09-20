@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'controllers/ads_controller.dart';
@@ -12,6 +13,7 @@ import 'services/crash_reporting_service.dart';
 import 'theme/app_theme.dart';
 import 'ui/screens/age_gate_screen.dart';
 import 'ui/screens/home_screen.dart';
+import 'services/settings_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +62,29 @@ class NestedApp extends ConsumerWidget {
       } else if (!isEnabled && wasEnabled) {
         ref.read(audioServiceProvider).stopMusic();
       }
+    });
+
+    // The orientation lock follows the setting, including on the very first
+    // resolution (`previous == null`), which is what applies a stored choice
+    // at launch. A no-op on web, where the platform channel isn't there and
+    // the manifest already declares "any" — the Home control is hidden there
+    // to match, rather than offering a button that does nothing.
+    ref.listen(settingsControllerProvider, (previous, next) {
+      final was = previous?.value?.orientation;
+      final now = next.value?.orientation;
+      if (previous != null && was == now) return;
+      SystemChrome.setPreferredOrientations(switch (now) {
+        ScreenOrientationPreference.portrait => const [
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+        ],
+        ScreenOrientationPreference.landscape => const [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ],
+        // Unset: hand every orientation back to the device.
+        null => DeviceOrientation.values,
+      });
     });
 
     return MaterialApp(

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_test/flutter_test.dart';
 import 'package:nested_game/ai/difficulty.dart';
 import 'package:nested_game/engines/common/game_mode.dart';
 import 'package:nested_game/services/age_gate_service.dart';
@@ -8,6 +9,18 @@ import 'package:nested_game/services/analytics_service.dart';
 import 'package:nested_game/services/audio_service.dart';
 import 'package:nested_game/services/purchase_service.dart';
 import 'package:nested_game/services/tutorial_progress_service.dart';
+import 'package:nested_game/ui/widgets/app_glyph.dart';
+
+/// Finds one of the project's own SVG icons (`AppIcons`) by its asset path.
+///
+/// `find.byIcon` only matches Material's `IconData`, so it silently finds
+/// nothing once a glyph has been replaced by a drawn one — which is exactly
+/// how a test asserting "the lock is showing" turns into a test asserting
+/// nothing at all.
+Finder findGlyph(String asset) => find.byWidgetPredicate(
+  (widget) => widget is AppGlyph && widget.asset == asset,
+  description: 'AppGlyph($asset)',
+);
 
 /// Marks every mode's tutorial as completed in whatever mock
 /// shared_preferences store is currently active. Call after

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
+import 'app_glyph.dart';
+import '../../theme/app_assets.dart';
 
 /// The header on full-screen panels: a circular badge, a title with a
 /// subtitle under it, and a close button.
@@ -91,7 +93,7 @@ class PanelHeader extends StatelessWidget {
           ),
           IconButton(
             key: closeKey,
-            icon: const Icon(Icons.close),
+            icon: const AppGlyph(AppIcons.close, size: 28),
             iconSize: 40,
             color: colors.neutral,
             tooltip: l10n.close,

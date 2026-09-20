@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../theme/tokens.dart';
 import '../../../theme/typography.dart';
+import '../../../theme/app_assets.dart';
+import '../app_glyph.dart';
 
 /// A square `surface` tile with a caption above its glyph — one entry in the
 /// Custom screen's category row.
@@ -79,8 +81,8 @@ class CategoryTile extends StatelessWidget {
                         child: Center(
                           child: available
                               ? icon
-                              : Icon(
-                                  Icons.lock,
+                              : AppGlyph(
+                                  AppIcons.locked,
                                   size: 40,
                                   color: colors.neutral,
                                 ),

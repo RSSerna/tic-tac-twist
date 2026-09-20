@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,6 +22,9 @@ import 'skins_screen.dart';
 import 'stats_screen.dart';
 import 'sub_mode_screen.dart';
 import 'tutorial_screen.dart';
+import '../widgets/app_glyph.dart';
+import '../../theme/app_assets.dart';
+import '../root_size.dart';
 
 String _modeName(AppLocalizations l10n, GameMode mode) => switch (mode) {
   GameMode.stackStatic => l10n.modeStackStatic,
@@ -180,25 +184,25 @@ class _CornerControls extends StatelessWidget {
       children: [
         CircleIconButton(
           key: const Key('open-stats'),
-          icon: Icons.bar_chart,
+          icon: const AppGlyph(AppIcons.statistics),
           tooltip: l10n.statsTitle,
           onPressed: () => open(const StatsScreen()),
         ),
         CircleIconButton(
           key: const Key('open-skins'),
-          icon: Icons.palette,
+          icon: const AppGlyph(AppIcons.skins),
           tooltip: l10n.skinsTitle,
           onPressed: () => open(const SkinsScreen()),
         ),
         CircleIconButton(
           key: const Key('open-shop'),
-          icon: Icons.storefront,
+          icon: const Icon(Icons.storefront),
           tooltip: l10n.shopTitle,
           onPressed: () => open(const ShopScreen()),
         ),
         CircleIconButton(
           key: const Key('open-settings'),
-          icon: Icons.settings,
+          icon: const Icon(Icons.settings),
           tooltip: l10n.settingsTitle,
           onPressed: () => open(const SettingsScreen()),
         ),
@@ -228,17 +232,43 @@ class _QuickControls extends ConsumerWidget {
         // source of truth for it.
         CircleIconButton(
           key: const Key('home-music-toggle'),
-          icon: musicOn ? Icons.music_note : Icons.music_off,
+          // No drawn "off" variant, so off is the same glyph dimmed —
+          // the app's existing unavailable idiom (design system §11).
+          icon: Opacity(
+            opacity: musicOn ? 1 : 0.45,
+            child: const AppGlyph(AppIcons.music),
+          ),
           tooltip: l10n.settingsMusicLabel,
           onPressed: () => ref
               .read(settingsControllerProvider.notifier)
               .setMusicEnabled(!musicOn),
         ),
+        // Flips the game between portrait and landscape. Hidden on web:
+        // `SystemChrome.setPreferredOrientations` does nothing there (design
+        // doc §9's platform split), and a button that visibly does nothing is
+        // worse than no button.
+        if (!kIsWeb)
+          CircleIconButton(
+            key: const Key('home-rotate'),
+            icon: const AppGlyph(AppIcons.rotate),
+            tooltip: l10n.settingsOrientationLabel,
+            onPressed: () => ref
+                .read(settingsControllerProvider.notifier)
+                .toggleOrientation(
+                  // The laid-out size, not MediaQuery's window metrics —
+                  // see `rootViewSize`. This is what the first tap flips
+                  // away from, so getting it wrong makes that tap a no-op.
+                  deviceIsPortrait: switch (rootViewSize(context)) {
+                    final size? => size.height >= size.width,
+                    null => true,
+                  },
+                ),
+          ),
         // A target, echoing both the mockup's missions glyph and the
         // concentric-ring language the chips are built on.
         CircleIconButton(
           key: const Key('open-challenges'),
-          icon: Icons.track_changes,
+          icon: const AppGlyph(AppIcons.objectives),
           tooltip: l10n.challengesTitle,
           onPressed: () => Navigator.of(context).push(
             MaterialPageRoute<void>(builder: (_) => const ChallengesScreen()),

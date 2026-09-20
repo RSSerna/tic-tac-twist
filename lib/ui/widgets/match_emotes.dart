@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/emote_controller.dart';
@@ -13,6 +12,9 @@ import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../screens/emote_skins_screen.dart' show emoteName;
 import 'emote_view.dart';
+import '../../theme/app_assets.dart';
+import 'app_glyph.dart';
+import '../root_size.dart';
 
 /// One bubble per seat, above the board: where an emote from that player
 /// appears.
@@ -180,25 +182,6 @@ class _MatchEmoteTrayState extends ConsumerState<MatchEmoteTray> {
     open ? _portal.show() : _portal.hide();
   }
 
-  /// Height of the space [RenderBox.localToGlobal] maps into.
-  ///
-  /// Taken from the render tree rather than `MediaQuery`, which reports the
-  /// window's metrics: those are the wrong number inside a smaller surface,
-  /// and under `flutter test` they don't follow `setSurfaceSize` at all — so
-  /// a MediaQuery-based rule can't be tested and would have shipped whatever
-  /// it happened to do.
-  static double _rootHeight(RenderBox box) {
-    RenderObject node = box;
-    while (node.parent != null) {
-      node = node.parent!;
-    }
-    return switch (node) {
-      RenderView(:final size) => size.height,
-      RenderBox(:final size) => size.height,
-      _ => double.infinity,
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     // Any change to the game closes the tray. Two reasons, both real:
@@ -276,7 +259,10 @@ class _MatchEmoteTrayState extends ConsumerState<MatchEmoteTray> {
     // last thing on screen and leaves ~10pt under it, so there the tray
     // flips above rather than opening off the bottom edge.
     final anchor = button.localToGlobal(Offset.zero) & button.size;
-    final below = _rootHeight(button) - anchor.bottom >= _spaceNeededBelow;
+    final screen = rootViewSize(_toggleKey.currentContext!);
+    final below =
+        (screen?.height ?? double.infinity) - anchor.bottom >=
+        _spaceNeededBelow;
 
     // Going up, clear the whole bar, not just the button: the bar wraps onto
     // a second run once Confirm appears, and a tray that clears only the
@@ -386,10 +372,11 @@ class _ToggleButton extends StatelessWidget {
             child: SizedBox(
               width: 44,
               height: 44,
-              child: Icon(
-                open
-                    ? Icons.keyboard_arrow_down
-                    : Icons.sentiment_satisfied_alt,
+              // The same glyph either way: the button's filled-`ink`
+              // background already says the tray is open, and swapping to a
+              // chevron lost the one icon that says what the button is for.
+              child: AppGlyph(
+                AppIcons.emoji,
                 size: 24,
                 color: open ? colors.surface : colors.ink,
               ),
