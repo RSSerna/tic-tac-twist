@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../controllers/ads_controller.dart';
+import '../../controllers/monetization_controller.dart';
 import '../../controllers/game_controller.dart';
 import '../../engines/common/game_mode.dart';
 import '../../controllers/game_session.dart';
@@ -502,7 +502,7 @@ class _ResultOverlay extends ConsumerWidget {
                   // is the one place that's genuinely "between games".
                   unawaited(
                     ref
-                        .read(adsControllerProvider.notifier)
+                        .read(monetizationControllerProvider.notifier)
                         .onReturnedToMenuAfterGame(),
                   );
                 },

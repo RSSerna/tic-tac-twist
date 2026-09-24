@@ -68,8 +68,11 @@ class ChestController {
     final celebrations = await ref.read(celebrationControllerProvider.future);
 
     final pool = <ChestReward>[
+      // purchaseOnly skins (e.g. Burger Stack) are excluded: a free chest
+      // handing out a paid-only skin would contradict the one thing
+      // "purchase-only" is supposed to mean.
       for (final skin in GameSkin.values)
-        if (!skins.isUnlocked(skin)) SkinReward(skin),
+        if (!skins.isUnlocked(skin) && !skin.purchaseOnly) SkinReward(skin),
       for (final emote in Emote.values)
         if (!emotes.isUnlocked(emote)) EmoteReward(emote),
       for (final celebration in Celebration.values)

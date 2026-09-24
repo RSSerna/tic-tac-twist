@@ -96,7 +96,7 @@ If a change would alter any of those, it's not a skin.
 | Persistence (SharedPreferences) | `lib/services/skin_service.dart` |
 | **Category root** ("Custom": which kind of cosmetic) | `lib/ui/screens/skins_screen.dart` |
 | **Chip picker** + names/descriptions + purchase route | `lib/ui/screens/chip_skins_screen.dart` |
-| Unlock triggers (achievement / purchase) | `lib/controllers/game_controller.dart`, `lib/controllers/ads_controller.dart` |
+| Unlock triggers (achievement / purchase) | `lib/controllers/game_controller.dart`, `lib/controllers/monetization_controller.dart` |
 | Display strings | `lib/l10n/app_en.arb`, `lib/l10n/app_es.arb` |
 | **Sending an emote in a match** (tray + seat bubbles) | `lib/ui/widgets/match_emotes.dart`, `lib/controllers/match_emote_controller.dart` |
 
@@ -281,6 +281,13 @@ Art should be square, transparent PNG (or WebP), and rendered with
 `BoxFit.contain` — so keep the meaningful shape centred with a little padding.
 Provide four visually distinct levels (see the legibility invariant, §1).
 
+**Per-mark art is the default, not a requirement.** `GameSkin.burgerStack`
+(`lib/theme/skin.dart`) ships only `assets/chips/burguer1.png` …
+`burguer4.png` — one photo per level, no `_p1`/`_p2` split — because both
+marks are meant to look identical when a player wears it. `resolve` simply
+ignores `ChipAssetRequest.isFirstPerson` in that case. Split by person only
+when the art is actually meant to differ.
+
 ### B2. Register the folder in `pubspec.yaml`
 
 There is **no `assets:` section yet** — add one under `flutter:`:
@@ -414,7 +421,7 @@ ProductId? _productFor(GameSkin skin) {
 ```
 
 3. Grant the unlock when the purchase stream reports success, in
-   `AdsController._onPurchased`:
+   `MonetizationController._onPurchased`:
 
 ```dart
 case ProductId.skinStoneStack:
@@ -423,6 +430,16 @@ case ProductId.skinStoneStack:
 
 The purchase button and lock icon in the picker are already driven by
 `_productFor` + `isUnlocked`.
+
+**If this skin should never be earned for free**, set `purchaseOnly: true` on
+the `GameSkin`. Today only `GameSkin.nestingDolls` mixes routes (achievement
+*and* purchase *and* the daily chest can all unlock it); `GameSkin.burgerStack`
+is the first skin sold with no free route at all — `purchaseOnly` is what
+`ChestController._grantOne` checks to leave it out of the random reward pool.
+Nothing reads it for the achievement path today because achievement unlocks
+are hand-mapped to specific skins already (§6 above) — `purchaseOnly` only
+matters wherever code iterates `GameSkin.values` looking for something to hand
+out for free.
 
 ---
 

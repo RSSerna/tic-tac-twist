@@ -84,6 +84,7 @@ class GameSkin {
     required this.id,
     required this.appearance,
     this.free = false,
+    this.purchaseOnly = false,
   });
 
   /// Stable identity, persisted in [SkinService] — never shown to players.
@@ -96,6 +97,13 @@ class GameSkin {
   /// check, which stopped being the right question the moment a second free
   /// skin existed.
   final bool free;
+
+  /// True for a skin sold only for real money — it never enters the
+  /// achievement-unlock path or the daily chest's random reward pool
+  /// (`ChestController._grantOne` checks this flag). `free` and
+  /// `purchaseOnly` are independent axes; a free skin is trivially never
+  /// purchase-only.
+  final bool purchaseOnly;
 
   /// Whether this skin looks different at each of the four chip levels.
   ///
@@ -139,7 +147,32 @@ class GameSkin {
     appearance: PaintedAppearance(ChipForm.dolls),
   );
 
-  static const values = [turnedWood, classicMarks, nestingDolls];
+  /// The first asset-backed skin to ship real art (07-SKINS.md Recipe B):
+  /// four photographed burger stages, one per chip level, instead of a
+  /// procedural silhouette. **Only one image per level exists** — there is
+  /// no separate first-/second-person variant the way Recipe B's convention
+  /// suggests, so [_burgerStackAsset] ignores [ChipAssetRequest.isFirstPerson]
+  /// and both marks share the same art when this skin is worn. Level
+  /// legibility (§1's invariant) comes from the photos themselves: patty
+  /// count and toppings grow with the level, standing in for the usual band
+  /// count, stacked on top of the ordinary size ladder.
+  ///
+  /// `purchaseOnly: true` — direct purchase is its only unlock route; it is
+  /// never granted by an achievement or the daily chest (decisions log,
+  /// 2026-09).
+  static const burgerStack = GameSkin(
+    id: 'burger_stack',
+    appearance: AssetAppearance(
+      resolve: _burgerStackAsset,
+      fallbackForm: ChipForm.rings,
+    ),
+    purchaseOnly: true,
+  );
+
+  static String _burgerStackAsset(ChipAssetRequest r) =>
+      'assets/chips/burguer${r.level ?? kDefaultUltimateMarkLevel}.png';
+
+  static const values = [turnedWood, classicMarks, nestingDolls, burgerStack];
 }
 
 /// The two skins in play at once: a player dresses their own chips

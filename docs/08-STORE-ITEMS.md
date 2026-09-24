@@ -92,13 +92,14 @@ storeId string      (the store)      App Store Connect + Play Console
 
 ## 2a. Sellable cosmetics that exist but have no product yet
 
-Two cosmetic lines are built and carry a locked state, but **neither has a
-`ProductId`** — nothing can be bought until products are registered in both
-stores (§3 Step 1).
+Chip skins already have `ProductId`s wired end to end; emotes and
+celebrations don't. Either way, nothing can actually be bought until the
+matching products are registered in both stores (§3 Step 1) — until then
+`buy()` queries a product that doesn't exist and no-ops.
 
 | Cosmetic | Locked entries | Where the unlock lands |
 |---|---|---|
-| Chip skins (`GameSkin`) | `nesting_dolls` | `SkinController.unlockSkin` — already wired to `ProductId.skinNestingDolls` |
+| Chip skins (`GameSkin`) | `nesting_dolls` (also achievement/chest-earnable), `burger_stack` (**purchase-only** — `purchaseOnly: true`, see `07-SKINS.md` §6) | `SkinController.unlockSkin` — wired to `ProductId.skinNestingDolls` / `ProductId.skinBurgerStack` |
 | Emotes (`Emote`) | 6 of 10 (`free: false`) | `EmoteController.unlock` — **no `ProductId` yet** |
 | Celebrations (`Celebration`) | 12 of 16 (`free: false`) | `CelebrationController.unlock` — **no `ProductId` yet** |
 
@@ -195,7 +196,7 @@ purchase sheet. You never build a payment form — the store owns that flow (and
 source of truth is the `PurchaseService.purchases` stream. Grant there:
 
 ```dart
-// AdsController._onPurchased (the existing dispatcher for purchase results)
+// MonetizationController._onPurchased (the existing dispatcher for purchase results)
 switch (product) {
   case ProductId.removeAds:        await purchases.markRemoved();
   case ProductId.skinNestingDolls: await skins.unlockSkin(GameSkin.nestingDolls);

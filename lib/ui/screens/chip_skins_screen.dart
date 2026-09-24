@@ -21,6 +21,7 @@ String _skinName(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
   'turned_wood' => l10n.skinTurnedWoodName,
   'classic_marks' => l10n.skinClassicMarksName,
   'nesting_dolls' => l10n.skinNestingDollsName,
+  'burger_stack' => l10n.skinBurgerStackName,
   _ => skin.id,
 };
 
@@ -28,6 +29,7 @@ String _skinDesc(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
   'turned_wood' => l10n.skinTurnedWoodDesc,
   'classic_marks' => l10n.skinClassicMarksDesc,
   'nesting_dolls' => l10n.skinNestingDollsDesc,
+  'burger_stack' => l10n.skinBurgerStackDesc,
   _ => '',
 };
 
@@ -40,6 +42,7 @@ ProductId? _productFor(GameSkin skin) {
   if (kIsWeb) return null;
   return switch (skin.id) {
     'nesting_dolls' => ProductId.skinNestingDolls,
+    'burger_stack' => ProductId.skinBurgerStack,
     _ => null,
   };
 }

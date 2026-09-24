@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nested_game/controllers/ads_controller.dart';
+import 'package:nested_game/controllers/monetization_controller.dart';
 import 'package:nested_game/controllers/age_gate_controller.dart';
 import 'package:nested_game/controllers/skin_controller.dart';
 import 'package:nested_game/services/ads_service.dart';
@@ -33,7 +33,7 @@ void main() {
 
   group('interstitial frequency cap', () {
     test('shows nothing before the cap is reached', () async {
-      final controller = container.read(adsControllerProvider.notifier);
+      final controller = container.read(monetizationControllerProvider.notifier);
       for (var i = 0; i < interstitialEveryNGames - 1; i++) {
         await controller.onReturnedToMenuAfterGame();
       }
@@ -41,7 +41,7 @@ void main() {
     });
 
     test('shows exactly once every Nth return to the menu', () async {
-      final controller = container.read(adsControllerProvider.notifier);
+      final controller = container.read(monetizationControllerProvider.notifier);
       for (var i = 0; i < interstitialEveryNGames; i++) {
         await controller.onReturnedToMenuAfterGame();
       }
@@ -58,7 +58,7 @@ void main() {
 
     test('ads removed suppresses every interstitial', () async {
       purchases.removed = true;
-      final controller = container.read(adsControllerProvider.notifier);
+      final controller = container.read(monetizationControllerProvider.notifier);
       for (var i = 0; i < interstitialEveryNGames * 3; i++) {
         await controller.onReturnedToMenuAfterGame();
       }
@@ -68,7 +68,7 @@ void main() {
 
   group('purchases', () {
     test('a completed remove-ads purchase marks ads removed', () async {
-      container.read(adsControllerProvider); // build the controller/subscription
+      container.read(monetizationControllerProvider); // build the controller/subscription
       purchases.completePurchase(ProductId.removeAds);
       await settle();
 
@@ -76,7 +76,7 @@ void main() {
     });
 
     test('a completed skin-pack purchase unlocks the Nesting Dolls skin', () async {
-      container.read(adsControllerProvider);
+      container.read(monetizationControllerProvider);
       purchases.completePurchase(ProductId.skinNestingDolls);
       await settle();
 
@@ -90,7 +90,7 @@ void main() {
       await SharedPreferencesAgeGateService().setIsChild(true);
       await container.read(ageGateControllerProvider.future);
 
-      await container.read(adsControllerProvider.notifier).initialize();
+      await container.read(monetizationControllerProvider.notifier).initialize();
 
       expect(ads.lastIsChild, isTrue);
     });

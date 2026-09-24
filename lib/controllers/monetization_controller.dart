@@ -18,7 +18,7 @@ const int interstitialEveryNGames = 3;
 /// completed purchases (remove-ads suppresses future interstitials; the
 /// skin pack unlocks through the same [SkinController] the achievement
 /// route uses), and the between-games frequency cap.
-class AdsController extends Notifier<void> {
+class MonetizationController extends Notifier<void> {
   static const _gamesSinceAdKey = 'nested_game.ads.games_since_interstitial';
 
   StreamSubscription<ProductId>? _purchaseSubscription;
@@ -38,6 +38,8 @@ class AdsController extends Notifier<void> {
         await ref.read(purchaseServiceProvider).markRemoved();
       case ProductId.skinNestingDolls:
         await ref.read(skinControllerProvider.notifier).unlockSkin(GameSkin.nestingDolls);
+      case ProductId.skinBurgerStack:
+        await ref.read(skinControllerProvider.notifier).unlockSkin(GameSkin.burgerStack);
     }
   }
 
@@ -66,4 +68,5 @@ class AdsController extends Notifier<void> {
   }
 }
 
-final adsControllerProvider = NotifierProvider<AdsController, void>(AdsController.new);
+final monetizationControllerProvider =
+    NotifierProvider<MonetizationController, void>(MonetizationController.new);

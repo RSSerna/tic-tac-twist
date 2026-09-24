@@ -238,6 +238,8 @@
   "shopItemFlexing": "Celebración",
   "skinClassicMarksName": "Clásico",
   "skinClassicMarksDesc": "La X y la O de siempre. El nivel aparece como número.",
+  "skinBurgerStackName": "Torre de Hamburguesa",
+  "skinBurgerStackDesc": "Fichas con forma de hamburguesa: cuanto más alto el nivel, más grande la hamburguesa.",
   "skinUltimateMarkLabel": "Marca de Ultimate",
   "skinUltimateMarkLevel": "Ficha de nivel {level}",
   "matchEmoteTrayToggle": "Emotes",

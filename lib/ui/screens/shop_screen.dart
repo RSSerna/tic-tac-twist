@@ -70,6 +70,15 @@ class ShopScreen extends ConsumerWidget {
       skin: GameSkin.nestingDolls,
     ),
     ShopItem(id: 'apple', kind: ShopItemKind.markO, name: 'Apple'),
+    // One purchase unlocks the skin for either mark (SkinController.unlockSkin
+    // isn't per-mark), so this reads as a combo rather than an X- or O-only
+    // pack. purchaseOnly: it's the one skin with no achievement/chest route.
+    ShopItem(
+      id: 'burger',
+      kind: ShopItemKind.combo,
+      name: 'Burger',
+      skin: GameSkin.burgerStack,
+    ),
     ShopItem(id: 'elements', kind: ShopItemKind.combo, name: 'Elements'),
     ShopItem(id: 'sakura', kind: ShopItemKind.board, name: 'Sakura'),
     ShopItem(

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'controllers/ads_controller.dart';
+import 'controllers/monetization_controller.dart';
 import 'controllers/age_gate_controller.dart';
 import 'controllers/settings_controller.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -117,7 +117,7 @@ class _AppRoot extends ConsumerWidget {
       final wasAnswered = previous?.value != null;
       final isAnswered = next.value != null;
       if (isAnswered && !wasAnswered) {
-        ref.read(adsControllerProvider.notifier).initialize();
+        ref.read(monetizationControllerProvider.notifier).initialize();
       }
     });
 

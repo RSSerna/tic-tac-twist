@@ -484,6 +484,14 @@
   "@skinClassicMarksDesc": {
     "description": "One-line description of the Classic chip skin, noting that its level comes from the numeral rather than rings."
   },
+  "skinBurgerStackName": "Burger Stack",
+  "@skinBurgerStackName": {
+    "description": "Name of the purchase-only chip skin drawn from photographed burger art, one image per level."
+  },
+  "skinBurgerStackDesc": "Chips styled after a stacked burger — the higher the level, the bigger the burger.",
+  "@skinBurgerStackDesc": {
+    "description": "One-line description of the Burger Stack chip skin."
+  },
   "skinUltimateMarkLabel": "Ultimate mark",
   "@skinUltimateMarkLabel": {
     "description": "Label for the picker choosing which chip variant is used as this player's mark on the Ultimate board."
