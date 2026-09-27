@@ -12,6 +12,7 @@ class SkinState {
     required this.unlockedIds,
     this.firstPersonUltimateLevel,
     this.secondPersonUltimateLevel,
+    this.fragmentCounts = const {},
   });
 
   /// The skin dressing each mark. Chosen and sold separately — the shop
@@ -29,6 +30,10 @@ class SkinState {
   /// glyph skin to the classic X/O — read that, not these.
   final int? firstPersonUltimateLevel;
   final int? secondPersonUltimateLevel;
+
+  /// Fragments collected so far toward each fragment-gated skin
+  /// (`GameSkin.fragmentsRequired`), keyed by [GameSkin.id]. Absent = 0.
+  final Map<String, int> fragmentCounts;
 
   /// Falls back to the free skin rather than throwing: a persisted id
   /// outlives any catalogue change that retires one.
@@ -62,12 +67,14 @@ class SkinState {
     Set<String>? unlockedIds,
     int? firstPersonUltimateLevel,
     int? secondPersonUltimateLevel,
+    Map<String, int>? fragmentCounts,
   }) => SkinState(
     firstPersonId: firstPersonId ?? this.firstPersonId,
     secondPersonId: secondPersonId ?? this.secondPersonId,
     unlockedIds: unlockedIds ?? this.unlockedIds,
     firstPersonUltimateLevel: firstPersonUltimateLevel,
     secondPersonUltimateLevel: secondPersonUltimateLevel,
+    fragmentCounts: fragmentCounts ?? this.fragmentCounts,
   );
 }
 
@@ -87,6 +94,7 @@ class SkinController extends AsyncNotifier<SkinState> {
       secondPersonUltimateLevel: await service.ultimateMarkLevel(
         firstPerson: false,
       ),
+      fragmentCounts: await service.fragmentCounts(),
     );
   }
 
@@ -161,6 +169,34 @@ class SkinController extends AsyncNotifier<SkinState> {
       ),
     );
     return true;
+  }
+
+  /// Adds [amount] fragments toward unlocking [skin]; auto-unlocks via
+  /// [unlockSkin] once the total reaches [GameSkin.fragmentsRequired], so
+  /// the unlock-writing logic lives in exactly one place. No-ops (returns
+  /// null) if [skin] isn't fragment-gated or is already unlocked — same
+  /// "controller is the actual gate" reasoning as [selectSkin]/[unlockSkin].
+  Future<({int totalAfter, bool unlockedNow})?> addFragments(
+    GameSkin skin,
+    int amount,
+  ) async {
+    final current = await future;
+    final required = skin.fragmentsRequired;
+    if (required == null || current.isUnlocked(skin)) return null;
+
+    final total = (current.fragmentCounts[skin.id] ?? 0) + amount;
+    await ref.read(skinServiceProvider).setFragmentCount(skin.id, total);
+    state = AsyncData(
+      current._copyWith(
+        fragmentCounts: {...current.fragmentCounts, skin.id: total},
+        firstPersonUltimateLevel: current.firstPersonUltimateLevel,
+        secondPersonUltimateLevel: current.secondPersonUltimateLevel,
+      ),
+    );
+
+    final unlockedNow = total >= required;
+    if (unlockedNow) await unlockSkin(skin);
+    return (totalAfter: total, unlockedNow: unlockedNow);
   }
 }
 

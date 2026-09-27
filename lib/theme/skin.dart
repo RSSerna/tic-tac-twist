@@ -5,7 +5,7 @@ import 'package:meta/meta.dart';
 /// never changes between skins — only its geometry does (design doc §2.6:
 /// "chip form (rings → dolls, stones, tiles)"). Only meaningful for a
 /// [PaintedAppearance]; an [AssetAppearance] ships art instead of geometry.
-enum ChipForm { rings, dolls, marks }
+enum ChipForm { rings, dolls, marks, shards }
 
 /// The chip a levelled skin wears on the Ultimate board until the player
 /// says otherwise. The largest chip: Ultimate's cells are small (81 of them
@@ -85,7 +85,13 @@ class GameSkin {
     required this.appearance,
     this.free = false,
     this.purchaseOnly = false,
-  });
+    this.fragmentsRequired,
+  }) : assert(
+         !(free && fragmentsRequired != null) &&
+             !(purchaseOnly && fragmentsRequired != null),
+         'fragmentsRequired is its own unlock route — it cannot also be '
+         'free or purchaseOnly',
+       );
 
   /// Stable identity, persisted in [SkinService] — never shown to players.
   final String id;
@@ -104,6 +110,17 @@ class GameSkin {
   /// `purchaseOnly` are independent axes; a free skin is trivially never
   /// purchase-only.
   final bool purchaseOnly;
+
+  /// Non-null for a skin whose only unlock route is collecting this many
+  /// fragments from the daily chest (`ChestController._grantOne`, which
+  /// grants `Rarity.fragments` toward it on a fragment-gated pool pick,
+  /// via `SkinController.addFragments`). Null for everything else — the
+  /// mechanism exists generically (see the parallel field on `Emote` and
+  /// `Celebration`), but nothing else uses it.
+  final int? fragmentsRequired;
+
+  /// Whether collecting fragments is this skin's unlock route at all.
+  bool get isFragmentGated => fragmentsRequired != null;
 
   /// Whether this skin looks different at each of the four chip levels.
   ///
@@ -172,7 +189,25 @@ class GameSkin {
   static String _burgerStackAsset(ChipAssetRequest r) =>
       'assets/chips/burguer${r.level ?? kDefaultUltimateMarkLevel}.png';
 
-  static const values = [turnedWood, classicMarks, nestingDolls, burgerStack];
+  /// Fragment-gated (07-SKINS.md's fourth unlock route, alongside free /
+  /// achievement / purchase): no free, achievement, or purchase path at
+  /// all — only collecting 100 fragments from the daily chest unlocks it.
+  /// A brand-new procedural form ([ChipForm.shards]) rather than a variant
+  /// of an existing one, since this is the first skin to need its own
+  /// distinct silhouette rather than reusing rings/dolls.
+  static const fragmentShard = GameSkin(
+    id: 'fragment_shard',
+    appearance: PaintedAppearance(ChipForm.shards),
+    fragmentsRequired: 100,
+  );
+
+  static const values = [
+    turnedWood,
+    classicMarks,
+    nestingDolls,
+    burgerStack,
+    fragmentShard,
+  ];
 }
 
 /// The two skins in play at once: a player dresses their own chips

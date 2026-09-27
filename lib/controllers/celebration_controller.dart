@@ -6,13 +6,21 @@ import '../theme/celebration.dart';
 
 @immutable
 class CelebrationState {
-  const CelebrationState({required this.selectedId, required this.unlockedIds});
+  const CelebrationState({
+    required this.selectedId,
+    required this.unlockedIds,
+    this.fragmentCounts = const {},
+  });
 
   final String selectedId;
 
   /// Purchased celebrations. Free ones are implicitly unlocked and never
   /// appear here (see [isUnlocked]).
   final Set<String> unlockedIds;
+
+  /// Fragments collected so far toward each fragment-gated celebration
+  /// (`Celebration.fragmentsRequired`), keyed by [Celebration.id]. Absent = 0.
+  final Map<String, int> fragmentCounts;
 
   /// Falls back to the default rather than throwing: a persisted id outlives
   /// any catalogue change that retires one.
@@ -34,6 +42,7 @@ class CelebrationController extends AsyncNotifier<CelebrationState> {
     return CelebrationState(
       selectedId: await service.selectedId(),
       unlockedIds: await service.unlockedIds(),
+      fragmentCounts: await service.fragmentCounts(),
     );
   }
 
@@ -47,6 +56,7 @@ class CelebrationController extends AsyncNotifier<CelebrationState> {
       CelebrationState(
         selectedId: celebration.id,
         unlockedIds: current.unlockedIds,
+        fragmentCounts: current.fragmentCounts,
       ),
     );
   }
@@ -61,9 +71,39 @@ class CelebrationController extends AsyncNotifier<CelebrationState> {
       CelebrationState(
         selectedId: current.selectedId,
         unlockedIds: {...current.unlockedIds, celebration.id},
+        fragmentCounts: current.fragmentCounts,
       ),
     );
     return true;
+  }
+
+  /// Adds [amount] fragments toward unlocking [celebration]; auto-unlocks
+  /// via [unlock] once the total reaches [Celebration.fragmentsRequired].
+  /// No-ops (returns null) if [celebration] isn't fragment-gated or is
+  /// already unlocked. Mirrors `SkinController.addFragments`.
+  Future<({int totalAfter, bool unlockedNow})?> addFragments(
+    Celebration celebration,
+    int amount,
+  ) async {
+    final current = await future;
+    final required = celebration.fragmentsRequired;
+    if (required == null || current.isUnlocked(celebration)) return null;
+
+    final total = (current.fragmentCounts[celebration.id] ?? 0) + amount;
+    await ref
+        .read(celebrationServiceProvider)
+        .setFragmentCount(celebration.id, total);
+    state = AsyncData(
+      CelebrationState(
+        selectedId: current.selectedId,
+        unlockedIds: current.unlockedIds,
+        fragmentCounts: {...current.fragmentCounts, celebration.id: total},
+      ),
+    );
+
+    final unlockedNow = total >= required;
+    if (unlockedNow) await unlock(celebration);
+    return (totalAfter: total, unlockedNow: unlockedNow);
   }
 }
 

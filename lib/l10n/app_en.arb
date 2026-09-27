@@ -338,11 +338,19 @@
   },
   "rarityCommon": "Common",
   "@rarityCommon": {
-    "description": "Rarity tier name, shown in the legend under the skin carousel."
+    "description": "Rarity tier name, shown in the legend under the skin carousel and in the chest-reveal animation."
   },
   "rarityRare": "Rare",
   "rarityEpic": "Epic",
   "rarityLegendary": "Legendary",
+  "rarityOdds": "{percent}% · {fragments, plural, one{1 fragment} other{{fragments} fragments}}",
+  "@rarityOdds": {
+    "description": "Published drop odds for one rarity tier, appended to its name in the legend, e.g. '60% · 1 fragment'.",
+    "placeholders": {
+      "percent": { "type": "int" },
+      "fragments": { "type": "int" }
+    }
+  },
   "emotesTitle": "Emotes",
   "@emotesTitle": {
     "description": "Title of the screen where a player equips emotes for matches."
@@ -491,6 +499,22 @@
   "skinBurgerStackDesc": "Chips styled after a stacked burger — the higher the level, the bigger the burger.",
   "@skinBurgerStackDesc": {
     "description": "One-line description of the Burger Stack chip skin."
+  },
+  "skinFragmentShardName": "Fragment Shard",
+  "@skinFragmentShardName": {
+    "description": "Name of the fragment-gated chip skin, unlocked only by collecting fragments from the daily chest."
+  },
+  "skinFragmentShardDesc": "Chips cut like faceted crystal shards. Collect fragments from the daily chest to unlock.",
+  "@skinFragmentShardDesc": {
+    "description": "One-line description of the Fragment Shard chip skin, explaining its unlock route."
+  },
+  "skinFragmentProgress": "{current}/{required} fragments",
+  "@skinFragmentProgress": {
+    "description": "Progress readout for a fragment-gated cosmetic, e.g. '42/100 fragments'.",
+    "placeholders": {
+      "current": {"type": "int"},
+      "required": {"type": "int"}
+    }
   },
   "skinUltimateMarkLabel": "Ultimate mark",
   "@skinUltimateMarkLabel": {

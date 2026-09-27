@@ -157,9 +157,35 @@ class _ChipPainter extends CustomPainter {
   static Path _ringSilhouette(Offset center, double radius) =>
       Path()..addOval(Rect.fromCircle(center: center, radius: radius));
 
+  /// A faceted gem silhouette for `GameSkin.fragmentShard` — 6 vertices,
+  /// stretched vertically so it reads as a cut stone rather than a plain
+  /// hexagon (the same asymmetric-about-the-vertical-axis trick
+  /// [_dollSilhouette] uses to read as a doll rather than "two circles").
+  /// Feeds the same concentric-band level loop [_ringSilhouette]/
+  /// [_dollSilhouette] already use in [paint] — level legibility (band
+  /// count + size ladder) comes for free from that shared mechanism, no
+  /// change needed anywhere else.
+  static Path _shardSilhouette(Offset center, double radius) {
+    const points = [
+      Offset(0, -1.0), // top point
+      Offset(0.62, -0.38), // upper-right shoulder
+      Offset(0.5, 0.55), // lower-right
+      Offset(0, 1.0), // bottom point
+      Offset(-0.5, 0.55), // lower-left
+      Offset(-0.62, -0.38), // upper-left shoulder
+    ];
+    final path = Path();
+    for (var i = 0; i < points.length; i++) {
+      final p = center + points[i] * radius;
+      i == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);
+    }
+    return path..close();
+  }
+
   Path _silhouetteAt(Offset center, double radius) => switch (form) {
     ChipForm.rings => _ringSilhouette(center, radius),
     ChipForm.dolls => _dollSilhouette(center, radius),
+    ChipForm.shards => _shardSilhouette(center, radius),
     // Never reached: `marks` is drawn as a stroked glyph by [_paintMark],
     // not as a filled silhouette with bands. Kept exhaustive so adding a
     // form is a compile error rather than a blank chip.

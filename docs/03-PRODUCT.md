@@ -70,12 +70,24 @@ which opens one chest.
   simply a new empty day — you cannot fall behind.
 - **One claim per day**, enforced in the service, so a double tap can't grant
   twice.
-- **Chest contents are uniformly random** across every cosmetic the player
-  doesn't already own (skins, emotes, celebrations). Uniform *on purpose*:
-  rarity tiers and drop weights are still undecided, and inventing weights now
-  would have to be unpicked later. Owning everything makes a claim a no-op
-  that says so rather than granting nothing silently.
-- Still **unpurchasable**, per this section's whole point.
+- **Which cosmetic a chest offers is still uniformly random** across every
+  cosmetic the player doesn't already own (skins, emotes, celebrations) —
+  that part didn't change. Owning everything makes a claim a no-op that says
+  so rather than granting nothing silently.
+- **Rarity is real now** (2026-09): every chest open independently rolls a
+  tier — see the odds table in §3.2 — which decides nothing for an ordinary
+  cosmetic (still an instant, uniform unlock as above) but decides *how many
+  fragments* a **fragment-gated** cosmetic's pick is worth. A fragment-gated
+  cosmetic (`GameSkin.fragmentsRequired`, and the matching field on `Emote`/
+  `Celebration`) unlocks once its running fragment total reaches its
+  requirement, rather than on a single lucky pick — `GameSkin.fragmentShard`
+  is the first one (100 fragments; see `07-SKINS.md` §6). The reveal
+  animation (cycling Common→Legendary, landing on the rolled tier) plays only
+  for that outcome, since an ordinary instant unlock has no rarity of its
+  own to show.
+- Still **unpurchasable**, per this section's whole point — rarity decides a
+  free chest's *fragment yield*, never something a player can pay to skip or
+  weight in their favour.
 
 Rewarded-ad chests and achievement chests remain unbuilt.
 
@@ -90,7 +102,17 @@ Rewarded-ad chests and achievement chests remain unbuilt.
 | **Streak chest** | No | Optional. Skip if retention mechanics feel heavy-handed. |
 
 ### 3.2 Constraints
-- **Publish drop odds anyway.** Not strictly required when chests are unpurchasable, but free to do, builds trust, future-proofs against policy changes.
+- **Publish drop odds anyway.** Not strictly required when chests are unpurchasable, but free to do, builds trust, future-proofs against policy changes. Done: every chest open rolls one of these tiers (`lib/theme/rarity.dart`), shown live in `RarityLegend` and the chest-reveal sheet:
+
+  | Tier | Odds | Fragments (if the pick is fragment-gated) |
+  |---|---|---|
+  | Common | 60% | 1 |
+  | Rare | 25% | 5 |
+  | Epic | 12% | 10 |
+  | Legendary | 3% | 25 |
+
+  Tuned so a 100-fragment cosmetic (`fragmentShard`) takes roughly 15–25 days
+  at one chest per day — a slow-burn reward, not a quick flip.
 - **Handle offline.** Ads need network. Rewarded chests must fail gracefully offline; **play-earned chests must work with no connection**, since v1 is otherwise fully offline.
 - **Never gate a rematch behind an ad.** The rewarded offer is always genuinely optional, never friction in the core loop.
 - Daily/streak rewards keyed to device clock are trivially cheated by changing system time. Low stakes for cosmetics — either accept it or gate on a network timestamp when available.
@@ -98,7 +120,7 @@ Rewarded-ad chests and achievement chests remain unbuilt.
 ### 3.3 Scope note
 The chest system (inventory, drop tables, rarity, odds, caps) is meaningful engineering for a game whose loop is a 2-minute match. **If Phase 9 needs trimming, ship ads + remove-ads IAP + directly-sold skin packs + achievement-unlocked skins first**, and add chests once the game is proven.
 
-**OPEN:** launch skin count, chest rarity tiers, progress-meter length, ad-chest daily cap.
+**OPEN:** launch skin count, progress-meter length, ad-chest daily cap.
 
 ---
 

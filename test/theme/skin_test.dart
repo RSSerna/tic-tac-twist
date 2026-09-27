@@ -32,4 +32,25 @@ void main() {
       expect(GameSkin.values, contains(GameSkin.burgerStack));
     });
   });
+
+  group('GameSkin.fragmentShard', () {
+    test('is fragment-gated, and nothing else', () {
+      expect(GameSkin.fragmentShard.isFragmentGated, isTrue);
+      expect(GameSkin.fragmentShard.fragmentsRequired, 100);
+      expect(GameSkin.fragmentShard.free, isFalse);
+      expect(GameSkin.fragmentShard.purchaseOnly, isFalse);
+    });
+
+    test('uses a painted, not asset, appearance', () {
+      expect(GameSkin.fragmentShard.appearance, isA<PaintedAppearance>());
+      expect(
+        (GameSkin.fragmentShard.appearance as PaintedAppearance).form,
+        ChipForm.shards,
+      );
+    });
+
+    test('is in the public catalogue', () {
+      expect(GameSkin.values, contains(GameSkin.fragmentShard));
+    });
+  });
 }

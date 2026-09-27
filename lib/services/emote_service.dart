@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,6 +15,11 @@ abstract interface class EmoteService {
   /// and never stored here (same arrangement as `SkinService`).
   Future<Set<String>> unlockedIds();
   Future<void> unlock(String id);
+
+  /// Fragments collected so far toward each fragment-gated emote
+  /// (`Emote.fragmentsRequired`), keyed by [Emote.id]. Absent = 0.
+  Future<Map<String, int>> fragmentCounts();
+  Future<void> setFragmentCount(String id, int count);
 }
 
 final emoteServiceProvider = Provider<EmoteService>(
@@ -22,6 +29,7 @@ final emoteServiceProvider = Provider<EmoteService>(
 class SharedPreferencesEmoteService implements EmoteService {
   static const _loadoutKey = 'nested_game.emotes.loadout';
   static const _unlockedKey = 'nested_game.emotes.unlocked';
+  static const _fragmentsKey = 'nested_game.emotes.fragments';
 
   @override
   Future<List<String>> loadoutIds() async {
@@ -47,5 +55,21 @@ class SharedPreferencesEmoteService implements EmoteService {
     final unlocked = (prefs.getStringList(_unlockedKey) ?? const []).toSet()
       ..add(id);
     await prefs.setStringList(_unlockedKey, unlocked.toList());
+  }
+
+  @override
+  Future<Map<String, int>> fragmentCounts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_fragmentsKey);
+    if (stored == null) return const {};
+    final decoded = jsonDecode(stored) as Map<String, dynamic>;
+    return decoded.map((id, count) => MapEntry(id, count as int));
+  }
+
+  @override
+  Future<void> setFragmentCount(String id, int count) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = await fragmentCounts();
+    await prefs.setString(_fragmentsKey, jsonEncode({...current, id: count}));
   }
 }

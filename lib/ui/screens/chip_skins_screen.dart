@@ -17,11 +17,12 @@ import '../widgets/rarity_legend.dart';
 import '../widgets/app_glyph.dart';
 import '../../theme/app_assets.dart';
 
-String _skinName(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
+String skinName(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
   'turned_wood' => l10n.skinTurnedWoodName,
   'classic_marks' => l10n.skinClassicMarksName,
   'nesting_dolls' => l10n.skinNestingDollsName,
   'burger_stack' => l10n.skinBurgerStackName,
+  'fragment_shard' => l10n.skinFragmentShardName,
   _ => skin.id,
 };
 
@@ -30,6 +31,7 @@ String _skinDesc(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
   'classic_marks' => l10n.skinClassicMarksDesc,
   'nesting_dolls' => l10n.skinNestingDollsDesc,
   'burger_stack' => l10n.skinBurgerStackDesc,
+  'fragment_shard' => l10n.skinFragmentShardDesc,
   _ => '',
 };
 
@@ -375,8 +377,8 @@ class _SkinTile extends StatelessWidget {
       button: true,
       selected: selected,
       label: unlocked
-          ? _skinName(l10n, skin)
-          : '${_skinName(l10n, skin)}, ${l10n.skinLocked}',
+          ? skinName(l10n, skin)
+          : '${skinName(l10n, skin)}, ${l10n.skinLocked}',
       child: ExcludeSemantics(
         child: Padding(
           padding: const EdgeInsets.all(10),
@@ -566,11 +568,16 @@ class _FocusedSkinActions extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
       child: Column(
         children: [
-          Text(_skinName(l10n, skin), style: styles.cardTitle),
+          Text(skinName(l10n, skin), style: styles.cardTitle),
           if (!compact) ...[
             const SizedBox(height: 2),
             Text(
-              unlocked ? _skinDesc(l10n, skin) : l10n.skinUnlockHint,
+              // The achievement-flavoured hint is wrong for a fragment-gated
+              // skin (it never mentions achievements) — its own description
+              // already explains the fragment route, so show that instead.
+              unlocked || skin.isFragmentGated
+                  ? _skinDesc(l10n, skin)
+                  : l10n.skinUnlockHint,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -579,7 +586,17 @@ class _FocusedSkinActions extends ConsumerWidget {
           ],
           const SizedBox(height: 8),
           if (!unlocked)
-            product == null
+            skin.isFragmentGated
+                ? Text(
+                    l10n.skinFragmentProgress(
+                      ref.watch(skinControllerProvider).value
+                              ?.fragmentCounts[skin.id] ??
+                          0,
+                      skin.fragmentsRequired!,
+                    ),
+                    style: styles.labelMuted,
+                  )
+                : product == null
                 ? Text(l10n.skinLocked, style: styles.labelMuted)
                 : PillActionButton(
                     key: Key('buy-skin-${skin.id}'),

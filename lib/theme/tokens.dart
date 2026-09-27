@@ -14,6 +14,10 @@ class GameColors extends ThemeExtension<GameColors> {
     required this.playerA,
     required this.playerB,
     required this.neutral,
+    required this.rarityCommon,
+    required this.rarityRare,
+    required this.rarityEpic,
+    required this.rarityLegendary,
   });
 
   /// App background — putty/limestone grey.
@@ -36,6 +40,15 @@ class GameColors extends ThemeExtension<GameColors> {
   /// Drawn boards, disabled states, buried-stack collar.
   final Color neutral;
 
+  /// Rarity tier accents (design doc §2.1b) — pill borders/fills behind
+  /// non-text glyphs in `RarityLegend` and the chest-reveal sheet. Never
+  /// used as text colour (pill text stays on [ink]/[surface]), so only the
+  /// 3:1 "meaningful graphics" contrast bar applies, not 4.5:1.
+  final Color rarityCommon;
+  final Color rarityRare;
+  final Color rarityEpic;
+  final Color rarityLegendary;
+
   /// Legal-move highlight: the active player's own colour at ~15% opacity
   /// (design system §2.1 — no separate highlight token).
   Color highlightFor(Color playerColor) => playerColor.withValues(alpha: 0.15);
@@ -54,6 +67,18 @@ class GameColors extends ThemeExtension<GameColors> {
     // — this is what the buried-chip collar and drawn-board marker render
     // against. #6B6D65 clears both (4.61:1 / 3.75:1) at the same hue.
     neutral: Color(0xFF6B6D65),
+    // Rarity tiers (design doc §2.1b). Common reuses `neutral` verbatim
+    // rather than inventing a 7th near-grey — "plain/undifferentiated" is
+    // exactly what the least-rare tier should read as, and it's already an
+    // accepted, contrast-checked token. Rare/Epic/Legendary are new; all
+    // three clear the 3:1 "meaningful graphics" bar against both `surface`
+    // and `ground` (5.45:1/3.59:1, 6.88:1/4.53:1, 5.50:1/3.63:1
+    // respectively), and are chosen to stay visually distinct from
+    // `playerA`/`playerB` since those two colours mean something else.
+    rarityCommon: Color(0xFF6B6D65),
+    rarityRare: Color(0xFF1F5F52),
+    rarityEpic: Color(0xFF5B2F8C),
+    rarityLegendary: Color(0xFF6E4F0C),
   );
 
   @override
@@ -64,6 +89,10 @@ class GameColors extends ThemeExtension<GameColors> {
     Color? playerA,
     Color? playerB,
     Color? neutral,
+    Color? rarityCommon,
+    Color? rarityRare,
+    Color? rarityEpic,
+    Color? rarityLegendary,
   }) {
     return GameColors(
       ground: ground ?? this.ground,
@@ -72,6 +101,10 @@ class GameColors extends ThemeExtension<GameColors> {
       playerA: playerA ?? this.playerA,
       playerB: playerB ?? this.playerB,
       neutral: neutral ?? this.neutral,
+      rarityCommon: rarityCommon ?? this.rarityCommon,
+      rarityRare: rarityRare ?? this.rarityRare,
+      rarityEpic: rarityEpic ?? this.rarityEpic,
+      rarityLegendary: rarityLegendary ?? this.rarityLegendary,
     );
   }
 
@@ -85,6 +118,10 @@ class GameColors extends ThemeExtension<GameColors> {
       playerA: Color.lerp(playerA, other.playerA, t)!,
       playerB: Color.lerp(playerB, other.playerB, t)!,
       neutral: Color.lerp(neutral, other.neutral, t)!,
+      rarityCommon: Color.lerp(rarityCommon, other.rarityCommon, t)!,
+      rarityRare: Color.lerp(rarityRare, other.rarityRare, t)!,
+      rarityEpic: Color.lerp(rarityEpic, other.rarityEpic, t)!,
+      rarityLegendary: Color.lerp(rarityLegendary, other.rarityLegendary, t)!,
     );
   }
 }
@@ -170,6 +207,7 @@ class GameAnimations extends ThemeExtension<GameAnimations> {
     required this.cover,
     required this.boardClaim,
     required this.winLineReveal,
+    required this.chestRevealLanding,
   });
 
   /// A chip landing on an empty cell.
@@ -185,11 +223,20 @@ class GameAnimations extends ThemeExtension<GameAnimations> {
   /// Drawing the line through the winning three squares.
   final Duration winLineReveal;
 
+  /// The chest-reveal sheet's landed-tier cross-fade (`ChestRevealSheet`) —
+  /// the "snap into place" flourish once `ChestRevealController` stops
+  /// cycling. The cycling itself runs on `ChestRevealController.tick`, a
+  /// controller-owned cadence rather than a "moment" duration, so it isn't
+  /// here (same reasoning `MatchEmoteController.displayFor`/`cooldown` stay
+  /// out of this extension).
+  final Duration chestRevealLanding;
+
   static const GameAnimations standard = GameAnimations(
     placement: Duration(milliseconds: 160),
     cover: Duration(milliseconds: 260),
     boardClaim: Duration(milliseconds: 320),
     winLineReveal: Duration(milliseconds: 450),
+    chestRevealLanding: Duration(milliseconds: 350),
   );
 
   static Duration _lerpDuration(Duration a, Duration b, double t) => Duration(
@@ -203,12 +250,14 @@ class GameAnimations extends ThemeExtension<GameAnimations> {
     Duration? cover,
     Duration? boardClaim,
     Duration? winLineReveal,
+    Duration? chestRevealLanding,
   }) {
     return GameAnimations(
       placement: placement ?? this.placement,
       cover: cover ?? this.cover,
       boardClaim: boardClaim ?? this.boardClaim,
       winLineReveal: winLineReveal ?? this.winLineReveal,
+      chestRevealLanding: chestRevealLanding ?? this.chestRevealLanding,
     );
   }
 
@@ -220,6 +269,11 @@ class GameAnimations extends ThemeExtension<GameAnimations> {
       cover: _lerpDuration(cover, other.cover, t),
       boardClaim: _lerpDuration(boardClaim, other.boardClaim, t),
       winLineReveal: _lerpDuration(winLineReveal, other.winLineReveal, t),
+      chestRevealLanding: _lerpDuration(
+        chestRevealLanding,
+        other.chestRevealLanding,
+        t,
+      ),
     );
   }
 }

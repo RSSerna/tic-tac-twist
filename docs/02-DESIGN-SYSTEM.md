@@ -39,6 +39,38 @@ Indigo/amber survives all three common colour-vision deficiencies, unlike red/gr
 
 **Player colours are for players.** `playerA`/`playerB` carry "this is Player 1/2" everywhere in the app, so generic UI — a settings toggle, a checkmark — uses `ink`, not indigo. Borrowing a player colour for a control makes it say something it doesn't mean.
 
+### 2.1b Rarity tiers (2026-09)
+
+| Token | Hex | Use |
+|---|---|---|
+| `rarityCommon` | `#6B6D65` | Reuses `neutral` verbatim — "plain/undifferentiated" is exactly what the least-rare tier should read as, and it's already an accepted, contrast-checked token |
+| `rarityRare` | `#1F5F52` | Deep teal |
+| `rarityEpic` | `#5B2F8C` | Violet |
+| `rarityLegendary` | `#6E4F0C` | Dark gold/bronze |
+
+Pill borders/fills behind a non-text glyph in `RarityLegend` and the
+chest-reveal sheet (`ChestRevealSheet`) — never text colour, so only the 3:1
+"meaningful graphics" bar applies, not 4.5:1. Chosen to stay visually
+distinct from `playerA`/`playerB`, which mean something else entirely.
+
+Contrast, checked against the values `GameColors.baseSkin` actually ships
+(`ground = #B7B3B2`, `surface = #E3DBD3`) — **not** §2.1's own table above
+(`#DCDAD1` / `#F2F0EA`), which has drifted from the code and predates this
+feature. Flagged here rather than fixed, so this section's numbers don't
+silently inherit a second bug:
+
+| Tier | vs `surface` | vs `ground` |
+|---|---|---|
+| Common (`neutral`) | 3.83:1 | 2.53:1 (below 3:1 — pre-existing, not introduced here) |
+| Rare | 5.45:1 | 3.59:1 |
+| Epic | 6.88:1 | 4.53:1 |
+| Legendary | 5.50:1 | 3.63:1 |
+
+Rare/Epic/Legendary all clear 3:1 against the real shipped colours. Common's
+shortfall against `ground` is inherited from `neutral` itself, not
+introduced by reusing it here — see the palette-drift note this section
+flags for a separate fix.
+
 ### 2.1a Elevation
 
 Shadows come from `GameElevations` (`lib/theme/tokens.dart`), a `ThemeExtension` alongside `GameColors`:
@@ -187,6 +219,26 @@ Chips drop and settle, covering has weight, board claims get a flourish, wins ge
 - **Skins supply their own placement/cover/claim effects and SFX set.** Build the animation layer once, parameterised by skin — that's what makes a skin feel like a purchase rather than a recolour.
 - Budget for low-end Android and Flutter web, where animation costs considerably more.
 
+### Chest reveal — a deliberate, narrow exception (2026-09)
+
+The chest-opening reveal (`ChestRevealController` + `ChestRevealSheet`,
+`07-SKINS.md` §6) is a brief modal that *does* block input while it plays —
+the one place in the app this happens. It's judged acceptable because it
+isn't the in-match case the rule above guards against: it only ever follows
+an explicit, out-of-match **Claim** tap on the Shop screen, it's
+tap-skippable from the first frame (skip once to land on the result, tap
+again to dismiss), and it falls back to an equivalent snackbar with no
+modal at all under reduced motion — never a silent grant with no feedback.
+It plays for a fragment-reward outcome only; an ordinary instant-unlock
+claim keeps its plain snackbar unchanged, since only a fragment-reward
+outcome has a rolled rarity worth revealing.
+
+`GameAnimations.chestRevealLanding` (~350ms, `Curves.easeOutBack`) is the
+sheet's landed-tier flourish. The cycling phase runs on its own controller
+cadence (`ChestRevealController.tick`), not a `GameAnimations` entry — same
+reasoning `MatchEmoteController.displayFor`/`cooldown` stay out of that
+extension.
+
 ---
 
 ## 5. Audio
@@ -287,7 +339,8 @@ widget at the call site — that's how a design drifts.
 | `MatchEmoteBubbles` / `MatchEmoteTray` | `widgets/match_emotes.dart` | Two always-drawn seat bubbles above the board (an empty one is the reserved place a v2 received emote lands), plus a toggle in the staging bar that opens the four equipped emotes as a floating overlay, so opening it moves nothing. The tray hangs off the button — centred on it, below where there's room and above where there isn't, clamped back on screen near an edge. Closes on any change to the game, since its position is fixed at open time. Sending is presentation state only — never a move. |
 | `AppGlyph` | `widgets/app_glyph.dart` | One of the project's own SVG icons (`AppIcons`), tinted from the theme. **The tint is not optional**: every file is authored white, so an untinted glyph is invisible on `surface` and `ground` alike. Size falls back to the ambient `IconTheme` (24 by default), never to the file's own 101×101. |
 | `AssetGlyph` | `widgets/asset_glyph.dart` | A bundled image that degrades to an icon when the art isn't there. Every cosmetic catalogue ships before its art, so this is the one place that behaviour lives. |
-| `RarityLegend` | `widgets/rarity_legend.dart` | The static COMMON/RARE/EPIC/LEGENDARY row. A legend, not a filter — nothing carries a rarity yet. |
+| `RarityLegend` | `widgets/rarity_legend.dart` | The COMMON/RARE/EPIC/LEGENDARY row, now showing the real published odds/fragment amounts (`Rarity`, `lib/theme/rarity.dart`). Still a legend, not a filter — every locked cosmetic is equally likely regardless of rarity; only a fragment-gated pick's fragment count depends on it. |
+| `ChestRevealSheet` | `screens/chest_reveal_sheet.dart` | The chest-opening reveal (§4 "Chest reveal" exception). Filed under `screens/`, not `widgets/`, because it needs each catalogue's own naming helper (`skinName`, `emoteName`, `celebrationName`) — importing those into `widgets/` would be the first widget-imports-screen dependency in the codebase, so this one broke the folder convention instead. |
 
 **Locked/unavailable is a shared idiom**: 45% opacity, a lock glyph where the
 content would be, and no tap. `CategoryTile`, `SegmentedPills`,

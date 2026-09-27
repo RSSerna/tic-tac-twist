@@ -113,7 +113,7 @@ The full history — Phase 0 through the 2026-08 UI pass, with the reasoning beh
 
 ## Still undecided — ask before assuming
 
-- Chest rarity tiers and drop weights, and the ad-chest daily cap (`03-PRODUCT.md` §3). A chest now exists and grants **uniformly at random** from what the player doesn't own; the rarity legend on the Chip skins and Flexing screens is still only a legend. Giving a cosmetic a tier means settling this list first, then weighting `ChestController._grantOne`.
+- The ad-chest daily cap (`03-PRODUCT.md` §3) — rewarded-ad chests are still unbuilt, so there's no cap to set yet.
 - Whether the Shop's six packs become real products, and what each contains — today `fire`/`troll`/`loser` point at existing cosmetics so their owned state is truthful, while `apple`/`elements`/`sakura` have nothing behind them yet (board skins don't exist at all).
 - Which emotes (if any) are sold, and at what price point — the catalogue has 6 locked entries with no `ProductId` behind them (see `08-STORE-ITEMS.md` §2a)
 - **What format a celebration is** — still image, sprite sequence, or video — and what plays it at the end of a won game. The picker, persistence and catalogue don't depend on the answer; the preview frame and `Celebration.assetPath` do.

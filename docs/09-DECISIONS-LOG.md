@@ -70,3 +70,104 @@ A design-led pass over the screens, driven by mockups. Engines, controllers and 
 - Wired exactly like `nestingDolls`'s existing purchase route (`ProductId.skinBurgerStack`, `dev.rsaldarris.nested.skin_burger_stack`, granted in `MonetizationController._onPurchased`) — same placeholder-`storeId`-pending-console-setup caveat as every other `ProductId` (Phase 9 note, above). Also added as a `ShopItem` (id `burger`, `ShopItemKind.combo`) on the Shop screen pointing at the skin, mirroring `nestingDolls`'s `fire` entry, so its owned/locked state reads truthfully there too — same pre-existing limitation as every other Shop card: tapping it shows an owned/payments-unavailable snackbar rather than opening a real purchase sheet, since `ShopItem` has no `product` field yet (that wiring is `08-STORE-ITEMS.md` §2a's still-undecided packs-vs-individual-products question, not something this change resolves).
 - `combo`, not `markX`/`markO`: unlocking is global (`SkinController.unlockSkin` isn't per-mark), so one purchase makes the skin selectable for either player's mark — a combo badge reads more truthfully than picking one side arbitrarily.
 - **`AdsController` renamed to `MonetizationController`** (file, class, provider, and its test all moved together): adding a second `ProductId` case to its purchase-completion handler made it obvious the name no longer matched the job — it was already granting skin unlocks, not just running ad frequency-capping, and its own doc comment already said "orchestrates ads + purchases." `PurchaseController` was considered and rejected: it would just move the misleading label onto the ad-frequency-cap half (`onReturnedToMenuAfterGame`, `interstitialEveryNGames`) instead of fixing it.
+
+## Decided (Fragments — a fourth cosmetic-unlock route, 2026-09-23)
+
+Resolves the "chest rarity tiers and drop weights" item `CLAUDE.md`'s
+"Still undecided" list carried since Phase 9 — see `03-PRODUCT.md` §3 and
+`07-SKINS.md` §6 for the mechanic itself; this entry is the *why* behind the
+choices, not a restatement of what they are.
+
+- **Rarity odds, chosen deliberately, not placeholders**: Common 60%→1
+  fragment, Rare 25%→5, Epic 12%→10, Legendary 3%→25 (`lib/theme/rarity.dart`).
+  Tuned so `GameSkin.fragmentShard`'s 100-fragment requirement takes roughly
+  15–25 days at the one chest/day the daily-challenge claim currently allows
+  — deliberately a slow-burn reward, confirmed with the developer rather than
+  picked unilaterally, since `03-PRODUCT.md` §3.2 obligates publishing real
+  odds once any weighting exists.
+- **The uniform pool pick stays uniform — rarity is a second, independent
+  roll layered on top**, not a reweighting of `ChestController._grantOne`'s
+  existing pool selection. This was the explicit alternative the old "Still
+  undecided" line proposed ("weighting `ChestController._grantOne`") and it
+  was deliberately not taken: reweighting the pool by rarity would make some
+  *cosmetics* rarer than others to win outright, which is a different (and
+  larger) design question than "how many fragments does a fragment-gated
+  pick yield," and would have forced picking weights for `nestingDolls`,
+  every emote, every celebration — not just the one new fragment-gated skin.
+  Keeping the two axes independent means today's uniform-pool guarantees
+  (§3.1: "uniformly random... owning everything makes a claim a no-op") stay
+  true verbatim; only a fragment-gated pick's *payout* depends on rarity.
+- **Three new parallel `ChestReward` leaves** (`SkinFragmentReward` /
+  `EmoteFragmentReward` / `CelebrationFragmentReward`, `chest_controller.dart`)
+  rather than one generic `FragmentReward` wrapping a nested target type:
+  matches `07-SKINS.md` §2a's existing "parallel, not shared" stance for the
+  three cosmetic trios, and keeps every `switch` on `ChestReward` (there were
+  already two, in `shop_screen.dart`) exhaustive and compiler-enforced rather
+  than needing a runtime type-check one level down.
+- **`fragmentsRequired` mirrored on `GameSkin`, `Emote` and `Celebration`
+  without a matching `purchaseOnly` mirror.** The mechanism is generic on
+  purpose (the scope was explicitly "all three catalogs," confirmed before
+  building), but `purchaseOnly` and `fragmentsRequired` solve different
+  problems: `purchaseOnly` *excludes* an item from the chest pool;
+  `fragmentsRequired` must **not** exclude it — a fragment-gated item has to
+  stay pickable so fragments can accrue. Emotes and celebrations have no
+  `purchaseOnly` equivalent today anyway (`08-STORE-ITEMS.md` §2a: no
+  `ProductId` exists for either catalogue), so there was nothing to mirror.
+- **`ChipForm.shards`** (`GameSkin.fragmentShard`'s silhouette,
+  `_shardSilhouette` in `chip_view.dart`): a 6-point faceted gem shape,
+  asymmetric about the vertical axis the same way `_dollSilhouette` is so it
+  reads as a cut stone rather than a plain hexagon. Feeds the *existing*
+  concentric-band level loop in `_ChipPainter.paint` with no other change —
+  confirmed that loop was already form-agnostic before adding the shape, so
+  Ultimate-board rendering needed zero changes either.
+- **Painted, not asset-backed**, unlike `burgerStack` — no source art was
+  provided for this skin (unlike Burger Stack's photographed PNGs), so a new
+  procedural form was the only option that shipped immediately rather than
+  waiting on art.
+- **Reveal animation plays only for a fragment-reward outcome**, not on every
+  chest claim — confirmed explicitly rather than assumed, since it was the
+  more surprising of two reasonable readings of "animate the reveal." An
+  ordinary instant-cosmetic-unlock has no rarity of its own in this design
+  (the independent-roll decision above), so cycling through tiers and landing
+  on one for that outcome would visually claim a rarity that pick never had.
+  Consequence: with only one fragment-gated item in the whole game today,
+  most Claim taps still show the plain pre-existing snackbar — the reveal is
+  rare almost by construction, which was flagged and accepted rather than
+  discovered as a surprise later.
+- **The chest-reveal modal is a deliberate, narrow exception to CLAUDE.md's
+  "never block input on animation" rule** (`02-DESIGN-SYSTEM.md` §4) —
+  confirmed explicitly rather than assumed, since the rule reads
+  unconditional on its face. Justified because it only ever follows an
+  explicit, out-of-match Claim tap (not the mid-move case the rule targets),
+  is tap-skippable from the first frame, and falls back to an equivalent
+  snackbar under `MediaQuery.disableAnimations` rather than a silent grant.
+- **`Timer`-driven `Notifier`, not the codebase's first `AnimationController`**
+  (`ChestRevealController`, mirroring `MatchEmoteController`'s existing
+  idiom): no explicit `AnimationController` exists anywhere else in `lib/`,
+  and the reveal's cycle-then-land sequence maps cleanly onto the same
+  controller-owned-state-machine-plus-`Timer`s shape `MatchEmoteController`
+  already uses, so it didn't need to be the exception that introduces one.
+- **`ChestRevealSheet` lives in `lib/ui/screens/`, not `lib/ui/widgets/`**
+  despite being widget-shaped: it needs each catalogue's own display-name
+  helper (`skinName` in `chip_skins_screen.dart`, `emoteName`,
+  `celebrationName`), and no widget in this codebase had ever imported a
+  screen file before — moving the sheet to `screens/` avoided being the
+  first place that happened, at the cost of breaking `02-DESIGN-SYSTEM.md`
+  §11's usual "shared components live in `widgets/`" framing for this one
+  entry (noted there, not hidden).
+- **`_skinName` made public as `skinName`** (`chip_skins_screen.dart`) purely
+  so `ChestRevealSheet` could import it — `emoteName`/`celebrationName` were
+  already public in their own screens, so this was the one inconsistent
+  holdout, not a new pattern.
+- **New rarity color tokens computed against the *real* shipped `GameColors.
+  baseSkin` values**, not `02-DESIGN-SYSTEM.md` §2.1's own palette table —
+  discovered while doing the contrast check that the doc's table
+  (`ground=#DCDAD1`/`surface=#F2F0EA`) has drifted from the shipped code
+  (`ground=#B7B3B2`/`surface=#E3DBD3`) — pre-existing, predates this feature,
+  and left unfixed here (flagged in `02-DESIGN-SYSTEM.md` §2.1b instead) since
+  fixing the base palette table is a separate decision with its own blast
+  radius. `rarityCommon` reuses `neutral` verbatim rather than a new hex —
+  "plain/undifferentiated" is exactly what the least-rare tier should read
+  as, and it was already an accepted, contrast-checked token; its 2.53:1
+  shortfall against the real `ground` is `neutral`'s own pre-existing gap,
+  not something reusing it here introduces.

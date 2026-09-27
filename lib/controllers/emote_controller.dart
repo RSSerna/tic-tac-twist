@@ -6,7 +6,11 @@ import '../theme/emote.dart';
 
 @immutable
 class EmoteState {
-  const EmoteState({required this.loadout, required this.unlockedIds});
+  const EmoteState({
+    required this.loadout,
+    required this.unlockedIds,
+    this.fragmentCounts = const {},
+  });
 
   /// Equipped emotes in slot order, at most [Emote.loadoutSize] long.
   final List<Emote> loadout;
@@ -14,6 +18,10 @@ class EmoteState {
   /// Purchased emotes. Free ones are implicitly unlocked and never appear
   /// here (see [isUnlocked]).
   final Set<String> unlockedIds;
+
+  /// Fragments collected so far toward each fragment-gated emote
+  /// (`Emote.fragmentsRequired`), keyed by [Emote.id]. Absent = 0.
+  final Map<String, int> fragmentCounts;
 
   bool isUnlocked(Emote emote) => emote.free || unlockedIds.contains(emote.id);
 
@@ -42,6 +50,7 @@ class EmoteController extends AsyncNotifier<EmoteState> {
     return EmoteState(
       loadout: List.unmodifiable(loadout.take(Emote.loadoutSize)),
       unlockedIds: unlocked,
+      fragmentCounts: await service.fragmentCounts(),
     );
   }
 
@@ -82,9 +91,37 @@ class EmoteController extends AsyncNotifier<EmoteState> {
       EmoteState(
         loadout: current.loadout,
         unlockedIds: {...current.unlockedIds, emote.id},
+        fragmentCounts: current.fragmentCounts,
       ),
     );
     return true;
+  }
+
+  /// Adds [amount] fragments toward unlocking [emote]; auto-unlocks via
+  /// [unlock] once the total reaches [Emote.fragmentsRequired]. No-ops
+  /// (returns null) if [emote] isn't fragment-gated or is already unlocked.
+  /// Mirrors `SkinController.addFragments`.
+  Future<({int totalAfter, bool unlockedNow})?> addFragments(
+    Emote emote,
+    int amount,
+  ) async {
+    final current = await future;
+    final required = emote.fragmentsRequired;
+    if (required == null || current.isUnlocked(emote)) return null;
+
+    final total = (current.fragmentCounts[emote.id] ?? 0) + amount;
+    await ref.read(emoteServiceProvider).setFragmentCount(emote.id, total);
+    state = AsyncData(
+      EmoteState(
+        loadout: current.loadout,
+        unlockedIds: current.unlockedIds,
+        fragmentCounts: {...current.fragmentCounts, emote.id: total},
+      ),
+    );
+
+    final unlockedNow = total >= required;
+    if (unlockedNow) await unlock(emote);
+    return (totalAfter: total, unlockedNow: unlockedNow);
   }
 
   Future<void> _save(EmoteState current, List<Emote> loadout) async {
@@ -95,6 +132,7 @@ class EmoteController extends AsyncNotifier<EmoteState> {
       EmoteState(
         loadout: List.unmodifiable(loadout),
         unlockedIds: current.unlockedIds,
+        fragmentCounts: current.fragmentCounts,
       ),
     );
   }

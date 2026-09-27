@@ -25,7 +25,11 @@ enum Emote {
     required this.id,
     required this.fallbackIcon,
     this.free = false,
-  });
+    this.fragmentsRequired,
+  }) : assert(
+         !(free && fragmentsRequired != null),
+         'fragmentsRequired is its own unlock route — it cannot also be free',
+       );
 
   /// Stable, persisted, never shown to players — renaming one orphans a
   /// player's saved loadout.
@@ -36,6 +40,16 @@ enum Emote {
   /// Available without unlocking. The rest arrive by purchase (product doc
   /// §2.2's cosmetics route) once store products exist for them.
   final bool free;
+
+  /// Non-null for an emote whose only unlock route is collecting this many
+  /// fragments from the daily chest (mirrors `GameSkin.fragmentsRequired` —
+  /// see `lib/theme/skin.dart`). Null for every emote today; the mechanism
+  /// exists generically across all three cosmetic catalogs, but nothing
+  /// currently uses it here.
+  final int? fragmentsRequired;
+
+  /// Whether collecting fragments is this emote's unlock route at all.
+  bool get isFragmentGated => fragmentsRequired != null;
 
   /// Where this emote's art lives once a designer produces it.
   ///

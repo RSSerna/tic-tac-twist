@@ -18,6 +18,7 @@ import '../widgets/buttons/pill_action_button.dart';
 import '../widgets/panel_header.dart';
 import '../widgets/app_glyph.dart';
 import '../../theme/app_assets.dart';
+import 'chest_reveal_sheet.dart';
 
 /// What kind of cosmetic a shop card sells. The badge across the top of a
 /// card; also decides which catalogue its "owned" state is read from.
@@ -334,10 +335,31 @@ class _ClaimBar extends ConsumerWidget {
     final reward = await ref.read(chestControllerProvider).claimDaily();
     if (!context.mounted) return;
 
+    // Fragment outcomes get the cycling reveal sheet — the only outcome
+    // with a rarity of its own (ChestController's doc comment) — unless the
+    // OS wants reduced motion, in which case it's the same information in a
+    // snackbar rather than a silent grant with no feedback at all. Every
+    // other outcome keeps today's plain snackbar, unchanged.
+    final isFragmentReward = switch (reward) {
+      SkinFragmentReward() || EmoteFragmentReward() || CelebrationFragmentReward() =>
+        true,
+      SkinReward() || EmoteReward() || CelebrationReward() || null => false,
+    };
+    if (isFragmentReward && !MediaQuery.of(context).disableAnimations) {
+      await showChestRevealSheet(context, ref, reward: reward!);
+      return;
+    }
+
     final message = switch (reward) {
       SkinReward() ||
       EmoteReward() ||
       CelebrationReward() => l10n.shopClaimGranted(_rewardName(l10n, reward!)),
+      SkinFragmentReward(:final totalAfter, :final skin) => l10n
+          .skinFragmentProgress(totalAfter, skin.fragmentsRequired!),
+      EmoteFragmentReward(:final totalAfter, :final emote) => l10n
+          .skinFragmentProgress(totalAfter, emote.fragmentsRequired!),
+      CelebrationFragmentReward(:final totalAfter, :final celebration) => l10n
+          .skinFragmentProgress(totalAfter, celebration.fragmentsRequired!),
       // Claimed, but the player already owns everything there is.
       null => l10n.shopClaimNothingLeft,
     };
@@ -351,6 +373,9 @@ class _ClaimBar extends ConsumerWidget {
         SkinReward(:final skin) => skin.id,
         EmoteReward(:final emote) => emote.id,
         CelebrationReward(:final celebration) => celebration.id,
+        SkinFragmentReward(:final skin) => skin.id,
+        EmoteFragmentReward(:final emote) => emote.id,
+        CelebrationFragmentReward(:final celebration) => celebration.id,
       };
 
   @override

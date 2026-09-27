@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -19,6 +21,12 @@ abstract interface class SkinService {
   /// exactly as it did.
   Future<int?> ultimateMarkLevel({required bool firstPerson});
   Future<void> setUltimateMarkLevel(int? level, {required bool firstPerson});
+
+  /// Fragments collected so far toward each fragment-gated skin
+  /// (`GameSkin.fragmentsRequired`), keyed by [GameSkin.id]. Absent = 0;
+  /// never contains an entry for a skin that was never granted fragments.
+  Future<Map<String, int>> fragmentCounts();
+  Future<void> setFragmentCount(String id, int count);
 }
 
 final skinServiceProvider = Provider<SkinService>(
@@ -33,6 +41,7 @@ class SharedPreferencesSkinService implements SkinService {
   static const _unlockedKey = 'nested_game.skin.unlocked';
   static const _firstUltimateKey = 'nested_game.skin.ultimate_level';
   static const _secondUltimateKey = 'nested_game.skin.ultimate_level.p2';
+  static const _fragmentsKey = 'nested_game.skin.fragments';
 
   @override
   Future<String> selectedSkinId({required bool firstPerson}) async {
@@ -95,5 +104,21 @@ class SharedPreferencesSkinService implements SkinService {
     final unlocked = (prefs.getStringList(_unlockedKey) ?? const []).toSet()
       ..add(id);
     await prefs.setStringList(_unlockedKey, unlocked.toList());
+  }
+
+  @override
+  Future<Map<String, int>> fragmentCounts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_fragmentsKey);
+    if (stored == null) return const {};
+    final decoded = jsonDecode(stored) as Map<String, dynamic>;
+    return decoded.map((id, count) => MapEntry(id, count as int));
+  }
+
+  @override
+  Future<void> setFragmentCount(String id, int count) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = await fragmentCounts();
+    await prefs.setString(_fragmentsKey, jsonEncode({...current, id: count}));
   }
 }

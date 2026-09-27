@@ -110,6 +110,8 @@ class EmoteSkinsScreen extends ConsumerWidget {
                   tileSize: tileSize,
                   isUnlocked: (emote) => state?.isUnlocked(emote) ?? emote.free,
                   isEquipped: (emote) => loadout.contains(emote),
+                  fragmentCount: (emote) =>
+                      state?.fragmentCounts[emote.id] ?? 0,
                   onTap: controller.toggle,
                 ),
                 const SizedBox(height: 16),
@@ -220,12 +222,17 @@ class _EmoteCatalogue extends StatefulWidget {
     required this.tileSize,
     required this.isUnlocked,
     required this.isEquipped,
+    required this.fragmentCount,
     required this.onTap,
   });
 
   final double tileSize;
   final bool Function(Emote) isUnlocked;
   final bool Function(Emote) isEquipped;
+
+  /// Fragments collected so far toward this emote, if it's fragment-gated —
+  /// meaningless (and unread) otherwise.
+  final int Function(Emote) fragmentCount;
   final ValueChanged<Emote> onTap;
 
   @override
@@ -300,6 +307,7 @@ class _EmoteCatalogueState extends State<_EmoteCatalogue> {
                               size: widget.tileSize,
                               unlocked: widget.isUnlocked(emote),
                               equipped: widget.isEquipped(emote),
+                              fragmentCount: widget.fragmentCount(emote),
                               onTap: () => widget.onTap(emote),
                             ),
                         ],
@@ -342,6 +350,7 @@ class _CatalogueTile extends StatelessWidget {
     required this.size,
     required this.unlocked,
     required this.equipped,
+    required this.fragmentCount,
     required this.onTap,
   });
 
@@ -349,14 +358,22 @@ class _CatalogueTile extends StatelessWidget {
   final double size;
   final bool unlocked;
   final bool equipped;
+
+  /// Fragments collected so far toward this emote — read only when
+  /// [Emote.isFragmentGated] is true.
+  final int fragmentCount;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = context.gameColors;
+    final styles = context.gameTextStyles;
     final elevations = context.gameElevations;
     final radius = BorderRadius.circular(size * 0.22);
+    final fragmentProgress = !unlocked && emote.isFragmentGated
+        ? l10n.skinFragmentProgress(fragmentCount, emote.fragmentsRequired!)
+        : null;
 
     return Semantics(
       button: true,
@@ -364,7 +381,12 @@ class _CatalogueTile extends StatelessWidget {
       selected: equipped,
       label: [
         emoteName(l10n, emote),
-        if (!unlocked) l10n.skinLocked else if (equipped) l10n.emoteEquipped,
+        if (fragmentProgress != null)
+          fragmentProgress
+        else if (!unlocked)
+          l10n.skinLocked
+        else if (equipped)
+          l10n.emoteEquipped,
       ].join(', '),
       child: ExcludeSemantics(
         child: Opacity(
@@ -389,6 +411,26 @@ class _CatalogueTile extends StatelessWidget {
                   padding: EdgeInsets.all(size * 0.18),
                   child: unlocked
                       ? EmoteView(emote: emote)
+                      : fragmentProgress != null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AppGlyph(
+                              AppIcons.locked,
+                              size: size * 0.32,
+                              color: colors.neutral,
+                            ),
+                            Text(
+                              fragmentProgress,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: styles.caption.copyWith(
+                                color: colors.neutral,
+                              ),
+                            ),
+                          ],
+                        )
                       : AppGlyph(
                           AppIcons.locked,
                           size: size * 0.4,

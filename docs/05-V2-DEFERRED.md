@@ -199,17 +199,24 @@ For v2: a remote player's mark is drawn with *their* chosen skin, so the
 pair has to come from the match, not from local storage. `SkinPair` is
 already the unit to send.
 
-### 4.6 Rarity tiers — a legend, not a system
+### 4.6 Rarity tiers — real for chest odds, not yet a per-cosmetic property
 
-`ChipSkinsScreen` and `CelebrationSkinsScreen` both end in a **static,
-non-interactive legend** reading COMMON / RARE / EPIC / LEGENDARY (one shared
-widget, `lib/ui/widgets/rarity_legend.dart`). No skin, emote or celebration
-carries a rarity, and nothing filters on one.
+**Built (2026-09):** `Rarity` (`lib/theme/rarity.dart`) is real — every chest
+open rolls one of four weighted tiers (Common 60%/Rare 25%/Epic 12%/
+Legendary 3%), and `ChipSkinsScreen`/`CelebrationSkinsScreen`'s shared
+`RarityLegend` (`lib/ui/widgets/rarity_legend.dart`) shows the actual odds
+and fragment amounts, not placeholder text. See `03-PRODUCT.md` §3.2 and
+`07-SKINS.md` §6.
 
-This is intentional: rarity tiers are still listed as undecided in
-`CLAUDE.md`, and chests (which is where rarity actually earns its keep) are
-deferred past Phase 9. Giving a cosmetic a rarity means deciding the tier list
-first — a data decision, not a layout one.
+**Still deferred:** the roll only ever decides a **fragment-gated**
+cosmetic's payout (`GameSkin.fragmentsRequired`, and the matching field on
+`Emote`/`Celebration`) — which specific cosmetic drops from a chest is still
+**uniform**, not weighted by rarity. No skin, emote or celebration carries
+"this one is Epic" as a property of itself; only whether it's fragment-gated
+at all. Making a cosmetic's *drop chance* depend on a rarity it's tagged
+with — rather than rarity only setting a fragment payout — is the part still
+undecided, and would mean reweighting `ChestController._grantOne`'s pool
+pick, not just consulting `Rarity.roll`.
 
 ---
 

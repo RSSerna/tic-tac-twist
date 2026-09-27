@@ -99,6 +99,8 @@ If a change would alter any of those, it's not a skin.
 | Unlock triggers (achievement / purchase) | `lib/controllers/game_controller.dart`, `lib/controllers/monetization_controller.dart` |
 | Display strings | `lib/l10n/app_en.arb`, `lib/l10n/app_es.arb` |
 | **Sending an emote in a match** (tray + seat bubbles) | `lib/ui/widgets/match_emotes.dart`, `lib/controllers/match_emote_controller.dart` |
+| **Rarity tiers + odds** (fourth unlock route: fragments) | `lib/theme/rarity.dart` |
+| **Chest-opening reveal** (fragment outcomes only) | `lib/controllers/chest_reveal_controller.dart`, `lib/ui/screens/chest_reveal_sheet.dart` |
 
 ---
 
@@ -137,9 +139,14 @@ draws a bundled image and degrades to an icon when the art isn't there.
 `EmoteView` is a thin wrapper over it. Anything else that ships before its
 art should use it rather than repeating the `errorBuilder`.
 
-They also share `RarityLegend` (`ui/widgets/rarity_legend.dart`), the static
+They also share `RarityLegend` (`ui/widgets/rarity_legend.dart`), the
 COMMON/RARE/EPIC/LEGENDARY row at the foot of the chip and celebration
-pickers. It's a legend, not a filter — nothing carries a rarity yet.
+pickers. **It's real now** (decisions log, 2026-09): `Rarity` is a chest's
+independent per-open roll (`lib/theme/rarity.dart`), and the legend shows the
+actual published odds and fragment amounts `ChestController._grantOne` uses.
+It still doesn't *filter* which cosmetic the pool picks — every locked
+cosmetic is equally likely regardless of rarity — only how many fragments a
+fragment-gated pick is worth.
 
 See `05-V2-DEFERRED.md` §4 for what's built vs. what's still open.
 
@@ -243,6 +250,12 @@ Your form shows up on the Ultimate board too — a levelled skin wears one of
 its own chips as its mark (default L4, see **§2b**), so `_MarkPainter` needs
 no change; only a glyph form reaches it. If your form reuses `rings`/`dolls`,
 skip this step entirely.
+
+`ChipForm.shards` (`GameSkin.fragmentShard`, `_shardSilhouette` in
+`chip_view.dart`) is a real instance of this recipe, not the hypothetical
+`stones` above — a 6-point faceted silhouette, asymmetric about the vertical
+axis the same way `_dollSilhouette` is, feeding the same concentric-band
+level loop with zero other changes needed.
 
 ### A2. Declare the skin
 
@@ -358,11 +371,11 @@ Names/descriptions are localized and keyed by `skin.id`.
 "skinStoneStackDesc": "Chips carved from river stones."
 ```
 
-2. Add cases to the two switches in `skins_screen.dart` (both keyed by
+2. Add cases to the two switches in `chip_skins_screen.dart` (both keyed by
    `skin.id`):
 
 ```dart
-String _skinName(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
+String skinName(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
       'turned_wood'   => l10n.skinTurnedWoodName,
       'nesting_dolls' => l10n.skinNestingDollsName,
       'stone_stack'   => l10n.skinStoneStackName,   // add
@@ -379,7 +392,10 @@ once the skin is in that list.
 
 ## 6. Unlocking (both recipes)
 
-A skin is one of three access tiers. Pick one.
+A skin is one of four access tiers. Pick one (a skin can combine Free with
+neither of the other three, since Free means no unlock exists to combine —
+but Achievement, Purchase and Fragment-gated *can* co-exist on the same skin,
+same as `nestingDolls` already mixes achievement, purchase and chest).
 
 ### Free / always unlocked
 Model it like `turnedWood`: `SkinState.isUnlocked` treats
@@ -399,8 +415,7 @@ if (anyNewlyUnlocked) {
 
 For a new earned skin, add its own trigger there (map specific achievements →
 specific skins). With more than one premium skin, replace the single unlock
-with a per-achievement mapping — this is exactly the "chests/rarity" seam
-`03-PRODUCT.md` §3 defers.
+with a per-achievement mapping.
 
 ### Direct purchase (IAP)
 1. Add a `ProductId` in `lib/services/purchase_service.dart` and create the
@@ -440,6 +455,42 @@ Nothing reads it for the achievement path today because achievement unlocks
 are hand-mapped to specific skins already (§6 above) — `purchaseOnly` only
 matters wherever code iterates `GameSkin.values` looking for something to hand
 out for free.
+
+### Fragment-gated (chest-only)
+
+Set `fragmentsRequired: <n>` on the `GameSkin` (`GameSkin.fragmentShard` is
+the first: 100). The mechanism is generic across all three cosmetic catalogs
+— `Emote` and `Celebration` carry the same field — but nothing besides
+`fragmentShard` uses it today.
+
+- **What happens**: `ChestController._grantOne` (decisions log, 2026-09) still
+  picks one cosmetic uniformly from everything unowned, exactly as before —
+  including fragment-gated ones, which must stay in the pool so fragments can
+  accrue toward them. It also independently rolls a `Rarity`
+  (`lib/theme/rarity.dart`) on every open. If the pool pick is fragment-gated,
+  the reward becomes `rarity.fragments` fragments toward it (a
+  `SkinFragmentReward`/`EmoteFragmentReward`/`CelebrationFragmentReward`)
+  instead of an instant unlock; anything else unlocks outright as it always
+  has, and the rolled rarity is simply unused for that outcome.
+- **Granting fragments**: `SkinController.addFragments(skin, amount)` (and the
+  `Emote`/`Celebration` controllers' equivalents) persists the running total
+  and calls the ordinary `unlockSkin`/`unlock` itself once the total reaches
+  `fragmentsRequired` — the unlock-writing code path is never duplicated.
+- **Never mixes with `free` or `purchaseOnly`** on the same item — both
+  constructors `assert` it. It *can* mix with achievement/purchase in
+  principle (nothing stops a future skin from having both a fragment route
+  and a purchase route), but `fragmentShard` today has neither.
+- **Progress UI**: each picker shows `l10n.skinFragmentProgress(current,
+  required)` in place of the ordinary locked state once
+  `skin.isFragmentGated` — see `_FocusedSkinActions` in
+  `chip_skins_screen.dart`, `_CatalogueTile` in `emote_skins_screen.dart`, and
+  `_PreviewAction` in `celebration_skins_screen.dart`.
+- **The reveal**: a cycling Common→Legendary reveal (`ChestRevealController`
+  + `ChestRevealSheet`, `lib/controllers/chest_reveal_controller.dart` /
+  `lib/ui/screens/chest_reveal_sheet.dart`) plays only for a fragment-reward
+  outcome — a whole-cosmetic unlock has no rarity of its own to reveal.
+  Triggered from `shop_screen.dart`'s `_ClaimBar._claim`; skipped in favour of
+  an equivalent snackbar under reduced motion.
 
 ---
 
@@ -498,7 +549,9 @@ Adding a skin, end to end:
 - [ ] Asset? Add art, register the folder in `pubspec.yaml`, write a `static`
       `resolve`, set a sensible `fallbackForm`.
 - [ ] Add name/description to `app_en.arb` **and** `app_es.arb`; add cases to
-      `_skinName`/`_skinDesc`.
-- [ ] Choose an unlock tier (free / achievement / purchase) and wire its
-      trigger.
+      `skinName`/`_skinDesc`.
+- [ ] Choose an unlock tier (free / achievement / purchase / fragment-gated,
+      §6) and wire its trigger. Fragment-gated needs no trigger to wire — just
+      set `fragmentsRequired`; `ChestController` and the picker screens pick
+      it up generically.
 - [ ] `flutter analyze`, `flutter test`, and eyeball on device.

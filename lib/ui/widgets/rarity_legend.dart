@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../../theme/rarity.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
+import 'rarity_display.dart';
 
-/// A static key to the rarity tiers.
+/// The published key to the chest's rarity tiers and drop odds
+/// (`03-PRODUCT.md` §3.2: "publish drop odds anyway").
 ///
-/// Nothing carries a rarity yet — the tier list and drop odds are still
-/// undecided (CLAUDE.md), and chests are deferred. This legend names the
-/// tiers; it does not filter, because there is nothing to filter on.
+/// `Rarity` is real now — a chest independently rolls one on every open
+/// (`ChestController._grantOne`) and, when the pool pick lands on a
+/// fragment-gated cosmetic, the rolled tier decides how many fragments that
+/// grant is worth (`GameSkin.fragmentsRequired`). This legend still doesn't
+/// *filter* anything — every cosmetic in the pool is equally likely to be
+/// picked regardless of rarity — but the odds/fragment amounts it shows are
+/// the real, load-bearing numbers `Rarity.roll` uses, not placeholders.
 class RarityLegend extends StatelessWidget {
   const RarityLegend({super.key});
 
@@ -29,28 +36,38 @@ class RarityLegend extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           spacing: 12,
           children: [
-            for (final tier in [
-              l10n.rarityCommon,
-              l10n.rarityRare,
-              l10n.rarityEpic,
-              l10n.rarityLegendary,
-            ])
+            for (final tier in Rarity.values)
               Container(
                 decoration: BoxDecoration(
                   color: colors.surface,
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: rarityColor(context, tier),
+                    width: 2,
+                  ),
                   boxShadow: elevations.resting,
                 ),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 18,
                   vertical: 8,
                 ),
-                child: Text(
-                  tier.toUpperCase(),
-                  style: styles.caption.copyWith(
-                    color: colors.ink,
-                    letterSpacing: 1.2,
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      rarityName(l10n, tier).toUpperCase(),
+                      style: styles.caption.copyWith(
+                        color: colors.ink,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    Text(
+                      l10n.rarityOdds(tier.weight, tier.fragments),
+                      style: styles.caption.copyWith(
+                        color: rarityColor(context, tier),
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],

@@ -10,6 +10,7 @@ import 'package:nested_game/engines/common/game_mode.dart';
 import 'package:nested_game/services/daily_challenge_service.dart';
 import 'package:nested_game/theme/celebration.dart';
 import 'package:nested_game/theme/emote.dart';
+import 'package:nested_game/theme/rarity.dart';
 import 'package:nested_game/theme/skin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -41,6 +42,13 @@ void main() {
     final container = ProviderContainer();
     addTearDown(container.dispose);
     await finishToday(container.read(dailyChallengeServiceProvider));
+    // Fragment-gated skins can be picked from the pool without unlocking
+    // anything (they grant fragments instead) — pre-unlock the one
+    // fragment-gated skin so this test's draw can only ever be an instant
+    // whole-cosmetic unlock, which is what it's actually asserting.
+    await container
+        .read(skinControllerProvider.notifier)
+        .unlockSkin(GameSkin.fragmentShard);
 
     final reward = await container.read(chestControllerProvider).claimDaily();
     expect(reward, isNotNull);
@@ -55,11 +63,12 @@ void main() {
         (await container.read(
           celebrationControllerProvider.future,
         )).unlockedIds.length;
-    expect(unlockedCount, 1);
+    // 1 from the pre-unlocked fragmentShard above, +1 from this claim.
+    expect(unlockedCount, 2);
 
     // The day is spent — a second claim grants nothing more.
     expect(await container.read(chestControllerProvider).claimDaily(), isNull);
-    expect(unlockedCount, 1);
+    expect(unlockedCount, 2);
   });
 
   test('the reward is one the player did not already own', () async {
@@ -117,4 +126,116 @@ void main() {
       );
     },
   );
+
+  group('fragments', () {
+    /// Unlocks everything except [GameSkin.fragmentShard], so a claim's
+    /// uniform pool pick has exactly one possible answer.
+    Future<void> unlockEverythingExceptFragmentShard(
+      ProviderContainer container,
+    ) async {
+      for (final skin in GameSkin.values.where(
+        (s) => s != GameSkin.fragmentShard,
+      )) {
+        await container.read(skinControllerProvider.notifier).unlockSkin(skin);
+      }
+      for (final emote in Emote.values) {
+        await container.read(emoteControllerProvider.notifier).unlock(emote);
+      }
+      for (final celebration in Celebration.values) {
+        await container
+            .read(celebrationControllerProvider.notifier)
+            .unlock(celebration);
+      }
+    }
+
+    test(
+      'a claim on a fragment-gated pick grants fragments, not an unlock',
+      () async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        await finishToday(container.read(dailyChallengeServiceProvider));
+        await unlockEverythingExceptFragmentShard(container);
+
+        final reward = await container
+            .read(chestControllerProvider)
+            .claimDaily();
+
+        expect(reward, isA<SkinFragmentReward>());
+        final fragmentReward = reward! as SkinFragmentReward;
+        expect(fragmentReward.skin, GameSkin.fragmentShard);
+        expect(
+          fragmentReward.totalAfter,
+          isIn(Rarity.values.map((r) => r.fragments)),
+        );
+        expect(fragmentReward.unlockedNow, isFalse);
+
+        final skins = await container.read(skinControllerProvider.future);
+        expect(skins.isUnlocked(GameSkin.fragmentShard), isFalse);
+      },
+    );
+
+    test(
+      'addFragments auto-unlocks exactly on the grant that crosses the '
+      'threshold',
+      () async {
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+        final notifier = container.read(skinControllerProvider.notifier);
+
+        // 4 grants of 25 = 100, the exact threshold.
+        for (var i = 0; i < 3; i++) {
+          final grant = await notifier.addFragments(
+            GameSkin.fragmentShard,
+            25,
+          );
+          expect(grant!.unlockedNow, isFalse);
+          expect(grant.totalAfter, 25 * (i + 1));
+          expect(
+            (await container.read(skinControllerProvider.future)).isUnlocked(
+              GameSkin.fragmentShard,
+            ),
+            isFalse,
+          );
+        }
+
+        final crossing = await notifier.addFragments(
+          GameSkin.fragmentShard,
+          25,
+        );
+        expect(crossing!.unlockedNow, isTrue);
+        expect(crossing.totalAfter, 100);
+        expect(
+          (await container.read(skinControllerProvider.future)).isUnlocked(
+            GameSkin.fragmentShard,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test('addFragments on an already-unlocked skin no-ops', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(skinControllerProvider.notifier);
+      await notifier.unlockSkin(GameSkin.fragmentShard);
+
+      expect(
+        await notifier.addFragments(GameSkin.fragmentShard, 25),
+        isNull,
+      );
+      final skins = await container.read(skinControllerProvider.future);
+      expect(skins.fragmentCounts[GameSkin.fragmentShard.id], isNull);
+    });
+
+    test('addFragments on a non-fragment-gated skin no-ops', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(skinControllerProvider.notifier);
+
+      expect(
+        await notifier.addFragments(GameSkin.nestingDolls, 25),
+        isNull,
+      );
+    });
+  });
 }

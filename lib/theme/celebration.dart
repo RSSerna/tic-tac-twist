@@ -32,7 +32,11 @@ enum Celebration {
     required this.id,
     required this.fallbackIcon,
     this.free = false,
-  });
+    this.fragmentsRequired,
+  }) : assert(
+         !(free && fragmentsRequired != null),
+         'fragmentsRequired is its own unlock route — it cannot also be free',
+       );
 
   /// Stable, persisted, never shown to players — renaming one orphans a
   /// player's saved selection.
@@ -43,6 +47,16 @@ enum Celebration {
   /// Available without unlocking. The rest arrive by purchase once store
   /// products exist (see `08-STORE-ITEMS.md`).
   final bool free;
+
+  /// Non-null for a celebration whose only unlock route is collecting this
+  /// many fragments from the daily chest (mirrors
+  /// `GameSkin.fragmentsRequired` — see `lib/theme/skin.dart`). Null for
+  /// every celebration today; the mechanism exists generically across all
+  /// three cosmetic catalogs, but nothing currently uses it here.
+  final int? fragmentsRequired;
+
+  /// Whether collecting fragments is this celebration's unlock route at all.
+  bool get isFragmentGated => fragmentsRequired != null;
 
   /// Where this celebration's art lives once it exists. Nothing is bundled,
   /// so every entry currently renders its [fallbackIcon].

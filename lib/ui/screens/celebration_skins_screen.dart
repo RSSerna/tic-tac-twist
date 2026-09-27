@@ -146,6 +146,8 @@ class _CelebrationSkinsScreenState
                             previewed: previewed,
                             equipped: state?.selected,
                             locked: previewLocked,
+                            fragmentCount:
+                                state?.fragmentCounts[previewed.id] ?? 0,
                             onSelect: () => ref
                                 .read(celebrationControllerProvider.notifier)
                                 .select(previewed),
@@ -368,12 +370,17 @@ class _PreviewAction extends StatelessWidget {
     required this.previewed,
     required this.equipped,
     required this.locked,
+    required this.fragmentCount,
     required this.onSelect,
   });
 
   final Celebration previewed;
   final Celebration? equipped;
   final bool locked;
+
+  /// Fragments collected so far toward [previewed] — read only when
+  /// [Celebration.isFragmentGated] is true.
+  final int fragmentCount;
   final VoidCallback onSelect;
 
   @override
@@ -414,7 +421,14 @@ class _PreviewAction extends StatelessWidget {
         // see the action exists and that it's the lock standing in the way.
         PillActionButton(
           key: const Key('celebration-select'),
-          label: locked ? l10n.skinLocked : l10n.skinSelect,
+          label: !locked
+              ? l10n.skinSelect
+              : previewed.isFragmentGated
+              ? l10n.skinFragmentProgress(
+                  fragmentCount,
+                  previewed.fragmentsRequired!,
+                )
+              : l10n.skinLocked,
           onPressed: locked ? null : onSelect,
         ),
         const SizedBox(height: 4),
