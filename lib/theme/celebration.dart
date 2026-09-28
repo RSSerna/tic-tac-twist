@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
+/// Fragments a chest must collect toward each locked celebration before it
+/// unlocks. One placeholder value for all twelve — tune per celebration if
+/// some should cost more.
+const _kCelebrationFragments = 30;
+
 /// The victory celebrations ("flexing") a player can equip — one plays when
 /// they win.
 ///
-/// Like [Emote], this is a catalogue that's expected to grow and to be sold.
+/// Like [Emote], this is a catalogue that's expected to grow.
 /// Adding one means an entry here, a name string in both ARBs, and
 /// (optionally) art at [assetPath].
 ///
@@ -15,18 +20,18 @@ enum Celebration {
   cheer(id: 'cheer', fallbackIcon: Icons.celebration, free: true),
   dance(id: 'dance', fallbackIcon: Icons.music_note, free: true),
   bow(id: 'bow', fallbackIcon: Icons.theater_comedy, free: true),
-  flex(id: 'flex', fallbackIcon: Icons.fitness_center),
-  wave(id: 'wave', fallbackIcon: Icons.waving_hand),
-  spin(id: 'spin', fallbackIcon: Icons.rotate_right),
-  jump(id: 'jump', fallbackIcon: Icons.arrow_upward),
-  salute(id: 'salute', fallbackIcon: Icons.military_tech),
-  shrug(id: 'shrug', fallbackIcon: Icons.help_outline),
-  facepalm(id: 'facepalm', fallbackIcon: Icons.back_hand),
-  fistbump(id: 'fistbump', fallbackIcon: Icons.front_hand),
-  crown(id: 'crown', fallbackIcon: Icons.workspace_premium),
-  trophy(id: 'trophy', fallbackIcon: Icons.emoji_events),
-  sparkle(id: 'sparkle', fallbackIcon: Icons.auto_awesome),
-  rocket(id: 'rocket', fallbackIcon: Icons.rocket_launch);
+  flex(id: 'flex', fallbackIcon: Icons.fitness_center, fragmentsRequired: _kCelebrationFragments),
+  wave(id: 'wave', fallbackIcon: Icons.waving_hand, fragmentsRequired: _kCelebrationFragments),
+  spin(id: 'spin', fallbackIcon: Icons.rotate_right, fragmentsRequired: _kCelebrationFragments),
+  jump(id: 'jump', fallbackIcon: Icons.arrow_upward, fragmentsRequired: _kCelebrationFragments),
+  salute(id: 'salute', fallbackIcon: Icons.military_tech, fragmentsRequired: _kCelebrationFragments),
+  shrug(id: 'shrug', fallbackIcon: Icons.help_outline, fragmentsRequired: _kCelebrationFragments),
+  facepalm(id: 'facepalm', fallbackIcon: Icons.back_hand, fragmentsRequired: _kCelebrationFragments),
+  fistbump(id: 'fistbump', fallbackIcon: Icons.front_hand, fragmentsRequired: _kCelebrationFragments),
+  crown(id: 'crown', fallbackIcon: Icons.workspace_premium, fragmentsRequired: _kCelebrationFragments),
+  trophy(id: 'trophy', fallbackIcon: Icons.emoji_events, fragmentsRequired: _kCelebrationFragments),
+  sparkle(id: 'sparkle', fallbackIcon: Icons.auto_awesome, fragmentsRequired: _kCelebrationFragments),
+  rocket(id: 'rocket', fallbackIcon: Icons.rocket_launch, fragmentsRequired: _kCelebrationFragments);
 
   const Celebration({
     required this.id,
@@ -44,8 +49,8 @@ enum Celebration {
 
   final IconData fallbackIcon;
 
-  /// Available without unlocking. The rest arrive by purchase once store
-  /// products exist (see `08-STORE-ITEMS.md`).
+  /// Available without unlocking. Every other celebration is fragment-gated
+  /// ([fragmentsRequired]) — earned from daily chests, never bought.
   final bool free;
 
   /// Non-null for a celebration whose only unlock route is collecting this

@@ -171,3 +171,45 @@ choices, not a restatement of what they are.
   as, and it was already an accepted, contrast-checked token; its 2.53:1
   shortfall against the real `ground` is `neutral`'s own pre-existing gap,
   not something reusing it here introduces.
+
+## Decided (One route per cosmetic; chests grant fragments only, 2026-09-27)
+
+Supersedes parts of the two entries above: the "instant unlock still possible
+from a chest" behaviour and "reveal plays only for a fragment outcome".
+
+- **Every cosmetic has exactly one route.** Turned Wood and Classic: free.
+  Nesting Dolls: achievement-only. Burger Stack: purchase-only. Fragment
+  Shard, the 6 locked emotes and the 12 locked celebrations: fragment-gated.
+  Driven by the developer's item-by-item spec, made after the first real
+  chest claim showed a plain "Unlocked: star" banner instead of the fragment
+  reveal — with a mixed pool, ~19 of 20 claims were still instant unlocks, so
+  the feature the developer asked for was almost never visible.
+- **A chest only grants fragments.** `ChestController._grantOne`'s pool is
+  now "fragment-gated and not yet unlocked", so free, achievement-only and
+  purchase-only cosmetics are excluded by construction (the old
+  `purchaseOnly` filter is redundant and gone). The instant-unlock reward
+  types (`SkinReward`/`EmoteReward`/`CelebrationReward`) were deleted rather
+  than left as dead code; `ChestReward` is now the three fragment variants
+  sharing `rarity`/`amount`/`totalAfter`/`unlockedNow` on the base class.
+- **The reveal plays on every claim**, since every claim is now a fragment
+  grant with a rolled rarity. The earlier "fragment outcomes only" scoping
+  existed solely because instant unlocks had no rarity; that case is gone. A
+  claim with nothing left to grant (everything fragment-gated is unlocked)
+  still shows a plain snackbar. The shop's unused `shopClaimGranted` string
+  (which also displayed raw ids like `star`) was removed with it.
+- **Nesting Dolls' store product was removed** (`ProductId.skinNestingDolls`,
+  its grant, and its buy button) — it never had a registered product, so no
+  purchase can exist. The Shop's `fire` pack still points at it and can only
+  ever read as owned; that card is a placeholder, not a sale.
+- **Placeholder requirements the developer didn't specify**: locked emotes 20
+  fragments each, locked celebrations 30 (`_kEmoteFragments`,
+  `_kCelebrationFragments`); Fragment Shard stays 100. Not derived from
+  anything — chosen to be cheaper than the Shard.
+- **Known problem, deliberately left open: pacing.** Fragments are per item
+  and each chest feeds *one* uniformly-picked item out of 19. At the average
+  yield (~6.4 fragments per chest) an item gets ~0.34 fragments/chest, so the
+  first emote unlock (20) is ~60 chests away and the whole catalogue is on
+  the order of a year of daily play. What would change our mind / options:
+  let the player choose which item a chest feeds, lower the requirements, or
+  add chest sources (rewarded ad, achievements). Listed in `CLAUDE.md`'s
+  "Still undecided".

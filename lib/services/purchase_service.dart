@@ -7,11 +7,10 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Cosmetic-only purchases (product doc §2: "No mechanic, mode, or gameplay
-/// advantage is ever sold or locked"). All are one-time, non-consumable —
-/// remove-ads; the Nesting Dolls skin pack (its other unlock route is the
-/// Phase 8 achievement set; this is the direct-purchase route design doc
-/// §2.2 also names); and the Burger Stack skin pack, which has **no other
-/// route** (`GameSkin.purchaseOnly`) — purchase is the only way to own it.
+/// advantage is ever sold or locked"). Both are one-time, non-consumable —
+/// remove-ads, and the Burger Stack skin pack, which has **no other route**
+/// (`GameSkin.purchaseOnly`) — purchase is the only way to own it. Nesting
+/// Dolls used to be sold too; it is achievement-only now.
 ///
 /// These IDs are placeholders: they still need matching products created in
 /// App Store Connect and the Play Console before a real purchase can
@@ -19,12 +18,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// the same kind of blocker as AdMob's app ID vs. its universal test ad
 /// units (test IDs exist for ads; they don't for IAP, since every product
 /// must be registered per-app).
-enum ProductId { removeAds, skinNestingDolls, skinBurgerStack }
+enum ProductId { removeAds, skinBurgerStack }
 
 extension ProductIdStoreId on ProductId {
   String get storeId => switch (this) {
         ProductId.removeAds => 'dev.rsaldarris.nested.remove_ads',
-        ProductId.skinNestingDolls => 'dev.rsaldarris.nested.skin_nesting_dolls',
         ProductId.skinBurgerStack => 'dev.rsaldarris.nested.skin_burger_stack',
       };
 }

@@ -38,37 +38,19 @@ void main() {
     expect(emotes.unlockedIds, isEmpty);
   });
 
-  test('a finished day grants exactly one locked cosmetic, once', () async {
+  test('a finished day grants one fragment reward, once', () async {
     final container = ProviderContainer();
     addTearDown(container.dispose);
     await finishToday(container.read(dailyChallengeServiceProvider));
-    // Fragment-gated skins can be picked from the pool without unlocking
-    // anything (they grant fragments instead) — pre-unlock the one
-    // fragment-gated skin so this test's draw can only ever be an instant
-    // whole-cosmetic unlock, which is what it's actually asserting.
-    await container
-        .read(skinControllerProvider.notifier)
-        .unlockSkin(GameSkin.fragmentShard);
 
     final reward = await container.read(chestControllerProvider).claimDaily();
     expect(reward, isNotNull);
-
-    final unlockedCount =
-        (await container.read(
-          skinControllerProvider.future,
-        )).unlockedIds.length +
-        (await container.read(
-          emoteControllerProvider.future,
-        )).unlockedIds.length +
-        (await container.read(
-          celebrationControllerProvider.future,
-        )).unlockedIds.length;
-    // 1 from the pre-unlocked fragmentShard above, +1 from this claim.
-    expect(unlockedCount, 2);
+    // A fresh install has no progress, so the running total is exactly what
+    // the rolled tier was worth.
+    expect(reward!.totalAfter, reward.amount);
 
     // The day is spent — a second claim grants nothing more.
     expect(await container.read(chestControllerProvider).claimDaily(), isNull);
-    expect(unlockedCount, 2);
   });
 
   test('the reward is one the player did not already own', () async {
@@ -91,8 +73,8 @@ void main() {
     }
 
     final reward = await container.read(chestControllerProvider).claimDaily();
-    expect(reward, isA<EmoteReward>());
-    expect((reward! as EmoteReward).emote, Emote.star);
+    expect(reward, isA<EmoteFragmentReward>());
+    expect((reward! as EmoteFragmentReward).emote, Emote.star);
   });
 
   test(

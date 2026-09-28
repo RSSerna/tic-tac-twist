@@ -75,13 +75,13 @@ void main() {
       expect(purchases.removed, isTrue);
     });
 
-    test('a completed skin-pack purchase unlocks the Nesting Dolls skin', () async {
+    test('a completed skin-pack purchase unlocks the Burger Stack skin', () async {
       container.read(monetizationControllerProvider);
-      purchases.completePurchase(ProductId.skinNestingDolls);
+      purchases.completePurchase(ProductId.skinBurgerStack);
       await settle();
 
       final skins = await container.read(skinControllerProvider.future);
-      expect(skins.isUnlocked(GameSkin.nestingDolls), isTrue);
+      expect(skins.isUnlocked(GameSkin.burgerStack), isTrue);
     });
   });
 

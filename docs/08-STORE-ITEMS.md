@@ -74,7 +74,7 @@ storeId string      (the store)      App Store Connect + Play Console
   no item carries a `ProductId`, so tapping one reports that payments aren't
   set up rather than pretending to sell.
 
-  Packs that point at a real cosmetic (`fire` → the Nesting Dolls skin,
+  Packs that point at a real cosmetic (`fire` → the Nesting Dolls skin, which is achievement-only — the card only ever reads as owned, never sells it,
   `troll` → an emote, `loser` → a celebration) show a truthful owned state.
   `apple`, `elements` and `sakura` have nothing behind them yet — board skins
   don't exist at all — so they can never read as owned.
@@ -90,23 +90,29 @@ storeId string      (the store)      App Store Connect + Play Console
 
 ---
 
-## 2a. Sellable cosmetics that exist but have no product yet
+## 2a. What is sold today, and what deliberately isn't
 
-Chip skins already have `ProductId`s wired end to end; emotes and
-celebrations don't. Either way, nothing can actually be bought until the
-matching products are registered in both stores (§3 Step 1) — until then
-`buy()` queries a product that doesn't exist and no-ops.
+**Only two things are sold**: remove-ads and the Burger Stack skin. As of
+2026-09-27 emotes and celebrations are **not sold at all** — the locked ones
+are fragment-gated, earned from daily chests (`07-SKINS.md` §6) — and
+Nesting Dolls is achievement-only (its `ProductId` was removed). Nothing can
+actually be bought until the two products are registered in both stores
+(§3 Step 1) — until then `buy()` queries a product that doesn't exist and
+no-ops.
 
 | Cosmetic | Locked entries | Where the unlock lands |
 |---|---|---|
-| Chip skins (`GameSkin`) | `nesting_dolls` (also achievement/chest-earnable), `burger_stack` (**purchase-only** — `purchaseOnly: true`, see `07-SKINS.md` §6) | `SkinController.unlockSkin` — wired to `ProductId.skinNestingDolls` / `ProductId.skinBurgerStack` |
-| Emotes (`Emote`) | 6 of 10 (`free: false`) | `EmoteController.unlock` — **no `ProductId` yet** |
-| Celebrations (`Celebration`) | 12 of 16 (`free: false`) | `CelebrationController.unlock` — **no `ProductId` yet** |
+| Chip skins (`GameSkin`) | `burger_stack` (**purchase-only** — `purchaseOnly: true`, see `07-SKINS.md` §6) | `SkinController.unlockSkin` — wired to `ProductId.skinBurgerStack`. `nesting_dolls` is achievement-only; `fragment_shard` is fragment-gated. |
+| Emotes (`Emote`) | 6 of 10 — **fragment-gated, not sold** | `EmoteController.addFragments` (chest) |
+| Celebrations (`Celebration`) | 12 of 16 — **fragment-gated, not sold** | `CelebrationController.addFragments` (chest) |
 
-Both controllers already expose `unlock(...)` and persist it, so the purchase
-route is a `ProductId` plus a grant call, not new plumbing. Follow §3 as
-written; the grant in Step 4 is `emoteControllerProvider.notifier.unlock(...)`
-or `celebrationControllerProvider.notifier.unlock(...)`.
+If emotes or celebrations are ever sold *as well*, both controllers already
+expose `unlock(...)` and persist it, so the purchase route is a `ProductId`
+plus a grant call, not new plumbing. Follow §3 as written; the grant in Step 4
+is `emoteControllerProvider.notifier.unlock(...)` or
+`celebrationControllerProvider.notifier.unlock(...)`. (An item can't be both
+fragment-gated *and* `free`, but nothing stops a purchase route beside a
+fragment route — that would be a new decision.)
 
 **Decide before building:** whether these sell individually or as packs.
 Individually means one `ProductId` and one store product per item, which
@@ -140,13 +146,13 @@ no product and the call no-ops. That's expected pre-setup.
 In `lib/services/purchase_service.dart`:
 
 ```dart
-enum ProductId { removeAds, skinNestingDolls, skinStoneStack } // add
+enum ProductId { removeAds, skinBurgerStack, skinStoneStack } // add
 
 extension ProductIdStoreId on ProductId {
   String get storeId => switch (this) {
-        ProductId.removeAds        => 'dev.rsaldarris.nested.remove_ads',
-        ProductId.skinNestingDolls => 'dev.rsaldarris.nested.skin_nesting_dolls',
-        ProductId.skinStoneStack   => 'dev.rsaldarris.nested.skin_stone_stack', // add
+        ProductId.removeAds       => 'dev.rsaldarris.nested.remove_ads',
+        ProductId.skinBurgerStack => 'dev.rsaldarris.nested.skin_burger_stack',
+        ProductId.skinStoneStack  => 'dev.rsaldarris.nested.skin_stone_stack', // add
       };
 }
 ```
@@ -198,9 +204,9 @@ source of truth is the `PurchaseService.purchases` stream. Grant there:
 ```dart
 // MonetizationController._onPurchased (the existing dispatcher for purchase results)
 switch (product) {
-  case ProductId.removeAds:        await purchases.markRemoved();
-  case ProductId.skinNestingDolls: await skins.unlockSkin(GameSkin.nestingDolls);
-  case ProductId.skinStoneStack:   await skins.unlockSkin(GameSkin.stoneStack); // add
+  case ProductId.removeAds:       await purchases.markRemoved();
+  case ProductId.skinBurgerStack: await skins.unlockSkin(GameSkin.burgerStack);
+  case ProductId.skinStoneStack:  await skins.unlockSkin(GameSkin.stoneStack); // add
 }
 ```
 

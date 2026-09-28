@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,6 +11,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../services/daily_challenge_service.dart';
 import '../../theme/celebration.dart';
 import '../../theme/emote.dart';
+import '../../theme/rarity.dart';
 import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
@@ -182,6 +184,8 @@ class ShopScreen extends ConsumerWidget {
                   },
                 ),
               ),
+              // TEMP: remove with _TempRevealTestButton below.
+              if (kDebugMode) const _TempRevealTestButton(),
               const _ClaimBar(),
             ],
           ),
@@ -323,6 +327,51 @@ class _ShopCard extends StatelessWidget {
   }
 }
 
+/// TEMPORARY, debug builds only — delete this class and its one use in
+/// [ShopScreen.build]. Plays the chest reveal with a fake fragment reward so
+/// the animation can be watched without finishing the day's challenges. Each
+/// tap lands on the next rarity tier (Common → Legendary, then around).
+/// Touches no real state: nothing is granted, saved or unlocked. The label is
+/// hardcoded on purpose — it's throwaway, not user-facing.
+class _TempRevealTestButton extends ConsumerStatefulWidget {
+  const _TempRevealTestButton();
+
+  @override
+  ConsumerState<_TempRevealTestButton> createState() =>
+      _TempRevealTestButtonState();
+}
+
+class _TempRevealTestButtonState extends ConsumerState<_TempRevealTestButton> {
+  int _next = 0;
+
+  void _play() {
+    final tier = Rarity.values[_next % Rarity.values.length];
+    _next++;
+    showChestRevealSheet(
+      context,
+      ref,
+      reward: SkinFragmentReward(
+        skin: GameSkin.fragmentShard,
+        rarity: tier,
+        totalAfter: 42,
+        unlockedNow: false,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: PillActionButton(
+        key: const Key('temp-reveal-test'),
+        label: 'TEST CHEST REVEAL',
+        onPressed: _play,
+      ),
+    );
+  }
+}
+
 /// The Claim button and the meter that fills with the day's challenges.
 class _ClaimBar extends ConsumerWidget {
   const _ClaimBar();
@@ -335,48 +384,35 @@ class _ClaimBar extends ConsumerWidget {
     final reward = await ref.read(chestControllerProvider).claimDaily();
     if (!context.mounted) return;
 
-    // Fragment outcomes get the cycling reveal sheet — the only outcome
-    // with a rarity of its own (ChestController's doc comment) — unless the
-    // OS wants reduced motion, in which case it's the same information in a
-    // snackbar rather than a silent grant with no feedback at all. Every
-    // other outcome keeps today's plain snackbar, unchanged.
-    final isFragmentReward = switch (reward) {
-      SkinFragmentReward() || EmoteFragmentReward() || CelebrationFragmentReward() =>
-        true,
-      SkinReward() || EmoteReward() || CelebrationReward() || null => false,
-    };
-    if (isFragmentReward && !MediaQuery.of(context).disableAnimations) {
-      await showChestRevealSheet(context, ref, reward: reward!);
+    // Claimed, but every fragment-gated cosmetic is already unlocked.
+    if (reward == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.shopClaimNothingLeft)));
       return;
     }
 
-    final message = switch (reward) {
-      SkinReward() ||
-      EmoteReward() ||
-      CelebrationReward() => l10n.shopClaimGranted(_rewardName(l10n, reward!)),
-      SkinFragmentReward(:final totalAfter, :final skin) => l10n
-          .skinFragmentProgress(totalAfter, skin.fragmentsRequired!),
-      EmoteFragmentReward(:final totalAfter, :final emote) => l10n
-          .skinFragmentProgress(totalAfter, emote.fragmentsRequired!),
-      CelebrationFragmentReward(:final totalAfter, :final celebration) => l10n
-          .skinFragmentProgress(totalAfter, celebration.fragmentsRequired!),
-      // Claimed, but the player already owns everything there is.
-      null => l10n.shopClaimNothingLeft,
+    // Every chest grants fragments, so every claim gets the cycling reveal —
+    // unless the OS wants reduced motion, in which case it's the same
+    // information in a snackbar rather than a silent grant with no feedback.
+    if (!MediaQuery.of(context).disableAnimations) {
+      await showChestRevealSheet(context, ref, reward: reward);
+      return;
+    }
+    final required = switch (reward) {
+      SkinFragmentReward(:final skin) => skin.fragmentsRequired!,
+      EmoteFragmentReward(:final emote) => emote.fragmentsRequired!,
+      CelebrationFragmentReward(:final celebration) =>
+        celebration.fragmentsRequired!,
     };
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l10n.skinFragmentProgress(reward.totalAfter, required)),
+        ),
+      );
   }
-
-  static String _rewardName(AppLocalizations l10n, ChestReward reward) =>
-      switch (reward) {
-        SkinReward(:final skin) => skin.id,
-        EmoteReward(:final emote) => emote.id,
-        CelebrationReward(:final celebration) => celebration.id,
-        SkinFragmentReward(:final skin) => skin.id,
-        EmoteFragmentReward(:final emote) => emote.id,
-        CelebrationFragmentReward(:final celebration) => celebration.id,
-      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

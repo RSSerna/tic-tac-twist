@@ -36,8 +36,6 @@ class MonetizationController extends Notifier<void> {
     switch (product) {
       case ProductId.removeAds:
         await ref.read(purchaseServiceProvider).markRemoved();
-      case ProductId.skinNestingDolls:
-        await ref.read(skinControllerProvider.notifier).unlockSkin(GameSkin.nestingDolls);
       case ProductId.skinBurgerStack:
         await ref.read(skinControllerProvider.notifier).unlockSkin(GameSkin.burgerStack);
     }

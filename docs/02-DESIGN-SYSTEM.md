@@ -229,9 +229,9 @@ an explicit, out-of-match **Claim** tap on the Shop screen, it's
 tap-skippable from the first frame (skip once to land on the result, tap
 again to dismiss), and it falls back to an equivalent snackbar with no
 modal at all under reduced motion — never a silent grant with no feedback.
-It plays for a fragment-reward outcome only; an ordinary instant-unlock
-claim keeps its plain snackbar unchanged, since only a fragment-reward
-outcome has a rolled rarity worth revealing.
+It plays on every chest claim, since every claim is a fragment grant with a
+rolled rarity worth revealing; only a claim with nothing left to grant gets a
+plain snackbar.
 
 `GameAnimations.chestRevealLanding` (~350ms, `Curves.easeOutBack`) is the
 sheet's landed-tier flourish. The cycling phase runs on its own controller

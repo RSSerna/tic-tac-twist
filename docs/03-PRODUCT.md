@@ -70,21 +70,19 @@ which opens one chest.
   simply a new empty day — you cannot fall behind.
 - **One claim per day**, enforced in the service, so a double tap can't grant
   twice.
-- **Which cosmetic a chest offers is still uniformly random** across every
-  cosmetic the player doesn't already own (skins, emotes, celebrations) —
-  that part didn't change. Owning everything makes a claim a no-op that says
-  so rather than granting nothing silently.
-- **Rarity is real now** (2026-09): every chest open independently rolls a
-  tier — see the odds table in §3.2 — which decides nothing for an ordinary
-  cosmetic (still an instant, uniform unlock as above) but decides *how many
-  fragments* a **fragment-gated** cosmetic's pick is worth. A fragment-gated
-  cosmetic (`GameSkin.fragmentsRequired`, and the matching field on `Emote`/
-  `Celebration`) unlocks once its running fragment total reaches its
-  requirement, rather than on a single lucky pick — `GameSkin.fragmentShard`
-  is the first one (100 fragments; see `07-SKINS.md` §6). The reveal
-  animation (cycling Common→Legendary, landing on the rolled tier) plays only
-  for that outcome, since an ordinary instant unlock has no rarity of its
-  own to show.
+- **A chest only ever grants fragments** (2026-09-27). It picks one
+  *fragment-gated* cosmetic the player doesn't own yet, uniformly at random
+  across skins, emotes and celebrations, and adds fragments toward it; the
+  cosmetic unlocks when its running total reaches its requirement. Nothing is
+  ever unlocked outright by a chest. Free, achievement-only (Nesting Dolls)
+  and purchase-only (Burger Stack) cosmetics are never in the pool. Once
+  every fragment-gated cosmetic is unlocked a claim is a no-op that says so.
+- **Rarity is real** (2026-09): every chest open independently rolls a tier —
+  see the odds table in §3.2 — which decides *how many fragments* that grant
+  is worth. Requirements today: Fragment Shard 100, each locked emote 20, each
+  locked celebration 30 (emote/celebration amounts are placeholders). See
+  `07-SKINS.md` §6. The reveal animation (cycling Common→Legendary, landing
+  on the rolled tier) plays on every claim.
 - Still **unpurchasable**, per this section's whole point — rarity decides a
   free chest's *fragment yield*, never something a player can pay to skip or
   weight in their favour.
@@ -111,8 +109,11 @@ Rewarded-ad chests and achievement chests remain unbuilt.
   | Epic | 12% | 10 |
   | Legendary | 3% | 25 |
 
-  Tuned so a 100-fragment cosmetic (`fragmentShard`) takes roughly 15–25 days
-  at one chest per day — a slow-burn reward, not a quick flip.
+  Fragments are per item and each chest feeds one randomly-picked item, so
+  progress is spread across every fragment-gated cosmetic still locked (19 at
+  launch) — unlocking any *particular* item takes far longer than its
+  requirement divided by the average yield. Pacing is unresolved; see the
+  decisions log.
 - **Handle offline.** Ads need network. Rewarded chests must fail gracefully offline; **play-earned chests must work with no connection**, since v1 is otherwise fully offline.
 - **Never gate a rematch behind an ad.** The rewarded offer is always genuinely optional, never friction in the core loop.
 - Daily/streak rewards keyed to device clock are trivially cheated by changing system time. Low stakes for cosmetics — either accept it or gate on a network timestamp when available.

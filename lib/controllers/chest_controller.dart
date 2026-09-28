@@ -12,80 +12,55 @@ import 'daily_challenge_controller.dart';
 import 'emote_controller.dart';
 import 'skin_controller.dart';
 
-/// What a chest handed over, so the UI can name it.
+/// What a chest handed over, so the UI can name it. A chest only ever grants
+/// **fragments** toward a fragment-gated cosmetic — never an instant unlock —
+/// so every variant carries the rolled [rarity] that decided the amount,
+/// the running total, and whether this grant just crossed the threshold.
 @immutable
 sealed class ChestReward {
-  const ChestReward();
+  const ChestReward({
+    required this.rarity,
+    required this.totalAfter,
+    required this.unlockedNow,
+  });
+
+  final Rarity rarity;
+  int get amount => rarity.fragments;
+  final int totalAfter;
+  final bool unlockedNow;
 }
 
-class SkinReward extends ChestReward {
-  const SkinReward(this.skin);
-  final GameSkin skin;
-}
-
-class EmoteReward extends ChestReward {
-  const EmoteReward(this.emote);
-  final Emote emote;
-}
-
-class CelebrationReward extends ChestReward {
-  const CelebrationReward(this.celebration);
-  final Celebration celebration;
-}
-
-/// Fragments granted toward a fragment-gated skin ([GameSkin.isFragmentGated])
-/// instead of an instant unlock. [rarity] is what the chest rolled — it's
-/// what decided [amount] — so the reveal UI can show it; [totalAfter] and
-/// [unlockedNow] come straight from `SkinController.addFragments`.
 class SkinFragmentReward extends ChestReward {
   const SkinFragmentReward({
     required this.skin,
-    required this.rarity,
-    required this.totalAfter,
-    required this.unlockedNow,
+    required super.rarity,
+    required super.totalAfter,
+    required super.unlockedNow,
   });
   final GameSkin skin;
-  final Rarity rarity;
-  int get amount => rarity.fragments;
-  final int totalAfter;
-  final bool unlockedNow;
 }
 
-/// Same shape as [SkinFragmentReward], for a fragment-gated emote.
 class EmoteFragmentReward extends ChestReward {
   const EmoteFragmentReward({
     required this.emote,
-    required this.rarity,
-    required this.totalAfter,
-    required this.unlockedNow,
+    required super.rarity,
+    required super.totalAfter,
+    required super.unlockedNow,
   });
   final Emote emote;
-  final Rarity rarity;
-  int get amount => rarity.fragments;
-  final int totalAfter;
-  final bool unlockedNow;
 }
 
-/// Same shape as [SkinFragmentReward], for a fragment-gated celebration.
 class CelebrationFragmentReward extends ChestReward {
   const CelebrationFragmentReward({
     required this.celebration,
-    required this.rarity,
-    required this.totalAfter,
-    required this.unlockedNow,
+    required super.rarity,
+    required super.totalAfter,
+    required super.unlockedNow,
   });
   final Celebration celebration;
-  final Rarity rarity;
-  int get amount => rarity.fragments;
-  final int totalAfter;
-  final bool unlockedNow;
 }
 
-/// Which catalog a uniformly-random pool pick came from. Kept separate from
-/// the public [ChestReward] (which also has fragment variants) so
-/// [ChestController._grantOne]'s dispatch switch stays exhaustive over
-/// exactly the 3 shapes the pool can produce, rather than demanding branches
-/// for fragment-reward outcomes that structurally can't come from a pool pick.
+/// Which catalog a uniformly-random pool pick came from.
 sealed class _PoolPick {
   const _PoolPick();
 }
@@ -107,14 +82,13 @@ class _CelebrationPick extends _PoolPick {
 
 /// Opens the chest earned by finishing a day's challenges.
 ///
-/// **The pool pick stays uniform.** One cosmetic is still chosen evenly from
-/// everything the player doesn't own — no weighting by rarity. What's new is
-/// an *independent* rarity roll on every open ([Rarity.roll]), consulted only
-/// when the picked cosmetic turns out to be fragment-gated: it decides how
-/// many fragments that grant is worth, rather than the picked cosmetic
-/// unlocking outright. A non-fragment-gated pick is unaffected — instant
-/// unlock, exactly as before — so the roll's outcome simply isn't surfaced
-/// for that case. See `docs/09-DECISIONS-LOG.md` for the published odds.
+/// **A chest only grants fragments.** It picks one cosmetic uniformly from
+/// every *fragment-gated* cosmetic the player doesn't own yet (across skins,
+/// emotes and celebrations), independently rolls a [Rarity], and adds that
+/// tier's fragment count toward the pick — unlocking it once the running
+/// total reaches its `fragmentsRequired`. Cosmetics with any other route
+/// (free, achievement-only like Nesting Dolls, purchase-only like Burger
+/// Stack) are never in the pool. See `docs/09-DECISIONS-LOG.md`.
 ///
 /// Chests are **never purchasable** (product doc §3.3 / `08-STORE-ITEMS.md`
 /// §1) — the only way to open one is to play. Keep it that way: a paid
@@ -125,11 +99,12 @@ class ChestController {
   final Ref ref;
   final Random _random;
 
-  /// Claims the day's reward and grants one locked cosmetic.
+  /// Claims the day's reward and grants fragments toward one cosmetic.
   ///
   /// Returns null when there was nothing to claim (already taken, or the
-  /// day's set isn't finished) or when everything is already unlocked — the
-  /// caller distinguishes those two by asking the daily controller.
+  /// day's set isn't finished) or when every fragment-gated cosmetic is
+  /// already unlocked — the caller distinguishes those two by asking the
+  /// daily controller.
   Future<ChestReward?> claimDaily() async {
     final claimed = await ref
         .read(dailyChallengeControllerProvider.notifier)
@@ -143,37 +118,26 @@ class ChestController {
     final emotes = await ref.read(emoteControllerProvider.future);
     final celebrations = await ref.read(celebrationControllerProvider.future);
 
-    // purchaseOnly skins (e.g. Burger Stack) are excluded: a free chest
-    // handing out a paid-only skin would contradict the one thing
-    // "purchase-only" is supposed to mean. Fragment-gated cosmetics are NOT
-    // excluded — they must stay pickable so fragments can accrue toward
-    // them; see the class doc comment above for how that pick then resolves.
     final pool = <_PoolPick>[
       for (final skin in GameSkin.values)
-        if (!skins.isUnlocked(skin) && !skin.purchaseOnly) _SkinPick(skin),
+        if (skin.isFragmentGated && !skins.isUnlocked(skin)) _SkinPick(skin),
       for (final emote in Emote.values)
-        if (!emotes.isUnlocked(emote)) _EmotePick(emote),
+        if (emote.isFragmentGated && !emotes.isUnlocked(emote))
+          _EmotePick(emote),
       for (final celebration in Celebration.values)
-        if (!celebrations.isUnlocked(celebration))
+        if (celebration.isFragmentGated &&
+            !celebrations.isUnlocked(celebration))
           _CelebrationPick(celebration),
     ];
     if (pool.isEmpty) return null;
 
     final picked = pool[_random.nextInt(pool.length)];
-    // Rolled on every open, independently of the pool pick above. Only
-    // consulted below if the picked cosmetic is fragment-gated — an instant
-    // whole-cosmetic unlock has no rarity of its own in this design.
     final rarity = Rarity.roll(_random);
 
+    // Safe to force-unwrap each addFragments: the pool filter above is
+    // exactly its own non-null conditions (fragment-gated, not unlocked).
     switch (picked) {
       case _SkinPick(:final skin):
-        if (!skin.isFragmentGated) {
-          await ref.read(skinControllerProvider.notifier).unlockSkin(skin);
-          return SkinReward(skin);
-        }
-        // Safe to force-unwrap: `isFragmentGated` and "not yet unlocked"
-        // (the pool filter above) are exactly addFragments's own
-        // non-null conditions.
         final grant = (await ref
             .read(skinControllerProvider.notifier)
             .addFragments(skin, rarity.fragments))!;
@@ -184,10 +148,6 @@ class ChestController {
           unlockedNow: grant.unlockedNow,
         );
       case _EmotePick(:final emote):
-        if (!emote.isFragmentGated) {
-          await ref.read(emoteControllerProvider.notifier).unlock(emote);
-          return EmoteReward(emote);
-        }
         final grant = (await ref
             .read(emoteControllerProvider.notifier)
             .addFragments(emote, rarity.fragments))!;
@@ -198,12 +158,6 @@ class ChestController {
           unlockedNow: grant.unlockedNow,
         );
       case _CelebrationPick(:final celebration):
-        if (!celebration.isFragmentGated) {
-          await ref
-              .read(celebrationControllerProvider.notifier)
-              .unlock(celebration);
-          return CelebrationReward(celebration);
-        }
         final grant = (await ref
             .read(celebrationControllerProvider.notifier)
             .addFragments(celebration, rarity.fragments))!;

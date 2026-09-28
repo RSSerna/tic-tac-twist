@@ -12,26 +12,15 @@ import 'celebration_skins_screen.dart' show celebrationName;
 import 'chip_skins_screen.dart' show skinName;
 import 'emote_skins_screen.dart' show emoteName;
 
-/// Starts the cycling reveal and shows it modally. [reward] must be one of
-/// [ChestReward]'s three fragment variants — a whole-cosmetic unlock has no
-/// rarity of its own to reveal (`ChestController`'s doc comment), so
-/// `_ClaimBar._claim` never calls this for the other three.
+/// Starts the cycling reveal and shows it modally. Every chest claim ends
+/// here — a chest only ever grants fragments, so there is always a rolled
+/// rarity to reveal.
 Future<void> showChestRevealSheet(
   BuildContext context,
   WidgetRef ref, {
   required ChestReward reward,
 }) {
-  final rarity = switch (reward) {
-    SkinFragmentReward(:final rarity) => rarity,
-    EmoteFragmentReward(:final rarity) => rarity,
-    CelebrationFragmentReward(:final rarity) => rarity,
-    SkinReward() ||
-    EmoteReward() ||
-    CelebrationReward() => throw ArgumentError(
-      'showChestRevealSheet requires a fragment reward',
-    ),
-  };
-  ref.read(chestRevealControllerProvider.notifier).start(rarity);
+  ref.read(chestRevealControllerProvider.notifier).start(reward.rarity);
   return showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -39,38 +28,30 @@ Future<void> showChestRevealSheet(
   );
 }
 
-/// What the sheet actually shows, pulled out of whichever fragment variant
-/// [reward] is — one lookup instead of three near-identical widget branches.
+/// What the sheet actually shows, pulled out of whichever variant [reward]
+/// is — one lookup instead of three near-identical widget branches.
 ({String name, Rarity rarity, int amount, int totalAfter, int required})
 _details(AppLocalizations l10n, ChestReward reward) => switch (reward) {
-  SkinFragmentReward(:final skin, :final rarity, :final totalAfter) => (
+  SkinFragmentReward(:final skin) => (
     name: skinName(l10n, skin),
-    rarity: rarity,
-    amount: rarity.fragments,
-    totalAfter: totalAfter,
+    rarity: reward.rarity,
+    amount: reward.amount,
+    totalAfter: reward.totalAfter,
     required: skin.fragmentsRequired!,
   ),
-  EmoteFragmentReward(:final emote, :final rarity, :final totalAfter) => (
+  EmoteFragmentReward(:final emote) => (
     name: emoteName(l10n, emote),
-    rarity: rarity,
-    amount: rarity.fragments,
-    totalAfter: totalAfter,
+    rarity: reward.rarity,
+    amount: reward.amount,
+    totalAfter: reward.totalAfter,
     required: emote.fragmentsRequired!,
   ),
-  CelebrationFragmentReward(
-    :final celebration,
-    :final rarity,
-    :final totalAfter,
-  ) =>
-    (
-      name: celebrationName(l10n, celebration),
-      rarity: rarity,
-      amount: rarity.fragments,
-      totalAfter: totalAfter,
-      required: celebration.fragmentsRequired!,
-    ),
-  SkinReward() || EmoteReward() || CelebrationReward() => throw ArgumentError(
-    'not a fragment reward',
+  CelebrationFragmentReward(:final celebration) => (
+    name: celebrationName(l10n, celebration),
+    rarity: reward.rarity,
+    amount: reward.amount,
+    totalAfter: reward.totalAfter,
+    required: celebration.fragmentsRequired!,
   ),
 };
 

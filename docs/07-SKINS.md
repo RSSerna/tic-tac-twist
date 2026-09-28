@@ -392,10 +392,11 @@ once the skin is in that list.
 
 ## 6. Unlocking (both recipes)
 
-A skin is one of four access tiers. Pick one (a skin can combine Free with
-neither of the other three, since Free means no unlock exists to combine —
-but Achievement, Purchase and Fragment-gated *can* co-exist on the same skin,
-same as `nestingDolls` already mixes achievement, purchase and chest).
+A skin is one of four access tiers. **Pick exactly one** — every skin today
+has a single route: Turned Wood and Classic are free, Nesting Dolls is
+achievement-only, Burger Stack is purchase-only, Fragment Shard is
+fragment-gated. (The model doesn't forbid combining, but nothing combines
+today, and `free`/`purchaseOnly` each `assert` against `fragmentsRequired`.)
 
 ### Free / always unlocked
 Model it like `turnedWood`: `SkinState.isUnlocked` treats
@@ -405,7 +406,8 @@ generalized.
 
 ### Achievement-earned
 Unlocks fire from `GameController._checkAchievements`. Today, unlocking *any*
-achievement unlocks `nestingDolls`:
+achievement unlocks `nestingDolls`, which is **achievement-only** (no store
+product, never in a chest):
 
 ```dart
 if (anyNewlyUnlocked) {
@@ -428,8 +430,8 @@ with a per-achievement mapping.
 ProductId? _productFor(GameSkin skin) {
   if (kIsWeb) return null;
   return switch (skin.id) {
-    'nesting_dolls' => ProductId.skinNestingDolls,
-    'stone_stack'   => ProductId.skinStoneStack,   // add
+    'burger_stack' => ProductId.skinBurgerStack,
+    'stone_stack'  => ProductId.skinStoneStack,   // add
     _ => null,
   };
 }
@@ -447,39 +449,39 @@ The purchase button and lock icon in the picker are already driven by
 `_productFor` + `isUnlocked`.
 
 **If this skin should never be earned for free**, set `purchaseOnly: true` on
-the `GameSkin`. Today only `GameSkin.nestingDolls` mixes routes (achievement
-*and* purchase *and* the daily chest can all unlock it); `GameSkin.burgerStack`
-is the first skin sold with no free route at all — `purchaseOnly` is what
-`ChestController._grantOne` checks to leave it out of the random reward pool.
-Nothing reads it for the achievement path today because achievement unlocks
-are hand-mapped to specific skins already (§6 above) — `purchaseOnly` only
-matters wherever code iterates `GameSkin.values` looking for something to hand
-out for free.
+the `GameSkin` (`GameSkin.burgerStack` is the one skin sold this way).
+Chests only ever grant fragments toward *fragment-gated* cosmetics, so a
+purchase-only skin is never in a chest's pool regardless; the flag is what
+documents the intent and `assert`s it can't also be fragment-gated.
 
 ### Fragment-gated (chest-only)
 
 Set `fragmentsRequired: <n>` on the `GameSkin` (`GameSkin.fragmentShard` is
 the first: 100). The mechanism is generic across all three cosmetic catalogs
-— `Emote` and `Celebration` carry the same field — but nothing besides
-`fragmentShard` uses it today.
+— `Emote` and `Celebration` carry the same field. Today it is the **only**
+route to: Fragment Shard (100), the six locked emotes (20 each) and the twelve
+locked celebrations (30 each). The emote/celebration amounts are placeholders
+(`_kEmoteFragments`, `_kCelebrationFragments`) — tune them in
+`emote.dart`/`celebration.dart`.
 
-- **What happens**: `ChestController._grantOne` (decisions log, 2026-09) still
-  picks one cosmetic uniformly from everything unowned, exactly as before —
-  including fragment-gated ones, which must stay in the pool so fragments can
-  accrue toward them. It also independently rolls a `Rarity`
-  (`lib/theme/rarity.dart`) on every open. If the pool pick is fragment-gated,
-  the reward becomes `rarity.fragments` fragments toward it (a
-  `SkinFragmentReward`/`EmoteFragmentReward`/`CelebrationFragmentReward`)
-  instead of an instant unlock; anything else unlocks outright as it always
-  has, and the rolled rarity is simply unused for that outcome.
+- **What happens**: a chest **only ever grants fragments** (decisions log,
+  2026-09-27). `ChestController._grantOne` picks one cosmetic uniformly from
+  every *fragment-gated* cosmetic the player doesn't own yet, independently
+  rolls a `Rarity` (`lib/theme/rarity.dart`), and adds `rarity.fragments`
+  toward the pick (a `SkinFragmentReward`/`EmoteFragmentReward`/
+  `CelebrationFragmentReward`). Cosmetics on any other route — free,
+  achievement-only, purchase-only — are never in the pool, and a chest never
+  unlocks anything outright except by crossing a fragment threshold.
+  **Fragments are per item**, not a shared currency: each chest's fragments
+  go to whichever single item was picked, so progress is spread across the
+  whole pool (see the pacing note in the decisions log).
 - **Granting fragments**: `SkinController.addFragments(skin, amount)` (and the
   `Emote`/`Celebration` controllers' equivalents) persists the running total
   and calls the ordinary `unlockSkin`/`unlock` itself once the total reaches
   `fragmentsRequired` — the unlock-writing code path is never duplicated.
-- **Never mixes with `free` or `purchaseOnly`** on the same item — both
-  constructors `assert` it. It *can* mix with achievement/purchase in
-  principle (nothing stops a future skin from having both a fragment route
-  and a purchase route), but `fragmentShard` today has neither.
+- **Never mixes with `free` or `purchaseOnly`** on the same item — the
+  constructors `assert` it. Nothing has a fragment route *and* an achievement
+  or purchase route today.
 - **Progress UI**: each picker shows `l10n.skinFragmentProgress(current,
   required)` in place of the ordinary locked state once
   `skin.isFragmentGated` — see `_FocusedSkinActions` in
@@ -487,10 +489,11 @@ the first: 100). The mechanism is generic across all three cosmetic catalogs
   `_PreviewAction` in `celebration_skins_screen.dart`.
 - **The reveal**: a cycling Common→Legendary reveal (`ChestRevealController`
   + `ChestRevealSheet`, `lib/controllers/chest_reveal_controller.dart` /
-  `lib/ui/screens/chest_reveal_sheet.dart`) plays only for a fragment-reward
-  outcome — a whole-cosmetic unlock has no rarity of its own to reveal.
-  Triggered from `shop_screen.dart`'s `_ClaimBar._claim`; skipped in favour of
-  an equivalent snackbar under reduced motion.
+  `lib/ui/screens/chest_reveal_sheet.dart`) plays on **every** chest claim
+  (every claim is a fragment grant). Triggered from `shop_screen.dart`'s
+  `_ClaimBar._claim`; skipped in favour of an equivalent snackbar under
+  reduced motion. A claim with nothing left to grant (every fragment-gated
+  cosmetic already unlocked) shows a plain "everything unlocked" snackbar.
 
 ---
 

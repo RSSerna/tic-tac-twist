@@ -43,7 +43,6 @@ String _skinDesc(AppLocalizations l10n, GameSkin skin) => switch (skin.id) {
 ProductId? _productFor(GameSkin skin) {
   if (kIsWeb) return null;
   return switch (skin.id) {
-    'nesting_dolls' => ProductId.skinNestingDolls,
     'burger_stack' => ProductId.skinBurgerStack,
     _ => null,
   };

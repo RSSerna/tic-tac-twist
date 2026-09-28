@@ -228,7 +228,6 @@
   "shopClaim": "Reclamar",
   "shopClaimHint": "Completa los desafíos de hoy para reclamar",
   "shopClaimedToday": "Reclamado: vuelve mañana",
-  "shopClaimGranted": "Desbloqueado: {name}",
   "shopClaimNothingLeft": "Ya lo tienes todo desbloqueado",
   "shopOwned": "En posesión",
   "shopItemMarkX": "Marca X",

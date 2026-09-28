@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
+/// Fragments a chest must collect toward each locked emote before it
+/// unlocks. One placeholder value for all six — tune per emote if some
+/// should cost more.
+const _kEmoteFragments = 20;
+
 /// The emotes a player can equip and send during a match.
 ///
-/// Catalogue, not a fixed set: emotes are a purchasable cosmetic, so this
-/// list is expected to grow. Adding one means an entry here, a name string
+/// Catalogue, not a fixed set: this list is expected to grow. Adding one means an entry here, a name string
 /// in both ARBs, and (optionally) art at [assetPath] — nothing else.
 ///
 /// Each emote renders from a bundled image and falls back to [fallbackIcon]
@@ -14,12 +18,12 @@ enum Emote {
   clap(id: 'clap', fallbackIcon: Icons.sign_language, free: true),
   laugh(id: 'laugh', fallbackIcon: Icons.sentiment_very_satisfied, free: true),
   cry(id: 'cry', fallbackIcon: Icons.sentiment_very_dissatisfied, free: true),
-  surprised(id: 'surprised', fallbackIcon: Icons.sentiment_neutral),
-  thinking(id: 'thinking', fallbackIcon: Icons.psychology),
-  fire(id: 'fire', fallbackIcon: Icons.local_fire_department),
-  heart(id: 'heart', fallbackIcon: Icons.favorite),
-  party(id: 'party', fallbackIcon: Icons.celebration),
-  star(id: 'star', fallbackIcon: Icons.star);
+  surprised(id: 'surprised', fallbackIcon: Icons.sentiment_neutral, fragmentsRequired: _kEmoteFragments),
+  thinking(id: 'thinking', fallbackIcon: Icons.psychology, fragmentsRequired: _kEmoteFragments),
+  fire(id: 'fire', fallbackIcon: Icons.local_fire_department, fragmentsRequired: _kEmoteFragments),
+  heart(id: 'heart', fallbackIcon: Icons.favorite, fragmentsRequired: _kEmoteFragments),
+  party(id: 'party', fallbackIcon: Icons.celebration, fragmentsRequired: _kEmoteFragments),
+  star(id: 'star', fallbackIcon: Icons.star, fragmentsRequired: _kEmoteFragments);
 
   const Emote({
     required this.id,
@@ -37,8 +41,8 @@ enum Emote {
 
   final IconData fallbackIcon;
 
-  /// Available without unlocking. The rest arrive by purchase (product doc
-  /// §2.2's cosmetics route) once store products exist for them.
+  /// Available without unlocking. Every other emote is fragment-gated
+  /// ([fragmentsRequired]) — earned from daily chests, never bought.
   final bool free;
 
   /// Non-null for an emote whose only unlock route is collecting this many

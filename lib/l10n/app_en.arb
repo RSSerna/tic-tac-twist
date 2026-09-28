@@ -465,11 +465,6 @@
   "@shopClaimedToday": {
     "description": "Shown in place of the Claim button once today's reward is taken."
   },
-  "shopClaimGranted": "Unlocked: {name}",
-  "@shopClaimGranted": {
-    "description": "Confirmation naming the cosmetic a claim just unlocked.",
-    "placeholders": { "name": { "type": "String" } }
-  },
   "shopClaimNothingLeft": "Everything is already unlocked",
   "@shopClaimNothingLeft": {
     "description": "Shown when a claim has nothing left to grant because the player owns every cosmetic."
