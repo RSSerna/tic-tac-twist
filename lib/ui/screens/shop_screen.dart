@@ -8,6 +8,7 @@ import '../../controllers/daily_challenge_controller.dart';
 import '../../controllers/emote_controller.dart';
 import '../../controllers/skin_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../services/purchase_service.dart';
 import '../../services/daily_challenge_service.dart';
 import '../../theme/celebration.dart';
 import '../../theme/emote.dart';
@@ -40,6 +41,7 @@ class ShopItem {
     this.skin,
     this.emote,
     this.celebration,
+    this.product,
   });
 
   /// Stable identity — maps 1:1 to a `ProductId.storeId` once real products
@@ -56,6 +58,11 @@ class ShopItem {
   final GameSkin? skin;
   final Emote? emote;
   final Celebration? celebration;
+
+  /// The store product behind this card, if it has one. Only acted on in debug
+  /// builds for now (see [_ShopCard.onBuy]); release builds still report
+  /// "payments unavailable" until the product is registered in the stores.
+  final ProductId? product;
 }
 
 /// The in-app shop (product doc §2: cosmetic-only, "no mechanic, mode, or
@@ -81,6 +88,7 @@ class ShopScreen extends ConsumerWidget {
       kind: ShopItemKind.combo,
       name: 'Burger',
       skin: GameSkin.burgerStack,
+      product: ProductId.skinBurgerStack,
     ),
     ShopItem(id: 'elements', kind: ShopItemKind.combo, name: 'Elements'),
     ShopItem(id: 'sakura', kind: ShopItemKind.board, name: 'Sakura'),
@@ -172,6 +180,13 @@ class ShopScreen extends ConsumerWidget {
                                       key: Key('shop-item-${item.id}'),
                                       item: item,
                                       owned: _owned(ref, item),
+                                      // TEMP: debug-only, pairs with the debug
+                                      // shortcut in InAppPurchaseService.buy.
+                                      onBuy: kDebugMode && item.product != null
+                                          ? () => ref
+                                                .read(purchaseServiceProvider)
+                                                .buy(item.product!)
+                                          : null,
                                       width: cardWidth,
                                     ),
                                 ],
@@ -200,12 +215,17 @@ class _ShopCard extends StatelessWidget {
     super.key,
     required this.item,
     required this.owned,
+    this.onBuy,
     required this.width,
   });
 
   final ShopItem item;
   final bool owned;
   final double width;
+
+  /// Buys this card's product when tapped while unowned. Null on release
+  /// builds and on cards with no product, which fall back to the snackbar.
+  final VoidCallback? onBuy;
 
   static Widget _badge(BuildContext context, ShopItemKind kind, Color color) {
     final style = context.gameTextStyles.label.copyWith(color: color);
@@ -236,6 +256,11 @@ class _ShopCard extends StatelessWidget {
       };
 
   void _tap(BuildContext context, AppLocalizations l10n) {
+    final buy = onBuy;
+    if (!owned && buy != null) {
+      buy();
+      return;
+    }
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
