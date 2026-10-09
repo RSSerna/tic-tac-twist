@@ -8,6 +8,7 @@ import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../widgets/asset_glyph.dart';
 import '../widgets/buttons/pill_action_button.dart';
+import '../widgets/locked_preview.dart';
 import '../widgets/panel_header.dart';
 import '../widgets/rarity_legend.dart';
 import '../widgets/app_glyph.dart';
@@ -620,24 +621,15 @@ class _CelebrationTile extends StatelessWidget {
                   Positioned.fill(
                     child: Padding(
                       padding: EdgeInsets.all(size * 0.18),
-                      child: unlocked
-                          ? AssetGlyph(
-                              assetPath: celebration.assetPath,
-                              fallbackIcon: celebration.fallbackIcon,
-                              color: colors.neutral,
-                            )
-                          : Center(
-                              child: CircleAvatar(
-                                radius: size * 0.22,
-                                backgroundColor: colors.ink,
-                                child: AppGlyph(
-                                  AppIcons.locked,
-                                  size: size * 0.24,
-                                  color: colors.surface,
-                                  semanticLabel: l10n.skinLocked,
-                                ),
-                              ),
-                            ),
+                      child: LockedPreview(
+                        locked: !unlocked,
+                        badgeSize: size * 0.28,
+                        child: AssetGlyph(
+                          assetPath: celebration.assetPath,
+                          fallbackIcon: celebration.fallbackIcon,
+                          color: colors.neutral,
+                        ),
+                      ),
                     ),
                   ),
                   // A tick, not just the outline: a 3pt border on a pale tile

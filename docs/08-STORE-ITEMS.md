@@ -77,7 +77,9 @@ storeId string      (the store)      App Store Connect + Play Console
   Packs that point at a real cosmetic (`fire` → the Nesting Dolls skin, which is achievement-only — the card only ever reads as owned, never sells it,
   `troll` → an emote, `loser` → a celebration) show a truthful owned state.
   `apple`, `elements` and `sakura` have nothing behind them yet — board skins
-  don't exist at all — so they can never read as owned.
+  don't exist at all — so they can never read as owned. Every card shows the
+  pack's real art with a lock (or, once owned, check) badge; those three show a
+  stand-in glyph, not real art. Tapping an unowned card opens a larger preview.
 
   **The X and O packs are separate items on purpose**: skins are chosen and
   persisted per mark (`SkinPair`, see `07-SKINS.md` §1), so selling one mark's

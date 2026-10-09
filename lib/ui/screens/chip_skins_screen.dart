@@ -12,6 +12,7 @@ import '../widgets/buttons/pill_action_button.dart';
 import '../widgets/buttons/pill_dropdown.dart';
 import '../widgets/buttons/segmented_pills.dart';
 import '../widgets/chip_view.dart';
+import '../widgets/locked_preview.dart';
 import '../widgets/panel_header.dart';
 import '../widgets/rarity_legend.dart';
 import '../widgets/app_glyph.dart';
@@ -394,26 +395,18 @@ class _SkinTile extends StatelessWidget {
                     : null,
               ),
               padding: const EdgeInsets.all(16),
-              child: unlocked
-                  ? ChipView(
-                      color: previewFirstPerson
-                          ? colors.playerA
-                          : colors.playerB,
-                      ringColor: colors.surface,
-                      level: 4,
-                      isFirstPerson: previewFirstPerson,
-                      appearance: skin.appearance,
-                    )
-                  // A locked skin shows a lock rather than a dimmed preview:
-                  // the art is the thing being sold, so don't give it away.
-                  : Center(
-                      child: AppGlyph(
-                        AppIcons.locked,
-                        size: 40,
-                        color: colors.neutral,
-                        semanticLabel: l10n.skinLocked,
-                      ),
-                    ),
+              // A locked skin still shows its art, with a lock badge: the
+              // player should know what they're earning or buying.
+              child: LockedPreview(
+                locked: !unlocked,
+                child: ChipView(
+                  color: previewFirstPerson ? colors.playerA : colors.playerB,
+                  ringColor: colors.surface,
+                  level: 4,
+                  isFirstPerson: previewFirstPerson,
+                  appearance: skin.appearance,
+                ),
+              ),
             ),
           ),
         ),

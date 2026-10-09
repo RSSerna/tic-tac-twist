@@ -55,11 +55,12 @@ void main() {
     await tapKey(tester, 'open-shop');
 
     await tester.tap(find.byKey(const Key('shop-item-apple')));
-    await tester.pump(); // let the SnackBar appear (don't settle it away)
+    await tester.pumpAndSettle();
 
-    // Nothing is buyable until real store products exist — a card must say
-    // so rather than pretending to sell.
-    expect(find.byType(SnackBar), findsOneWidget);
+    // Nothing is buyable until real store products exist — a card shows what
+    // the pack looks like, locked, and says so rather than pretending to sell.
+    expect(find.byKey(const Key('cosmetic-preview')), findsOneWidget);
+    expect(find.byKey(const Key('preview-badge-locked')), findsWidgets);
   });
 
   testWidgets('the claim meter is empty and Claim is disabled on a fresh day', (

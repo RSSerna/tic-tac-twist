@@ -213,3 +213,21 @@ from a chest" behaviour and "reveal plays only for a fragment outcome".
   let the player choose which item a chest feeds, lower the requirements, or
   add chest sources (rewarded ad, achievements). Listed in `CLAUDE.md`'s
   "Still undecided".
+
+
+## Decided (Locked cosmetics show their art, 2026-10-09)
+
+- **Locked chips, emotes, celebrations and shop cards now show the real art
+  with a lock badge** (`LockedPreview`), instead of a bare lock glyph. Chose
+  this because players couldn't tell what they were earning or buying; the old
+  comment in `_SkinCard` ("the art is the thing being sold, so don't give it
+  away") traded that for a surprise nobody asked for. What would change our
+  mind: a mystery-reveal chest, where the *unknown* is the product.
+- Owned shop cards show art + a check badge (was a check alone). Locked emotes
+  and unowned shop cards open `showCosmeticPreview` on tap; the shop's old
+  "payments unavailable" snackbar is now that dialog's status line.
+- An unavailable `CategoryTile` (only `board`) keeps its own icon, badged,
+  rather than swapping it for a lock.
+- **Not built**: board skins. `sakura` (kind `board`) and the other empty packs
+  use a stand-in glyph; real previews arrive with `BoardSkin` (one more case in
+  `_ShopCard._art`).

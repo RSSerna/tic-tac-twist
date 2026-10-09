@@ -118,6 +118,6 @@ The full history — Phase 0 through the 2026-08 UI pass, with the reasoning beh
 - Whether emotes/celebrations are *also* sold, now that the locked ones are fragment-gated (see `08-STORE-ITEMS.md` §2a). Today they are not.
 - **Fragment pacing.** Fragments are per item and a chest feeds one random item, so with 19 fragment-gated cosmetics the first unlock of any particular item takes months at one chest/day. The emote (20) and celebration (30) requirements are also placeholders. Options: let the player pick which item a chest feeds, lower the requirements, add more chest sources. See `09-DECISIONS-LOG.md` (2026-09-27).
 - **What format a celebration is** — still image, sprite sequence, or video — and what plays it at the end of a won game. The picker, persistence and catalogue don't depend on the answer; the preview frame and `Celebration.assetPath` do.
-- Whether `board` becomes a real category (it's the last locked one), and what a board skin may change without touching the gameplay-critical parts of `02-DESIGN-SYSTEM.md` §2.4
+- Whether `board` becomes a real category (it's the last locked one), and what a board skin may change without touching the gameplay-critical parts of `02-DESIGN-SYSTEM.md` §2.4 (its previews are placeholder-only until then)
 - Which crash-reporting backend (Crashlytics vs. Sentry) to actually finish and switch on
 - Whether to switch on `FirebaseAnalyticsService` (and therefore configure a real Firebase project)

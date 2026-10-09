@@ -77,6 +77,11 @@ skin list, and some of those categories exist for v2 features. Everything
 below is **already in the codebase** — v2 wires it to multiplayer rather than
 designing it from scratch.
 
+> **Board skins** are the one category with nothing behind it. Its tile keeps its
+> own icon with a lock badge, and the shop's `sakura` pack shows a stand-in glyph;
+> real board previews arrive with a `BoardSkin` type (one more case in
+> `_ShopCard._art`). Not built.
+
 ### 4.1 The customisation root
 
 `SkinsScreen` (`lib/ui/screens/skins_screen.dart`) is no longer the chip

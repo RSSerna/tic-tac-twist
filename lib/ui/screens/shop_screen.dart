@@ -17,6 +17,10 @@ import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../widgets/app_mark.dart';
+import '../widgets/asset_glyph.dart';
+import '../widgets/chip_view.dart';
+import '../widgets/emote_view.dart';
+import '../widgets/locked_preview.dart';
 import '../widgets/buttons/pill_action_button.dart';
 import '../widgets/panel_header.dart';
 import '../widgets/app_glyph.dart';
@@ -255,10 +259,43 @@ class _ShopCard extends StatelessWidget {
         ShopItemKind.flexing => l10n.shopItemFlexing,
       };
 
+  /// The pack's real art, or a stand-in when none exists yet. A new cosmetic
+  /// kind (board skins, later) adds one case here.
+  Widget _art(BuildContext context) {
+    final colors = context.gameColors;
+    if (item.skin case final skin?) {
+      return ChipView(
+        color: colors.playerA,
+        ringColor: colors.surface,
+        level: 4,
+        isFirstPerson: true,
+        appearance: skin.appearance,
+      );
+    }
+    if (item.emote case final emote?) return EmoteView(emote: emote);
+    if (item.celebration case final celebration?) {
+      return AssetGlyph(
+        assetPath: celebration.assetPath,
+        fallbackIcon: celebration.fallbackIcon,
+        color: colors.neutral,
+      );
+    }
+    return AppGlyph(AppIcons.skins, size: width * 0.5, color: colors.neutral);
+  }
+
   void _tap(BuildContext context, AppLocalizations l10n) {
     final buy = onBuy;
     if (!owned && buy != null) {
       buy();
+      return;
+    }
+    if (!owned) {
+      showCosmeticPreview(
+        context,
+        art: _art(context),
+        title: item.name,
+        status: l10n.shopPaymentsUnavailable,
+      );
       return;
     }
     ScaffoldMessenger.of(context)
@@ -308,25 +345,21 @@ class _ShopCard extends StatelessWidget {
                       child: _badge(context, item.kind, colors.surface),
                     ),
                   ),
-                  // The art window. Empty until packs carry real art — the
-                  // card still shows what kind of thing it is and whether
-                  // it's owned.
+                  // The art window: the pack's real art, badged locked or
+                  // owned. Packs with nothing behind them yet show a stand-in
+                  // so the card still says what a pack looks like.
                   Container(
                     height: width * 0.9,
                     width: double.infinity,
                     color: colors.surface,
+                    padding: EdgeInsets.all(width * 0.12),
                     alignment: Alignment.center,
-                    child: owned
-                        ? AppGlyph(
-                            AppIcons.check,
-                            size: width * 0.28,
-                            color: colors.ink,
-                          )
-                        : AppGlyph(
-                            AppIcons.locked,
-                            size: width * 0.24,
-                            color: colors.neutral,
-                          ),
+                    child: LockedPreview(
+                      locked: !owned,
+                      ownedBadge: owned,
+                      badgeSize: width * 0.24,
+                      child: _art(context),
+                    ),
                   ),
                   SizedBox(
                     height: bar,

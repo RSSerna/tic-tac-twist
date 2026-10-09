@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../theme/tokens.dart';
 import '../../../theme/typography.dart';
-import '../../../theme/app_assets.dart';
-import '../app_glyph.dart';
+import '../locked_preview.dart';
 
 /// A square `surface` tile with a caption above its glyph — one entry in the
 /// Custom screen's category row.
@@ -79,13 +78,13 @@ class CategoryTile extends StatelessWidget {
                       ),
                       Expanded(
                         child: Center(
-                          child: available
-                              ? icon
-                              : AppGlyph(
-                                  AppIcons.locked,
-                                  size: 40,
-                                  color: colors.neutral,
-                                ),
+                          // An unavailable category keeps its own icon, badged
+                          // as locked, so it reads "coming" rather than "empty".
+                          child: LockedPreview(
+                            locked: !available,
+                            badgeSize: 32,
+                            child: icon,
+                          ),
                         ),
                       ),
                     ],

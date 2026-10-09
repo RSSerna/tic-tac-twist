@@ -7,6 +7,7 @@ import '../../theme/emote.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../widgets/emote_view.dart';
+import '../widgets/locked_preview.dart';
 import '../widgets/panel_header.dart';
 import '../widgets/app_glyph.dart';
 import '../../theme/app_assets.dart';
@@ -389,53 +390,52 @@ class _CatalogueTile extends StatelessWidget {
           l10n.emoteEquipped,
       ].join(', '),
       child: ExcludeSemantics(
-        child: Opacity(
-          opacity: unlocked ? 1 : 0.45,
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            boxShadow: elevations.resting,
+            // Equipped emotes stay in the catalogue rather than vanishing
+            // from it — the outline is what says "this one's already in".
+            border: equipped ? Border.all(color: colors.ink, width: 3) : null,
+          ),
+          child: Material(
+            color: colors.surface,
+            borderRadius: radius,
+            child: InkWell(
               borderRadius: radius,
-              boxShadow: elevations.resting,
-              // Equipped emotes stay in the catalogue rather than vanishing
-              // from it — the outline is what says "this one's already in".
-              border: equipped ? Border.all(color: colors.ink, width: 3) : null,
-            ),
-            child: Material(
-              color: colors.surface,
-              borderRadius: radius,
-              child: InkWell(
-                borderRadius: radius,
-                onTap: unlocked ? onTap : null,
-                child: Padding(
-                  padding: EdgeInsets.all(size * 0.18),
-                  child: unlocked
-                      ? EmoteView(emote: emote)
-                      : fragmentProgress != null
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AppGlyph(
-                              AppIcons.locked,
-                              size: size * 0.32,
-                              color: colors.neutral,
-                            ),
-                            Text(
-                              fragmentProgress,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: styles.caption.copyWith(
-                                color: colors.neutral,
-                              ),
-                            ),
-                          ],
-                        )
-                      : AppGlyph(
-                          AppIcons.locked,
-                          size: size * 0.4,
-                          color: colors.neutral,
-                        ),
+              // A locked emote can't be equipped, but tapping it shows it
+              // large — the player should see what they're working toward.
+              onTap: unlocked
+                  ? onTap
+                  : () => showCosmeticPreview(
+                      context,
+                      art: EmoteView(emote: emote),
+                      title: emoteName(l10n, emote),
+                      status: fragmentProgress ?? l10n.skinLocked,
+                    ),
+              child: Padding(
+                padding: EdgeInsets.all(size * 0.14),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: LockedPreview(
+                        locked: !unlocked,
+                        badgeSize: size * 0.26,
+                        child: EmoteView(emote: emote),
+                      ),
+                    ),
+                    if (fragmentProgress != null)
+                      Text(
+                        fragmentProgress,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: styles.caption.copyWith(color: colors.neutral),
+                      ),
+                  ],
                 ),
               ),
             ),

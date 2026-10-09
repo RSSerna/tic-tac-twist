@@ -339,13 +339,18 @@ widget at the call site — that's how a design drifts.
 | `MatchEmoteBubbles` / `MatchEmoteTray` | `widgets/match_emotes.dart` | Two always-drawn seat bubbles above the board (an empty one is the reserved place a v2 received emote lands), plus a toggle in the staging bar that opens the four equipped emotes as a floating overlay, so opening it moves nothing. The tray hangs off the button — centred on it, below where there's room and above where there isn't, clamped back on screen near an edge. Closes on any change to the game, since its position is fixed at open time. Sending is presentation state only — never a move. |
 | `AppGlyph` | `widgets/app_glyph.dart` | One of the project's own SVG icons (`AppIcons`), tinted from the theme. **The tint is not optional**: every file is authored white, so an untinted glyph is invisible on `surface` and `ground` alike. Size falls back to the ambient `IconTheme` (24 by default), never to the file's own 101×101. |
 | `AssetGlyph` | `widgets/asset_glyph.dart` | A bundled image that degrades to an icon when the art isn't there. Every cosmetic catalogue ships before its art, so this is the one place that behaviour lives. |
+| `LockedPreview` / `showCosmeticPreview` | `widgets/locked_preview.dart` | A cosmetic's **real art** at 70% opacity with a small ink badge bottom-right: a lock when not owned, a check (`ownedBadge`) for an owned shop card. Used by the chip, emote and celebration tiles, the shop card art window and an unavailable `CategoryTile`. Takes any widget, so board skins plug in later. `showCosmeticPreview` is the large look at it (180pt art, name, status) — tapping a locked emote or an unowned shop card opens it; it never equips or buys anything. |
 | `RarityLegend` | `widgets/rarity_legend.dart` | The COMMON/RARE/EPIC/LEGENDARY row, now showing the real published odds/fragment amounts (`Rarity`, `lib/theme/rarity.dart`). Still a legend, not a filter — every locked cosmetic is equally likely regardless of rarity; only a fragment-gated pick's fragment count depends on it. |
 | `ChestRevealSheet` | `screens/chest_reveal_sheet.dart` | The chest-opening reveal (§4 "Chest reveal" exception). Filed under `screens/`, not `widgets/`, because it needs each catalogue's own naming helper (`skinName`, `emoteName`, `celebrationName`) — importing those into `widgets/` would be the first widget-imports-screen dependency in the codebase, so this one broke the folder convention instead. |
 
 **Locked/unavailable is a shared idiom**: 45% opacity, a lock glyph where the
-content would be, and no tap. `CategoryTile`, `SegmentedPills`,
-`PillActionButton` and the emote catalogue all use it, so "not yet" looks the
-same everywhere.
+content would be, and no tap. `SegmentedPills` and `PillActionButton` use it.
+
+**Locked *cosmetics* are the exception** (2026-10-09): they show their real art
+with a lock badge via `LockedPreview`, because the player has to be able to see
+what they'd earn or buy. Locked emotes and shop cards stay tappable, but only
+to preview. A shop pack with no cosmetic behind it (`apple`, `elements`,
+`sakura`) shows a stand-in (the `skins` glyph) — a placeholder, not real art.
 
 ### Layout rules that keep biting
 
