@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../controllers/board_skin_controller.dart';
 import '../../controllers/monetization_controller.dart';
 import '../../controllers/game_controller.dart';
 import '../../engines/common/game_mode.dart';
@@ -11,6 +12,7 @@ import '../../controllers/skin_controller.dart';
 import '../../engines/common/game_status.dart';
 import '../../engines/stacking/stacking_move.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../theme/board_skin.dart';
 import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
@@ -186,13 +188,13 @@ double kMaxBoardSize({required bool stacking}) => stacking ? 640 : 722;
 /// The board itself, capped to a sensible maximum size so it doesn't
 /// stretch edge-to-edge on tablets (design doc §1: "let boards grow to a
 /// sensible maximum with margin").
-class BoardArea extends StatelessWidget {
+class BoardArea extends ConsumerWidget {
   const BoardArea({super.key, required this.session});
 
   final GameSession session;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final status = session.status;
     // Only for an actual line win (not a tiebreak/timeout/repetition
     // result, which has no three-in-a-row to point at).
@@ -200,6 +202,14 @@ class BoardArea extends StatelessWidget {
         ? status.winningLine
         : null;
     final colors = context.gameColors;
+    // The line must run through the *cells*, and a board's art may inset them
+    // (Ultimate has no board skins, so it never insets).
+    final insets = session.mode.isStacking
+        ? (ref.watch(boardSkinControllerProvider).value?.selected ??
+                  BoardSkin.defaultChoice)
+              .style
+              .insets
+        : BoardInsets.zero;
 
     return IgnorePointer(
       // Nothing for the human to tap on the AI's turn — the controller
@@ -223,6 +233,7 @@ class BoardArea extends StatelessWidget {
                   Positioned.fill(
                     child: IgnorePointer(
                       child: WinningLineOverlay(
+                        insets: insets,
                         line: winningLine,
                         color: session.personFor(status.winner!) == 1
                             ? colors.playerA

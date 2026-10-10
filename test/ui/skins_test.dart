@@ -76,18 +76,6 @@ void main() {
     expect(chevron, findsNothing);
   });
 
-  testWidgets('locked categories refuse taps', (tester) async {
-    await pumpNestedApp(tester);
-    await tapKey(tester, 'open-skins');
-
-    await tester.tap(find.byKey(const Key('category-board')));
-    await tester.pumpAndSettle();
-
-    // Still on the category screen — nothing was pushed.
-    expect(find.byType(SkinsScreen), findsOneWidget);
-    expect(find.byType(ChipSkinsScreen), findsNothing);
-  });
-
   testWidgets(
     'Turned Wood is unlocked and selected by default; Nesting Dolls starts locked',
     (tester) async {

@@ -5,8 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/ads_service.dart';
 import '../services/purchase_service.dart';
+import '../theme/board_skin.dart';
 import '../theme/skin.dart';
 import 'age_gate_controller.dart';
+import 'board_skin_controller.dart';
 import 'skin_controller.dart';
 
 /// Interstitials only every few games (product doc §2.1: "frequency-capped")
@@ -38,6 +40,8 @@ class MonetizationController extends Notifier<void> {
         await ref.read(purchaseServiceProvider).markRemoved();
       case ProductId.skinBurgerStack:
         await ref.read(skinControllerProvider.notifier).unlockSkin(GameSkin.burgerStack);
+      case ProductId.boardRock:
+        await ref.read(boardSkinControllerProvider.notifier).unlock(BoardSkin.rock);
     }
   }
 

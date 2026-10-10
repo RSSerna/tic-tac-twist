@@ -562,5 +562,33 @@
   "settingsOrientationLabel": "Rotate the screen",
   "@settingsOrientationLabel": {
     "description": "Button that flips the game between portrait and landscape."
+  },
+  "boardsSubtitle": "Pick your board",
+  "@boardsSubtitle": {
+    "description": "Line under the Board picker title."
+  },
+  "boardsScope": "Boards apply to Stack-Static and Stack-Movable.",
+  "@boardsScope": {
+    "description": "Note at the foot of the Board picker: Ultimate keeps its own look."
+  },
+  "boardNameClassic": "Classic",
+  "@boardNameClassic": {
+    "description": "Name of the default board."
+  },
+  "boardNameSandstone": "Sandstone",
+  "@boardNameSandstone": {
+    "description": "Name of the free painted sandstone board."
+  },
+  "boardNameRock": "Rock",
+  "@boardNameRock": {
+    "description": "Name of the purchasable stone-slab board."
+  },
+  "boardEquipped": "Equipped",
+  "@boardEquipped": {
+    "description": "Shown under the preview when the previewed board is the one currently equipped."
+  },
+  "boardLockedHint": "Available in the Shop",
+  "@boardLockedHint": {
+    "description": "Shown under the disabled Select button for a board the player hasn't bought."
   }
 }

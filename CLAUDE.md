@@ -17,6 +17,7 @@ Read the one relevant to the current task. Do not load all of them at once.
 | `docs/07-SKINS.md` | Adding or wiring any cosmetic — chip skins (painted or asset-backed), **emotes**, or **celebrations**: the `ChipAppearance`/`Emote`/`Celebration` models, the category root, naming, unlock routes, and constraints |
 | `docs/08-STORE-ITEMS.md` | Adding purchasable items to the Shop: `ShopItem`/`ProductId` wiring, store-console setup, granting/restoring, and the "direct purchase vs. currency" decision |
 | `docs/09-DECISIONS-LOG.md` | Before re-deciding something that might already have a documented reason, or when you need the historical context behind a specific phase's code |
+| `docs/10-BRIEF-DISENADOR.md` | Briefing the designer (**in Spanish**): what art the game needs for boards, chips, emotes and celebrations, and the gameplay rules art must not break. Update it when an art requirement changes |
 
 ## Documentation — a feature isn't done until the docs are true
 
@@ -114,10 +115,11 @@ The full history — Phase 0 through the 2026-08 UI pass, with the reasoning beh
 ## Still undecided — ask before assuming
 
 - The ad-chest daily cap (`03-PRODUCT.md` §3) — rewarded-ad chests are still unbuilt, so there's no cap to set yet.
-- Whether the Shop's six packs become real products, and what each contains — today `fire`/`troll`/`loser` point at existing cosmetics so their owned state is truthful, while `apple`/`elements`/`sakura` have nothing behind them yet (board skins don't exist at all).
+- Whether the Shop's six packs become real products, and what each contains — today `fire`/`troll`/`loser` point at existing cosmetics so their owned state is truthful, while `apple`/`elements`/`sakura` have nothing behind them yet (`rock`, a board, is the first pack that is actually sold — `ProductId.boardRock`).
 - Whether emotes/celebrations are *also* sold, now that the locked ones are fragment-gated (see `08-STORE-ITEMS.md` §2a). Today they are not.
 - **Fragment pacing.** Fragments are per item and a chest feeds one random item, so with 19 fragment-gated cosmetics the first unlock of any particular item takes months at one chest/day. The emote (20) and celebration (30) requirements are also placeholders. Options: let the player pick which item a chest feeds, lower the requirements, add more chest sources. See `09-DECISIONS-LOG.md` (2026-09-27).
 - **What format a celebration is** — still image, sprite sequence, or video — and what plays it at the end of a won game. The picker, persistence and catalogue don't depend on the answer; the preview frame and `Celebration.assetPath` do.
-- Whether `board` becomes a real category (it's the last locked one), and what a board skin may change without touching the gameplay-critical parts of `02-DESIGN-SYSTEM.md` §2.4 (its previews are placeholder-only until then)
+- **TODO(rock-board-art)** — the Rock board ships on `assets/boards/rock_board.png` *as delivered*, which doesn't meet `docs/10-BRIEF-DISENADOR.md` (not square, off-centre grid, uneven cells, edge halo, 3758px). When the designer's version arrives: replace the PNG, re-measure `BoardSkin.rock`'s `insets`, drop the `BoxFit.fill`/`cacheWidth` workarounds in `board_surface.dart`, and recheck amber-chip contrast (2.60:1 today). See `07-SKINS.md` §2c.
+- Board skins beyond Stacking: whether Ultimate gets board art (nine slabs vs one), and whether boards get unlock routes other than purchase (fragments, achievements). Today: Classic and Sandstone free, Rock bought.
 - Which crash-reporting backend (Crashlytics vs. Sentry) to actually finish and switch on
 - Whether to switch on `FirebaseAnalyticsService` (and therefore configure a real Firebase project)

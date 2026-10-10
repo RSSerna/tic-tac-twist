@@ -39,6 +39,7 @@ flutter:
     - assets/images/
     - assets/svgs/
     - assets/chips/
+    - assets/boards/
 
   # Bricolage Grotesque (design system §2.2), bundled rather than fetched at
   # runtime. Static instances from the upstream project, SIL OFL 1.1 —

@@ -76,8 +76,9 @@ storeId string      (the store)      App Store Connect + Play Console
 
   Packs that point at a real cosmetic (`fire` → the Nesting Dolls skin, which is achievement-only — the card only ever reads as owned, never sells it,
   `troll` → an emote, `loser` → a celebration) show a truthful owned state.
-  `apple`, `elements` and `sakura` have nothing behind them yet — board skins
-  don't exist at all — so they can never read as owned. Every card shows the
+  `apple`, `elements` and `sakura` have nothing behind them yet, so they can
+  never read as owned. The `rock` pack is the first board: it points at
+  `BoardSkin.rock` and carries `ProductId.boardRock`. Every card shows the
   pack's real art with a lock (or, once owned, check) badge; those three show a
   stand-in glyph, not real art. Tapping an unowned card opens a larger preview.
 
@@ -94,7 +95,7 @@ storeId string      (the store)      App Store Connect + Play Console
 
 ## 2a. What is sold today, and what deliberately isn't
 
-**Only two things are sold**: remove-ads and the Burger Stack skin. As of
+**Only three things are sold**: remove-ads, the Burger Stack skin and the Rock board. As of
 2026-09-27 emotes and celebrations are **not sold at all** — the locked ones
 are fragment-gated, earned from daily chests (`07-SKINS.md` §6) — and
 Nesting Dolls is achievement-only (its `ProductId` was removed). Nothing can
@@ -105,6 +106,7 @@ no-ops.
 | Cosmetic | Locked entries | Where the unlock lands |
 |---|---|---|
 | Chip skins (`GameSkin`) | `burger_stack` (**purchase-only** — `purchaseOnly: true`, see `07-SKINS.md` §6) | `SkinController.unlockSkin` — wired to `ProductId.skinBurgerStack`. `nesting_dolls` is achievement-only; `fragment_shard` is fragment-gated. |
+| Board skins (`BoardSkin`) | `rock` (**purchase-only**; `classic` and `sandstone` are free) | `BoardSkinController.unlock` — wired to `ProductId.boardRock` in `MonetizationController._onPurchased`. Product id `dev.rsaldarris.nested.board_rock` must be created in **both** store consoles (§3 Step 1) — until then `buy()` no-ops. |
 | Emotes (`Emote`) | 6 of 10 — **fragment-gated, not sold** | `EmoteController.addFragments` (chest) |
 | Celebrations (`Celebration`) | 12 of 16 — **fragment-gated, not sold** | `CelebrationController.addFragments` (chest) |
 

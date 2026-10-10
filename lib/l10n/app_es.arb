@@ -251,5 +251,12 @@
   "matchEmoteFromPlayer": "Jugador {number} envió {name}",
   "matchEmoteEmptySeat": "Los emotes del jugador {number} aparecen aquí",
   "playerShort": "J{number}",
-  "settingsOrientationLabel": "Girar la pantalla"
+  "settingsOrientationLabel": "Girar la pantalla",
+  "boardsSubtitle": "Elige tu tablero",
+  "boardsScope": "Los tableros se aplican a Stack-Static y Stack-Movable.",
+  "boardNameClassic": "Clásico",
+  "boardNameSandstone": "Arenisca",
+  "boardNameRock": "Roca",
+  "boardEquipped": "Equipado",
+  "boardLockedHint": "Disponible en la tienda"
 }

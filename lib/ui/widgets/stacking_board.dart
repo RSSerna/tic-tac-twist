@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../controllers/board_skin_controller.dart';
 import '../../controllers/game_controller.dart';
 import '../../controllers/skin_controller.dart';
 import '../../engines/common/player.dart';
 import '../../engines/stacking/stacking_engine.dart';
 import '../../engines/stacking/stacking_move.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../theme/board_skin.dart';
 import '../../theme/skin.dart';
 import '../../theme/tokens.dart';
+import 'board_surface.dart';
 import 'chip_view.dart';
 
 /// The 3×3 stacking board. Renders only public information: the topmost
@@ -48,32 +51,28 @@ class StackingBoard extends ConsumerWidget {
       _ => null,
     };
 
-    return AspectRatio(
-      aspectRatio: 1,
-      child: GridView.count(
-        crossAxisCount: 3,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        children: [
-          for (var cell = 0; cell < 9; cell++)
-            _StackingCell(
-              key: Key('cell-$cell'),
-              engine: engine,
-              cell: cell,
-              highlighted: highlights.contains(cell),
-              highlightColor: colors.highlightFor(currentColor),
-              isSelectedOrigin: session.selectedCell == cell,
-              stagedLevel: stagedCell == cell ? stagedLevel : null,
-              stagedOrigin: stagedFrom == cell,
-              isLastMove: lastMoveCell == cell,
-              currentPersonIsFirst: currentPerson == 1,
-              currentColor: currentColor,
-              personFor: session.personFor,
-              skins: skins,
-              onTap: () => controller.onStackingCellTapped(cell),
-            ),
-        ],
+    final board =
+        ref.watch(boardSkinControllerProvider).value?.selected ??
+        BoardSkin.defaultChoice;
+
+    return BoardSurface(
+      skin: board,
+      cellBuilder: (context, cell, face) => _StackingCell(
+        key: Key('cell-$cell'),
+        engine: engine,
+        cell: cell,
+        face: face,
+        highlighted: highlights.contains(cell),
+        highlightColor: colors.highlightFor(currentColor),
+        isSelectedOrigin: session.selectedCell == cell,
+        stagedLevel: stagedCell == cell ? stagedLevel : null,
+        stagedOrigin: stagedFrom == cell,
+        isLastMove: lastMoveCell == cell,
+        currentPersonIsFirst: currentPerson == 1,
+        currentColor: currentColor,
+        personFor: session.personFor,
+        skins: skins,
+        onTap: () => controller.onStackingCellTapped(cell),
       ),
     );
   }
@@ -84,6 +83,7 @@ class _StackingCell extends StatelessWidget {
     super.key,
     required this.engine,
     required this.cell,
+    required this.face,
     required this.highlighted,
     required this.highlightColor,
     required this.isSelectedOrigin,
@@ -99,6 +99,10 @@ class _StackingCell extends StatelessWidget {
 
   final StackingEngine engine;
   final int cell;
+
+  /// The cell's backdrop, from the board skin — a `surface` square on the
+  /// classic board, transparent where the board's art already draws the cell.
+  final BoxDecoration face;
   final bool highlighted;
   final Color highlightColor;
   final bool isSelectedOrigin;
@@ -141,9 +145,7 @@ class _StackingCell extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: BorderRadius.circular(4),
+          decoration: face.copyWith(
             border: isSelectedOrigin
                 ? Border.all(color: colors.ink, width: 2)
                 : null,
@@ -155,7 +157,7 @@ class _StackingCell extends StatelessWidget {
                 DecoratedBox(
                   decoration: BoxDecoration(
                     color: highlightColor,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: face.borderRadius,
                   ),
                 ),
               if (top != null)

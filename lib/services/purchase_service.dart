@@ -18,12 +18,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// the same kind of blocker as AdMob's app ID vs. its universal test ad
 /// units (test IDs exist for ads; they don't for IAP, since every product
 /// must be registered per-app).
-enum ProductId { removeAds, skinBurgerStack }
+enum ProductId { removeAds, skinBurgerStack, boardRock }
 
 extension ProductIdStoreId on ProductId {
   String get storeId => switch (this) {
         ProductId.removeAds => 'dev.rsaldarris.nested.remove_ads',
         ProductId.skinBurgerStack => 'dev.rsaldarris.nested.skin_burger_stack',
+        ProductId.boardRock => 'dev.rsaldarris.nested.board_rock',
       };
 }
 

@@ -5,6 +5,7 @@ import '../../theme/tokens.dart';
 import '../widgets/app_mark.dart';
 import '../widgets/buttons/category_tile.dart';
 import '../widgets/panel_header.dart';
+import 'board_skins_screen.dart';
 import 'celebration_skins_screen.dart';
 import 'chip_skins_screen.dart';
 import 'emote_skins_screen.dart';
@@ -13,12 +14,12 @@ import '../../theme/app_assets.dart';
 
 /// The cosmetic categories a player can customise.
 ///
-/// Only [chips] has content today ([ChipSkinsScreen], roadmap Phase 8). The
-/// rest are declared here because the screen is built around the category
-/// row — they render locked until each has a system behind it, rather than
-/// being hidden and then needing the layout redesigned when they land.
+/// Every category has a screen behind it now; [available] stays so a future
+/// category can be declared here before its system exists — it renders locked
+/// rather than being hidden and then needing the layout redesigned when it
+/// lands.
 enum CustomizationCategory {
-  board(available: false),
+  board(available: true),
   chips(available: true),
   emote(available: true),
   flexing(available: true);
@@ -73,6 +74,10 @@ class SkinsScreen extends StatelessWidget {
 
   void _open(BuildContext context, CustomizationCategory category) {
     switch (category) {
+      case CustomizationCategory.board:
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const BoardSkinsScreen()),
+        );
       case CustomizationCategory.chips:
         Navigator.of(context).push(
           MaterialPageRoute<void>(builder: (_) => const ChipSkinsScreen()),
@@ -87,11 +92,6 @@ class SkinsScreen extends StatelessWidget {
             builder: (_) => const CelebrationSkinsScreen(),
           ),
         );
-      case CustomizationCategory.board:
-        // Unreachable: CategoryTile refuses taps when unavailable. Left
-        // explicit so adding a system means filling this in, not hunting for
-        // where navigation was supposed to go.
-        break;
     }
   }
 

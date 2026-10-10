@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/board_skin.dart';
+
 /// Draws an animated line through three winning cells of a 3×3 grid — used
 /// for both the stacking board's own cells and Ultimate's big-board cells,
 /// which share the same 0–8 indexing (design doc §4: "draw the line through
@@ -13,7 +15,13 @@ class WinningLineOverlay extends StatelessWidget {
     required this.line,
     required this.color,
     required this.duration,
+    this.insets = BoardInsets.zero,
   });
+
+  /// Where the 3×3 cells sit inside this widget's box. Zero unless a board
+  /// skin's art insets them — the line has to run through the cells, not
+  /// through the art's frame.
+  final BoardInsets insets;
 
   final List<int> line;
   final Color color;
@@ -40,6 +48,7 @@ class WinningLineOverlay extends StatelessWidget {
           end: _centerOf(line.last),
           progress: t,
           color: color,
+          insets: insets,
         ),
       ),
     );
@@ -52,8 +61,10 @@ class _WinningLinePainter extends CustomPainter {
     required this.end,
     required this.progress,
     required this.color,
+    required this.insets,
   });
 
+  final BoardInsets insets;
   final Offset start;
   final Offset end;
   final double progress;
@@ -61,8 +72,11 @@ class _WinningLinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final from = Offset(start.dx * size.width, start.dy * size.height);
-    final to = Offset(end.dx * size.width, end.dy * size.height);
+    final grid = insets.gridRect(size.width);
+    Offset place(Offset f) =>
+        Offset(grid.left + f.dx * grid.width, grid.top + f.dy * grid.height);
+    final from = place(start);
+    final to = place(end);
     final current = Offset.lerp(from, to, progress)!;
     final paint = Paint()
       ..color = color
@@ -76,5 +90,6 @@ class _WinningLinePainter extends CustomPainter {
       old.start != start ||
       old.end != end ||
       old.progress != progress ||
-      old.color != color;
+      old.color != color ||
+      old.insets != insets;
 }

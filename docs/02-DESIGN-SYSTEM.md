@@ -147,6 +147,9 @@ Two rules it must obey:
 ### 2.4 Board
 - Grid drawn as **negative space** — gaps between `surface` squares against `ground` — not drawn lines. Cleaner at Ultimate's density, where 81 cells of gridlines is noise.
 - Squares: 4px corner radius. Chips: fully round. Soft-square board against perfect-circle chips is the visual rhythm.
+- **That is the Classic board.** A board skin (`07-SKINS.md` §2c) may put a slab or an image behind the 3×3 and give the cells their own faces and radius. It may not change cell tap targets, the highlight, the collar or any chip size.
+- **Sandstone** (free painted board): slab `#DCCFB9`→`#BFAE93`, cell face `#EADFCC`, recess `#B9A78B`. Contrast on the cell face: `neutral` collar 3.98:1, `ink` 9.99:1, `playerA` 6.82:1, `playerB` 3.08:1 — all ≥ 3:1.
+- **Rock** (bought, asset): a pale `surface` plate at 70% over each cell lifts the collar to 3.36:1, but `playerB` is 2.60:1 there — a known shortfall, tracked by `TODO(rock-board-art)`.
 
 ### 2.5 CRITICAL — never reveal what is buried
 A covered square shows a thin `neutral` **collar** at its base, indicating only *that* something is buried and how deep. It must never hint at the buried chip's colour or level.
@@ -316,7 +319,7 @@ Key beats:
 - Settings — reset stats, SFX/music toggles, replay tutorial, language, local turn timer
 - Home also carries a **rotate** control that locks the game to portrait or landscape (`ScreenOrientationPreference`, persisted). Hidden on web, where `SystemChrome.setPreferredOrientations` does nothing.
 - Neutral age screen (see `03-PRODUCT.md`; gates ad initialisation)
-- Custom (cosmetic category root) → Chip skins, Emotes, Flexing/celebrations (see `07-SKINS.md` §2a). The Chip skins screen also carries the **Ultimate mark** picker for the worn skin (`07-SKINS.md` §2b).
+- Custom (cosmetic category root) → Board (`BoardSkinsScreen`: preview, equip, one tile per board; a board not yet bought is previewable but not equippable and points to the Shop), Chip skins, Emotes, Flexing/celebrations (see `07-SKINS.md` §2a). The Chip skins screen also carries the **Ultimate mark** picker for the worn skin (`07-SKINS.md` §2b).
 - Challenges — today's daily goals (which fill the Shop's claim meter) above the permanent achievement list (`03-PRODUCT.md` §3)
 - Shop — cosmetic packs, plus the Claim button and daily meter
 - *(v2)* Lobby / matchmaking
@@ -335,6 +338,7 @@ widget at the call site — that's how a design drifts.
 | `SegmentedPills` | `widgets/buttons/segmented_pills.dart` | One-of-many pills; a segment can be `available: false` to render locked. |
 | `CircleIconButton` / `CircleButtonCluster` | `widgets/buttons/` | Corner controls. The cluster wraps rather than overflows. |
 | `CategoryTile` | `widgets/buttons/category_tile.dart` | Square tile with caption + glyph; `available: false` renders locked and refuses taps. |
+| `BoardSurface` / `BoardPreview` | `widgets/board_surface.dart`, `widgets/board_preview.dart` | A `BoardSkin` turned into pixels: the art plus the nine cells laid over its playable area (`BoardLayout`). The real stacking board, the picker tiles and the shop card all use it, so a preview is what you get. Art is backdrop only — taps, highlight, collar and chips come from the cell builder on top. |
 | `AppMark` | `widgets/app_mark.dart` | The logo mark, painted rather than bundled so it inherits `ink` and stays crisp at any size. |
 | `MatchEmoteBubbles` / `MatchEmoteTray` | `widgets/match_emotes.dart` | Two always-drawn seat bubbles above the board (an empty one is the reserved place a v2 received emote lands), plus a toggle in the staging bar that opens the four equipped emotes as a floating overlay, so opening it moves nothing. The tray hangs off the button — centred on it, below where there's room and above where there isn't, clamped back on screen near an edge. Closes on any change to the game, since its position is fixed at open time. Sending is presentation state only — never a move. |
 | `AppGlyph` | `widgets/app_glyph.dart` | One of the project's own SVG icons (`AppIcons`), tinted from the theme. **The tint is not optional**: every file is authored white, so an untinted glyph is invisible on `surface` and `ground` alike. Size falls back to the ambient `IconTheme` (24 by default), never to the file's own 101×101. |

@@ -231,3 +231,32 @@ from a chest" behaviour and "reveal plays only for a fragment outcome".
 - **Not built**: board skins. `sakura` (kind `board`) and the other empty packs
   use a stand-in glyph; real previews arrive with `BoardSkin` (one more case in
   `_ShopCard._art`).
+
+
+## Decided (Board skins, 2026-10-09)
+
+- **One board per match, not per player** (unlike chips, which are `SkinPair`).
+  A board has no owner, so there is nothing to split; one persisted id.
+- **Stacking only; Ultimate keeps its look.** The rock art is a single 3×3 slab.
+  Nine slabs (one per small board) would put cells at ~35px unzoomed and needs
+  its own legibility pass. What would change our mind: art made *for* Ultimate.
+- **Cells are a uniform grid laid over the art, not traced from its carved
+  lines.** Hand-carved grooves are uneven (~420–540px cells on the Rock art);
+  tracing them would mean per-cell rectangles per board and chips that drift.
+  Cost: a chip can sit slightly off-centre on uneven art.
+- **The first free board is painted, not an image** (`sandstone`): nothing to
+  ship, size or fail to load, and a perfectly uniform grid. Image boards are the
+  second `BoardArt` subtype, as `AssetAppearance` is to chips.
+- **Rock ships now, bought, on art that doesn't meet the designer brief.**
+  Chosen so the purchase and asset paths exist and are tested end-to-end before
+  the final art; it's rendered with `BoxFit.fill` and `cacheWidth: 1600` as
+  workarounds. Tracked by `TODO(rock-board-art)` (`07-SKINS.md` §2c). Rock's
+  amber-chip contrast (2.60:1) is below the 3:1 bar; what would change our mind
+  is the new art being lighter or flatter, making the plate unnecessary.
+- **A pale `surface` plate over each Rock cell (70%)** rather than touching the
+  collar or chips — those aren't a skin's to change (`CLAUDE.md`).
+- **A saved board that isn't unlocked renders as Classic.** A refunded or
+  not-yet-restored purchase must never show a board the player doesn't own.
+- Test removed: `skins_test` "locked categories refuse taps" relied on `board`
+  being the one locked category; all four are live now. The mechanism it covered
+  (`CategoryTile(available: false)`) is unchanged.

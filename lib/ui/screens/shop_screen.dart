@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../controllers/board_skin_controller.dart';
 import '../../controllers/celebration_controller.dart';
 import '../../controllers/chest_controller.dart';
 import '../../controllers/daily_challenge_controller.dart';
@@ -10,6 +11,7 @@ import '../../controllers/skin_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../services/purchase_service.dart';
 import '../../services/daily_challenge_service.dart';
+import '../../theme/board_skin.dart';
 import '../../theme/celebration.dart';
 import '../../theme/emote.dart';
 import '../../theme/rarity.dart';
@@ -18,6 +20,7 @@ import '../../theme/tokens.dart';
 import '../../theme/typography.dart';
 import '../widgets/app_mark.dart';
 import '../widgets/asset_glyph.dart';
+import '../widgets/board_preview.dart';
 import '../widgets/chip_view.dart';
 import '../widgets/emote_view.dart';
 import '../widgets/locked_preview.dart';
@@ -43,6 +46,7 @@ class ShopItem {
     required this.kind,
     required this.name,
     this.skin,
+    this.board,
     this.emote,
     this.celebration,
     this.product,
@@ -60,6 +64,7 @@ class ShopItem {
   /// What owning this pack means, in whichever catalogue it belongs to. All
   /// null on a pack whose contents don't exist yet.
   final GameSkin? skin;
+  final BoardSkin? board;
   final Emote? emote;
   final Celebration? celebration;
 
@@ -96,6 +101,15 @@ class ShopScreen extends ConsumerWidget {
     ),
     ShopItem(id: 'elements', kind: ShopItemKind.combo, name: 'Elements'),
     ShopItem(id: 'sakura', kind: ShopItemKind.board, name: 'Sakura'),
+    // The first board skin that is sold. Bought through the purchases stream
+    // like Burger (`MonetizationController._onPurchased`).
+    ShopItem(
+      id: 'rock',
+      kind: ShopItemKind.board,
+      name: 'Rock',
+      board: BoardSkin.rock,
+      product: ProductId.boardRock,
+    ),
     ShopItem(
       id: 'troll',
       kind: ShopItemKind.emote,
@@ -113,6 +127,10 @@ class ShopScreen extends ConsumerWidget {
   bool _owned(WidgetRef ref, ShopItem item) {
     if (item.skin case final skin?) {
       return ref.watch(skinControllerProvider).value?.isUnlocked(skin) ?? false;
+    }
+    if (item.board case final board?) {
+      return ref.watch(boardSkinControllerProvider).value?.isUnlocked(board) ??
+          false;
     }
     if (item.emote case final emote?) {
       return ref.watch(emoteControllerProvider).value?.isUnlocked(emote) ??
@@ -272,6 +290,7 @@ class _ShopCard extends StatelessWidget {
         appearance: skin.appearance,
       );
     }
+    if (item.board case final board?) return BoardPreview(skin: board);
     if (item.emote case final emote?) return EmoteView(emote: emote);
     if (item.celebration case final celebration?) {
       return AssetGlyph(

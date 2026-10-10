@@ -19,10 +19,9 @@ player 1's chips and player 2's chips can differ; the shop sells them as
 separate packs. Board widgets take the pair and call
 `appearanceFor(isFirstPerson:)` at the chip or mark, because that's the first
 point in the tree that knows whose it is. Never resolve a skin higher up —
-you'd draw both players with one. Board colours, backgrounds, and
-palette are *not* skinned today (they come from the fixed `GameColors.baseSkin`
-theme extension; the design doc allows skinning them later, but the model here
-doesn't wire them yet).
+you'd draw both players with one. The **Stacking board's backdrop** is skinned separately, by
+`BoardSkin` (§2c). The app's palette and Ultimate's board are *not* skinned
+(they come from the fixed `GameColors.baseSkin` theme extension).
 
 Two independent axes:
 
@@ -108,14 +107,14 @@ If a change would alter any of those, it's not a skin.
 
 `SkinsScreen` is the **category root**, not the chip picker. It lists
 `CustomizationCategory` — board, chips, emote, flexing — and routes to a
-screen per category. Two are live:
+screen per category. All four are live:
 
 | Category | Screen | Model |
 |---|---|---|
 | `chips` | `ChipSkinsScreen` | `GameSkin` (`lib/theme/skin.dart`) |
 | `emote` | `EmoteSkinsScreen` | `Emote` (`lib/theme/emote.dart`) |
 | `flexing` | `CelebrationSkinsScreen` | `Celebration` (`lib/theme/celebration.dart`) |
-| `board` | — (locked) | none yet |
+| `board` | `BoardSkinsScreen` | `BoardSkin` (`lib/theme/board_skin.dart`) — see §2c |
 
 **Each is a separate model, deliberately.** A skin decides how one thing is
 *drawn*; an emote is something a player *equips and sends*; a celebration is
@@ -182,6 +181,57 @@ with no files fails the build. Every entry currently renders its
 `fallbackIcon` through `AssetGlyph`, the same degrade-to-something convention
 `ChipView` uses for asset skins. When real art arrives, add the files *and*
 the pubspec entry together.
+
+---
+
+## 2c. Board skins (Stack-Static and Stack-Movable only)
+
+A `BoardSkin` (`lib/theme/board_skin.dart`) is the look of the 3×3 stacking
+board. **One per match, not per player** — a board has no owner, so unlike chips
+there is a single persisted choice (`BoardSkinService`, keys
+`nested_game.board.selected` / `.unlocked`). **Ultimate is untouched**: its 81
+cells aren't something one 3×3 slab can sit under; see `09-DECISIONS-LOG.md`.
+
+| id | Art | Route |
+|---|---|---|
+| `classic` | none — transparent slab, 8px gaps, `surface` cells, 4px radius — the same layout and colours as before boards were skinnable | free, default |
+| `sandstone` | `PaintedBoard` — a bevelled slab with recessed cells, drawn by `_SlabPainter` | free |
+| `rock` | `AssetBoard` — `assets/boards/rock_board.png` | **bought** (`ProductId.boardRock`, `08-STORE-ITEMS.md`) |
+
+`BoardSurface` (`lib/ui/widgets/board_surface.dart`) is the one place a skin
+becomes pixels; the real board, the picker tiles and the shop card all go through
+it. **Art is backdrop only.** Taps, the legal-move highlight, selection border,
+last-move glow, the buried collar and the chips are drawn by the cell builder on
+top — so a board can't change legality, size relationships or what is revealed
+(`02-DESIGN-SYSTEM.md` §2.4–2.6).
+
+### Authoring a board
+1. Add a case to `BoardSkin` with a `BoardStyle`: `art`, `insets`, `gap`,
+   `cellRadius`. Names go in both ARBs and in `boardName()`.
+2. `insets` (`BoardInsets`) are **fractions** of the board's side locating the 3×3
+   playable area inside the art — `left/top/right/bottom` separately, because art
+   is rarely centred. Cells are laid on a **uniform** grid inside it; the art's
+   carved lines just have to line up underneath. `BoardLayout` is the single
+   source for cell positions (grid, painter and `WinningLineOverlay` all use it).
+3. **Calibrate** by playing on it: the cells must sit inside the carved squares.
+   For asset art, temporarily draw `layout.cellRects(side)` as outlines over the
+   image to measure.
+4. Set `cellScrim` on an `AssetBoard` if mid-tone art sinks the `neutral` collar
+   or the chips below 3:1 — it lays a pale `surface` plate over each cell. Record
+   the ratios next to the value, as `SlabPalette`/`rock` do.
+5. Register the asset folder in `pubspec.yaml`. A failed load never leaves an
+   invisible board: the plates remain.
+
+### Known gap — Rock ships on art that doesn't meet the brief
+`rock_board.png` is used **as delivered**: 3758×3625 (not square, ~54 MB decoded
+at full size), grid off-centre, uneven carved cells, red/yellow halo on some
+edges. It is rendered with `BoxFit.fill` (~3.7% squash) and `cacheWidth: 1600`,
+and `insets` were measured from it. **`TODO(rock-board-art)`** (in `board_skin.dart`
+and `board_surface.dart`): when the designer's version arrives
+(`docs/10-BRIEF-DISENADOR.md`), replace the PNG, re-measure `insets`, drop `fill`
+and `cacheWidth`. Contrast on Rock after the 0.7 scrim: collar 3.36:1 (passes),
+`playerA` 5.76:1, `playerB` amber **2.60:1** (below the 3:1 bar; chips are ringed
+in `surface` and distinguished by centre marker, so colour isn't the only cue).
 
 ---
 
@@ -520,7 +570,8 @@ Handled for you once the skin is in `GameSkin.values`:
 | Stacking chips | ✅ painted or asset | `ChipView` |
 | Ultimate move marks (a player's X/O) | ✅ painted or asset | `_UltimateMark` |
 | Ultimate board-claim glyph / drawn disc | ❌ painted only | `_SmallBoard` (board *outcome*, not a move — "drawn" has no person/asset) |
-| Board colours, background, palette | ❌ not wired to skins | `GameColors.baseSkin` |
+| The 3×3 **stacking** board's backdrop (slab, cell faces, art) | ✅ painted or asset | `BoardSkin` → `BoardSurface` (§2c) |
+| Ultimate's board, app background, palette | ❌ not wired to skins | `GameColors.baseSkin`, `UltimateBoard` |
 | Buried-collar dots, highlight, staging ghost | ❌ never | gameplay-critical |
 
 Extending the claim glyph to assets is possible but out of scope by default —
@@ -558,3 +609,5 @@ Adding a skin, end to end:
       set `fragmentsRequired`; `ChestController` and the picker screens pick
       it up generically.
 - [ ] `flutter analyze`, `flutter test`, and eyeball on device.
+
+Adding a **board**: §2c.
